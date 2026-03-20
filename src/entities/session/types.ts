@@ -1,0 +1,23 @@
+export type InterviewMode = "practice" | "real";
+export type InterviewType = "personality" | "technical" | "culture-fit";
+export type EnginePhase =
+  | "idle"
+  | "generating"
+  | "speaking"
+  | "listening"
+  | "processing"
+  | "ended";
+
+export interface HistoryEntry {
+  role: "interviewer" | "interviewee";
+  content: string;
+}
+
+export interface QuestionEntry {
+  id: number;
+  type: string;
+  text: string;
+  answer: string | null;
+  startTime: number;
+  endTime: number | null;
+}
