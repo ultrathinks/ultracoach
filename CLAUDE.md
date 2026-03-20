@@ -1,99 +1,69 @@
 # UltraCoach
 
-AI 면접 코칭 플랫폼. Next.js 16 + React 19 + Tailwind v4.
+AI 면접 코칭 플랫폼.
 
 ## 명령어
 
 - `docker compose up -d` — Postgres 시작
 - `pnpm dev` — 개발 서버 (Turbopack)
 - `pnpm build` — 프로덕션 빌드
-- `pnpm lint` — biome check
-- `pnpm format` — biome format
+- `pnpm lint` — Biome 린트 (`biome check`)
+- `pnpm format` — Biome 포맷 (`biome format --write`)
 - `pnpm db:generate` — Drizzle 마이그레이션 생성
 - `pnpm db:migrate` — 마이그레이션 실행
 
-## 스택
+## 아키텍처
 
-- Next.js 16.1.6 (App Router, React Compiler)
-- React 19 + Tailwind CSS 4 (`@tailwindcss/postcss`)
-- Biome 2 (린트 + 포맷)
-- TypeScript 5 (strict)
-- Zustand 5 (상태 관리)
-- Drizzle ORM + Postgres (Docker Compose)
-- Dexie 4 (IndexedDB, 비디오 Blob)
-- Motion 12 (애니메이션)
-- MediaPipe Tasks Vision 0.10 (Web Worker)
-- OpenAI SDK 6 (GPT-4o-mini 질문, GPT-4o 피드백, Whisper)
-- Simli Client 3 (WebRTC 아바타)
-- ElevenLabs WebSocket (TTS)
-- NextAuth v5 (Google OAuth, JWT)
-- path alias: `@/*` → `./src/*`
+FSD 간소화. 의존성: `app/ → widgets → features → entities → shared`. 상위 레이어가 하위를 import하는 것만 허용.
 
-## 아키텍처: FSD 간소화
-
-의존성 규칙: `app/ → widgets → features → entities → shared`
-
-## 프로젝트 구조
-
-```
-src/
-├── app/                    # Next.js 라우팅 (thin shell)
-│   ├── api/                # API routes
-│   │   ├── auth/[...nextauth]/
-│   │   ├── feedback/
-│   │   ├── next-question/
-│   │   ├── sessions/
-│   │   ├── tts/
-│   │   ├── upload-resume/
-│   │   └── whisper/
-│   ├── interview/
-│   ├── results/[id]/
-│   └── history/
-│
-├── widgets/                # 페이지 컴포지션
-│   ├── interview/
-│   ├── landing/
-│   ├── report/
-│   ├── history/
-│   └── nav/
-│
-├── features/               # 사용자 액션
-│   ├── interview-engine/   # 상태머신 + VAD + Web Speech
-│   ├── body-language/      # MediaPipe Web Worker
-│   ├── voice-coach/        # 4중 필터 코칭 엔진
-│   ├── avatar/             # Simli + ElevenLabs
-│   ├── recording/          # MediaRecorder
-│   └── setup/              # 셋업 폼 + 카운트다운
-│
-├── entities/               # 도메인 객체
-│   ├── session/
-│   ├── metrics/
-│   └── feedback/
-│
-└── shared/                 # 인프라
-    ├── ui/                 # Button, Card, Input, Chip
-    ├── lib/                # cn, auth, openai, providers
-    ├── db/                 # Drizzle 스키마 + 쿼리
-    └── config/             # Dexie
-```
-
-## 디자인
-
-- 다크 모드 only, 배경 `#09090b`
-- Pretendard 폰트
-- 그라디언트: 인디고 → 퍼플 → 핑크
-- glassmorphism (`backdrop-filter: blur`)
-- 점수 색상: 초록 (80+) / 노랑 (60+) / 빨강 (<60)
+- `app/` — Next.js 라우팅 thin shell. 페이지는 widget을 렌더링만 함
+- `app/api/` — API route handlers. 각 route는 독립적
+- `widgets/` — 페이지 단위 컴포지션. feature를 조합
+- `features/` — 사용자 시나리오 단위. hook + 로직 + UI
+- `entities/` — 도메인 모델. Zustand store + 타입
+- `shared/` — UI 컴포넌트, DB, 유틸리티. 비즈니스 로직 없음
 
 ## 코드 규칙
 
-- Biome 설정 따름
-- `as` 타입 단언 금지
+- Biome 2 설정을 따름 (double quotes, semicolons, space indent 2)
+- `as` 타입 단언 금지. 올바른 타입을 찾아 사용
 - 에러 메시지: 소문자 시작, 마침표 없음
-- 컴포넌트: named export (page/layout 제외)
+- 컴포넌트: named export (page/layout만 default export)
 - 파일명: kebab-case
-- KISS 원칙
+- index.ts는 re-export만. 로직 넣지 않음
+- path alias: `@/*` → `./src/*`
+
+## 디자인 시스템
+
+- 다크 모드 only. 배경 `#09090b`
+- Pretendard 폰트 (CDN)
+- 그라디언트: indigo → purple → pink. `gradient-text` 클래스 사용
+- glassmorphism: `glass` 클래스 사용
+- 점수 색상: green (80+) / yellow (60+) / red (<60)
+- 커스텀 색상은 `globals.css`의 `@theme inline` 블록에 정의됨
+
+## 핵심 패턴
+
+### 면접 루프
+
+interview-screen에서 while 루프로 `질문 생성 → TTS → VAD 대기 → Whisper 전사`를 반복. `loopAbortRef`로 중단 제어.
+
+### VAD (Voice Activity Detection)
+
+RMS 기반. threshold 0.035, 2.5초 무음 시 발화 종료 판정. 최소 발화 1초.
+
+### 코칭 엔진 4중 필터
+
+1. 발화 중 금지 (isSpeaking)
+2. 최소 간격 20초
+3. 쿨다운 20초
+4. 심각도 순위로 최악 1개만 알림
+
+### API route 인증
+
+`/api/sessions`만 `auth()` 체크. 나머지 API는 현재 인증 없음.
 
 ## Git
 
 - 커밋 메시지: 영어, 소문자, `type: description`
+- type: feat, fix, refactor, chore, docs, test
