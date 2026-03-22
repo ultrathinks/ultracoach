@@ -6,7 +6,14 @@ export type EnginePhase =
   | "speaking"
   | "listening"
   | "processing"
+  | "paused"
+  | "error"
   | "ended";
+
+export interface EngineError {
+  type: "permission" | "network" | "api" | "timeout";
+  message: string;
+}
 
 export interface HistoryEntry {
   role: "interviewer" | "interviewee";

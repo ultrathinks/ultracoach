@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type {
+  EngineError,
   EnginePhase,
   HistoryEntry,
   InterviewMode,
@@ -14,6 +15,7 @@ interface SessionState {
   resumeFileId: string | null;
 
   phase: EnginePhase;
+  error: EngineError | null;
   history: HistoryEntry[];
   questions: QuestionEntry[];
   currentQuestion: string | null;
@@ -27,6 +29,8 @@ interface SessionState {
     resumeFileId?: string | null;
   }) => void;
   setPhase: (phase: EnginePhase) => void;
+  setError: (error: EngineError) => void;
+  clearError: () => void;
   addHistory: (entry: HistoryEntry) => void;
   addQuestion: (q: QuestionEntry) => void;
   updateLastAnswer: (answer: string) => void;
@@ -42,17 +46,20 @@ const initialState = {
   mode: "real" as InterviewMode,
   resumeFileId: null,
   phase: "idle" as EnginePhase,
-  history: [],
-  questions: [],
-  currentQuestion: null,
-  startTime: null,
-  sessionDbId: null,
+  error: null as EngineError | null,
+  history: [] as HistoryEntry[],
+  questions: [] as QuestionEntry[],
+  currentQuestion: null as string | null,
+  startTime: null as number | null,
+  sessionDbId: null as string | null,
 };
 
 export const useSessionStore = create<SessionState>((set) => ({
   ...initialState,
   setSetup: (setup) => set(setup),
   setPhase: (phase) => set({ phase }),
+  setError: (error) => set({ error }),
+  clearError: () => set({ error: null }),
   addHistory: (entry) =>
     set((s) => ({ history: [...s.history, entry] })),
   addQuestion: (q) =>
