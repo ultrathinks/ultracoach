@@ -53,10 +53,10 @@ export function InterviewScreen() {
     return () => clearInterval(interval);
   }, [startTime, phase]);
 
-  const waitForStream = useCallback((): Promise<MediaStream> => {
+  const waitForStream = useCallback((): Promise<MediaStream | null> => {
     if (streamRef.current) return Promise.resolve(streamRef.current);
     return new Promise((resolve) => {
-      streamReadyRef.current = () => resolve(streamRef.current!);
+      streamReadyRef.current = () => resolve(streamRef.current);
     });
   }, []);
 
@@ -90,6 +90,8 @@ export function InterviewScreen() {
         startRecording(stream);
       } catch {
         console.error("camera/mic access denied");
+        streamReadyRef.current?.();
+        streamReadyRef.current = null;
       }
     })();
     return () => {
@@ -106,6 +108,10 @@ export function InterviewScreen() {
 
     (async () => {
       const stream = await waitForStream();
+      if (!stream) {
+        useSessionStore.getState().setPhase("ended");
+        return;
+      }
 
       while (!loopAbortRef.current) {
         let data: { question: string; type: string; shouldEnd: boolean };
