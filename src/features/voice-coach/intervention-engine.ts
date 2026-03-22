@@ -2,10 +2,6 @@ import type { MetricSnapshot } from "@/entities/metrics";
 
 export type InterventionType = "gaze" | "posture" | "expression" | "gesture";
 
-const COOLDOWN_SEC = 20;
-const TRIGGER_DURATION_SEC = 5;
-const MIN_INTERVAL_SEC = 20;
-
 const messages: Record<InterventionType, string> = {
   gaze: "시선 올려보세요",
   posture: "어깨 펴보세요",
@@ -18,13 +14,23 @@ export interface Intervention {
   message: string;
 }
 
+interface EngineConfig {
+  cooldown: number;
+  minInterval: number;
+  triggerDuration: number;
+}
+
 interface State {
   lastInterventionTime: number;
   lastCooldownEnd: number;
   issueStartTimes: Record<InterventionType, number | null>;
 }
 
-export function createInterventionEngine() {
+export function createInterventionEngine(config?: Partial<EngineConfig>) {
+  const cooldown = config?.cooldown ?? 20;
+  const minInterval = config?.minInterval ?? 20;
+  const triggerDuration = config?.triggerDuration ?? 5;
+
   const state: State = {
     lastInterventionTime: 0,
     lastCooldownEnd: 0,
@@ -42,21 +48,15 @@ export function createInterventionEngine() {
   ): Intervention | null {
     const now = snapshot.timestamp / 1000;
 
-    // 1. never interrupt during speech
     if (isSpeaking) return null;
-
-    // 2. minimum interval
-    if (now - state.lastInterventionTime < MIN_INTERVAL_SEC) return null;
-
-    // 3. cooldown
+    if (now - state.lastInterventionTime < minInterval) return null;
     if (now < state.lastCooldownEnd) return null;
 
     const issues: { type: InterventionType; severity: number }[] = [];
 
-    // gaze
     if (!snapshot.gaze.isFrontFacing) {
       if (!state.issueStartTimes.gaze) state.issueStartTimes.gaze = now;
-      if (now - state.issueStartTimes.gaze >= TRIGGER_DURATION_SEC) {
+      if (now - state.issueStartTimes.gaze >= triggerDuration) {
         issues.push({
           type: "gaze",
           severity:
@@ -67,10 +67,9 @@ export function createInterventionEngine() {
       state.issueStartTimes.gaze = null;
     }
 
-    // posture
     if (!snapshot.posture.isUpright) {
       if (!state.issueStartTimes.posture) state.issueStartTimes.posture = now;
-      if (now - state.issueStartTimes.posture >= TRIGGER_DURATION_SEC) {
+      if (now - state.issueStartTimes.posture >= triggerDuration) {
         issues.push({
           type: "posture",
           severity:
@@ -81,11 +80,10 @@ export function createInterventionEngine() {
       state.issueStartTimes.posture = null;
     }
 
-    // expression
     if (!snapshot.expression.isPositiveOrNeutral) {
       if (!state.issueStartTimes.expression)
         state.issueStartTimes.expression = now;
-      if (now - state.issueStartTimes.expression >= TRIGGER_DURATION_SEC) {
+      if (now - state.issueStartTimes.expression >= triggerDuration) {
         issues.push({
           type: "expression",
           severity: snapshot.expression.frownScore,
@@ -95,10 +93,9 @@ export function createInterventionEngine() {
       state.issueStartTimes.expression = null;
     }
 
-    // gesture
     if (!snapshot.gesture.isModerate) {
       if (!state.issueStartTimes.gesture) state.issueStartTimes.gesture = now;
-      if (now - state.issueStartTimes.gesture >= TRIGGER_DURATION_SEC) {
+      if (now - state.issueStartTimes.gesture >= triggerDuration) {
         issues.push({
           type: "gesture",
           severity: snapshot.gesture.wristMovement,
@@ -110,12 +107,11 @@ export function createInterventionEngine() {
 
     if (issues.length === 0) return null;
 
-    // 4. pick worst (normalized severity, top 1)
     issues.sort((a, b) => b.severity - a.severity);
     const worst = issues[0];
 
     state.lastInterventionTime = now;
-    state.lastCooldownEnd = now + COOLDOWN_SEC;
+    state.lastCooldownEnd = now + cooldown;
     state.issueStartTimes[worst.type] = null;
 
     return { type: worst.type, message: messages[worst.type] };
