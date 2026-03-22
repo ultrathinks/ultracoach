@@ -16,32 +16,24 @@ export function useAvatar() {
   const pcmPlayerRef = useRef<ReturnType<typeof createPcmPlayer> | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const keysRef = useRef<{ apiKey: string; simliApiKey: string } | null>(null);
-
-  const fetchKeys = useCallback(async () => {
-    if (keysRef.current) return keysRef.current;
-    const res = await fetch("/api/tts");
-    const data = await res.json();
-    keysRef.current = data;
-    return data as { apiKey: string; simliApiKey: string };
-  }, []);
 
   const connect = useCallback(
     async (
       videoElement: HTMLVideoElement,
       audioElement: HTMLAudioElement,
     ) => {
-      const keys = await fetchKeys();
+      ttsRef.current = createElevenLabsTTS();
 
-      // always init ElevenLabs TTS
-      ttsRef.current = createElevenLabsTTS(keys.apiKey);
-
-      // try Simli avatar (non-blocking)
       try {
+        const res = await fetch("/api/simli-token", { method: "POST" });
+        if (!res.ok) throw new Error("simli token fetch failed");
+        const { sessionToken, iceServers } = await res.json();
+
         const avatar = await createSimliAvatar({
           videoElement,
           audioElement,
-          apiKey: keys.simliApiKey,
+          sessionToken,
+          iceServers,
           onSpeaking: () => setIsSpeaking(true),
           onSilent: () => setIsSpeaking(false),
         });
@@ -53,7 +45,7 @@ export function useAvatar() {
 
       setIsConnected(true);
     },
-    [fetchKeys],
+    [],
   );
 
   const speak = useCallback(
