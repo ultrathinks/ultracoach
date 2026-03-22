@@ -5,3 +5,4 @@ export type {
   SessionFeedback,
   StarFulfillment,
 } from "./types";
+export { sessionFeedbackSchema } from "./schema";
