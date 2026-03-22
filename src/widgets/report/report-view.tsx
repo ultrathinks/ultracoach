@@ -66,9 +66,9 @@ export function ReportView({ feedback, jobTitle, duration }: ReportViewProps) {
           <Card>
             <h2 className="font-semibold mb-3">핵심 순간</h2>
             <div className="space-y-2">
-              {feedback.keyMoments.map((moment, i) => (
+              {feedback.keyMoments.map((moment) => (
                 <div
-                  key={i}
+                  key={`${moment.timestamp}-${moment.type}`}
                   className="flex items-start gap-3 text-sm"
                 >
                   <span
