@@ -74,6 +74,7 @@ export const feedback = pgTable("feedback", {
     .$defaultFn(() => crypto.randomUUID()),
   sessionId: text("session_id")
     .notNull()
+    .unique()
     .references(() => sessions.id, { onDelete: "cascade" }),
   summaryJson: jsonb("summary_json"),
   keyMomentsJson: jsonb("key_moments_json"),
