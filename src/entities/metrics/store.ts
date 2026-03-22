@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { MetricEvent, MetricSnapshot } from "./types";
 
+const MAX_SNAPSHOTS = 600;
+
 interface MetricsState {
   snapshots: MetricSnapshot[];
   events: MetricEvent[];
@@ -15,10 +17,13 @@ export const useMetricsStore = create<MetricsState>((set) => ({
   events: [],
   latest: null,
   push: (snapshot) =>
-    set((s) => ({
-      snapshots: [...s.snapshots, snapshot],
-      latest: snapshot,
-    })),
+    set((s) => {
+      const next = [...s.snapshots, snapshot];
+      return {
+        snapshots: next.length > MAX_SNAPSHOTS ? next.slice(-MAX_SNAPSHOTS) : next,
+        latest: snapshot,
+      };
+    }),
   addEvent: (event) =>
     set((s) => ({
       events: [...s.events, event],
