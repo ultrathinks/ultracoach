@@ -3,7 +3,7 @@ interface VadOptions {
   silenceDelay?: number;
   minSpeechDuration?: number;
   onSpeechStart?: () => void;
-  onSpeechEnd?: () => void;
+  onSpeechEnd?: () => void | Promise<void>;
   onLevel?: (rms: number) => void;
 }
 
@@ -59,10 +59,9 @@ export function createVad(options: VadOptions = {}): VadController {
         isSpeaking = false;
         silenceStart = 0;
         speechStart = 0;
-        // only trigger if speech lasted long enough
         if (duration >= minSpeechDuration) {
           onSpeechEnd?.();
-          return; // stop processing after speech end
+          return;
         }
       }
     }
@@ -95,4 +94,44 @@ export function createVad(options: VadOptions = {}): VadController {
       speechStart = 0;
     },
   };
+}
+
+export async function calibrate(stream: MediaStream, durationMs = 2000): Promise<number> {
+  const audioContext = new AudioContext();
+  const source = audioContext.createMediaStreamSource(stream);
+  const analyser = audioContext.createAnalyser();
+  analyser.fftSize = 2048;
+  source.connect(analyser);
+
+  const samples: number[] = [];
+  const data = new Float32Array(analyser.fftSize);
+
+  return new Promise((resolve) => {
+    let rafId: number;
+
+    function measure() {
+      analyser.getFloatTimeDomainData(data);
+      let sum = 0;
+      for (let i = 0; i < data.length; i++) {
+        sum += data[i] * data[i];
+      }
+      samples.push(Math.sqrt(sum / data.length));
+      rafId = requestAnimationFrame(measure);
+    }
+
+    rafId = requestAnimationFrame(measure);
+
+    setTimeout(() => {
+      cancelAnimationFrame(rafId);
+      audioContext.close();
+
+      if (samples.length === 0) {
+        resolve(0.035);
+        return;
+      }
+
+      const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
+      resolve(Math.max(avg * 3, 0.02));
+    }, durationMs);
+  });
 }

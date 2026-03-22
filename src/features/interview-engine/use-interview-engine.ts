@@ -1,18 +1,38 @@
 "use client";
 
+import type { InterviewConfig } from "@/entities/session";
 import { useSessionStore } from "@/entities/session";
 import { useCallback, useRef, useState } from "react";
+import { z } from "zod";
 import { createVad } from "./vad";
 
-const GRACE_PERIOD_MS = 800; // wait after TTS before starting VAD
+const questionResponseSchema = z.object({
+  question: z.string(),
+  type: z.string(),
+  shouldEnd: z.boolean().optional(),
+});
 
-export function useInterviewEngine() {
+const transcribeResponseSchema = z.object({
+  text: z.string(),
+});
+
+export function useInterviewEngine(config?: InterviewConfig) {
   const vadRef = useRef<ReturnType<typeof createVad> | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const questionCountRef = useRef(0);
   const listenResolveRef = useRef<(() => void) | null>(null);
+  const gracePeriodTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [audioLevel, setAudioLevel] = useState(0);
+
+  const gracePeriod = config?.gracePeriod ?? 800;
+  const vadThreshold = config?.vadThreshold ?? 0.035;
+  const silenceDelay = config?.silenceDelay ?? 2500;
+  const minSpeechDuration = config?.minSpeechDuration ?? 1000;
+  const targetQuestionCount = config?.targetQuestionCount ?? 15;
+  const maxQuestionCount = config?.maxQuestionCount ?? 20;
 
   const fetchNextQuestion = useCallback(async () => {
     const store = useSessionStore.getState();
@@ -26,11 +46,15 @@ export function useInterviewEngine() {
         interviewType: store.interviewType,
         resumeFileId: store.resumeFileId,
         history: store.history,
+        questionCount: questionCountRef.current,
+        targetQuestionCount,
+        maxQuestionCount,
       }),
     });
 
     if (!res.ok) throw new Error("failed to fetch question");
-    const data = await res.json();
+    const raw = await res.json();
+    const data = questionResponseSchema.parse(raw);
 
     questionCountRef.current++;
     const s = useSessionStore.getState();
@@ -45,8 +69,12 @@ export function useInterviewEngine() {
     });
     s.setCurrentQuestion(data.question);
 
-    return data as { question: string; type: string; shouldEnd: boolean };
-  }, []);
+    return {
+      question: data.question,
+      type: data.type,
+      shouldEnd: data.shouldEnd ?? false,
+    };
+  }, [targetQuestionCount, maxQuestionCount]);
 
   const transcribeAudio = useCallback(async (audioBlob: Blob) => {
     const formData = new FormData();
@@ -58,21 +86,20 @@ export function useInterviewEngine() {
     });
 
     if (!res.ok) throw new Error("failed to transcribe");
-    const data = await res.json();
-    return data.text as string;
+    const data = transcribeResponseSchema.parse(await res.json());
+    return data.text;
   }, []);
 
   const startListening = useCallback(
-    (stream: MediaStream): Promise<void> => {
-      // cleanup previous VAD if any
+    (stream: MediaStream, calibratedThreshold?: number): Promise<void> => {
       vadRef.current?.stop();
       mediaRecorderRef.current?.stop();
 
       return new Promise((resolve) => {
         listenResolveRef.current = resolve;
 
-        // grace period to avoid echo from TTS
-        setTimeout(() => {
+        gracePeriodTimerRef.current = setTimeout(() => {
+          gracePeriodTimerRef.current = null;
           useSessionStore.getState().setPhase("listening");
           audioChunksRef.current = [];
 
@@ -94,9 +121,9 @@ export function useInterviewEngine() {
           mediaRecorder.start(1000);
 
           vadRef.current = createVad({
-            threshold: 0.035,
-            silenceDelay: 2500,
-            minSpeechDuration: 1000,
+            threshold: calibratedThreshold ?? vadThreshold,
+            silenceDelay,
+            minSpeechDuration,
             onLevel: (rms) => setAudioLevel(rms),
             onSpeechStart: () => {},
             onSpeechEnd: async () => {
@@ -109,9 +136,7 @@ export function useInterviewEngine() {
                 type: "audio/webm",
               });
 
-              // check if there's actually any audio data
               if (audioBlob.size < 1000) {
-                // too small, probably noise — skip transcription
                 const store = useSessionStore.getState();
                 store.addHistory({
                   role: "interviewee",
@@ -139,13 +164,17 @@ export function useInterviewEngine() {
           });
 
           vadRef.current.start(stream);
-        }, GRACE_PERIOD_MS);
+        }, gracePeriod);
       });
     },
-    [transcribeAudio],
+    [transcribeAudio, vadThreshold, silenceDelay, minSpeechDuration, gracePeriod],
   );
 
   const stopListening = useCallback(() => {
+    if (gracePeriodTimerRef.current) {
+      clearTimeout(gracePeriodTimerRef.current);
+      gracePeriodTimerRef.current = null;
+    }
     vadRef.current?.stop();
     vadRef.current = null;
     mediaRecorderRef.current?.stop();

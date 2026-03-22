@@ -1,5 +1,3 @@
-const VOICE_ID = "pNInz6obpgDQGcFmaJgB";
-const MODEL_ID = "eleven_multilingual_v2";
 const TTS_TIMEOUT = 30000;
 
 interface TTSCallbacks {
@@ -8,85 +6,58 @@ interface TTSCallbacks {
   onError: (error: string) => void;
 }
 
-export function createElevenLabsTTS(apiKey: string) {
-  let ws: WebSocket | null = null;
+export function createElevenLabsTTS() {
+  let abortController: AbortController | null = null;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   function speak(text: string, callbacks: TTSCallbacks) {
-    let resolved = false;
+    abortController = new AbortController();
 
-    function finish() {
-      if (resolved) return;
-      resolved = true;
-      if (timeoutId) clearTimeout(timeoutId);
-      callbacks.onDone();
-    }
+    timeoutId = setTimeout(() => {
+      abortController?.abort();
+      callbacks.onError("tts timeout");
+    }, TTS_TIMEOUT);
 
-    function fail(msg: string) {
-      if (resolved) return;
-      resolved = true;
-      if (timeoutId) clearTimeout(timeoutId);
-      callbacks.onError(msg);
-    }
+    (async () => {
+      try {
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+          signal: abortController!.signal,
+        });
 
-    // timeout fallback
-    timeoutId = setTimeout(() => fail("tts timeout"), TTS_TIMEOUT);
-
-    const url = `wss://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream-input?model_id=${MODEL_ID}&output_format=pcm_16000`;
-
-    ws = new WebSocket(url);
-
-    ws.onopen = () => {
-      ws?.send(
-        JSON.stringify({
-          text: " ",
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-          },
-          xi_api_key: apiKey,
-        }),
-      );
-
-      ws?.send(
-        JSON.stringify({
-          text: text,
-          try_trigger_generation: true,
-        }),
-      );
-
-      ws?.send(
-        JSON.stringify({
-          text: "",
-        }),
-      );
-    };
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.audio) {
-        const binary = atob(data.audio);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-          bytes[i] = binary.charCodeAt(i);
+        if (!res.ok || !res.body) {
+          if (timeoutId) clearTimeout(timeoutId);
+          callbacks.onError("tts request failed");
+          return;
         }
-        callbacks.onAudioChunk(bytes);
-      }
-      if (data.isFinal) {
-        finish();
-      }
-    };
 
-    ws.onerror = () => fail("elevenlabs websocket error");
+        const reader = res.body.getReader();
 
-    // if server closes without isFinal, treat as done
-    ws.onclose = () => finish();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          callbacks.onAudioChunk(value);
+        }
+
+        if (timeoutId) clearTimeout(timeoutId);
+        callbacks.onDone();
+      } catch (err) {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (err instanceof Error && err.name === "AbortError") {
+          callbacks.onDone();
+        } else {
+          callbacks.onError("tts stream error");
+        }
+      }
+    })();
   }
 
   function stop() {
     if (timeoutId) clearTimeout(timeoutId);
-    ws?.close();
-    ws = null;
+    abortController?.abort();
+    abortController = null;
   }
 
   return { speak, stop };

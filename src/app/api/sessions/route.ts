@@ -2,12 +2,39 @@ import { db } from "@/shared/db";
 import {
   sessions,
   questions as questionsTable,
-  feedback as feedbackTable,
   metricSnapshots,
 } from "@/shared/db/schema";
 import { auth } from "@/shared/lib/auth";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+
+const metricSnapshotSchema = z.object({
+  timestamp: z.number(),
+  gaze: z.object({
+    pitch: z.number(),
+    yaw: z.number(),
+    isFrontFacing: z.boolean(),
+  }),
+  posture: z.object({
+    shoulderTilt: z.number(),
+    headOffset: z.number(),
+    isUpright: z.boolean(),
+  }),
+  expression: z.object({
+    frownScore: z.number(),
+    isPositiveOrNeutral: z.boolean(),
+  }),
+  gesture: z.object({
+    wristMovement: z.number(),
+    isModerate: z.boolean(),
+  }),
+});
+
+const metricEventSchema = z.object({
+  timestamp: z.number(),
+  type: z.enum(["gaze", "posture", "expression", "gesture"]),
+  message: z.string(),
+});
 
 const requestSchema = z.object({
   jobTitle: z.string(),
@@ -25,8 +52,8 @@ const requestSchema = z.object({
   ),
   metrics: z
     .object({
-      snapshots: z.unknown(),
-      events: z.unknown(),
+      snapshots: z.array(metricSnapshotSchema),
+      events: z.array(metricEventSchema),
     })
     .optional(),
 });
@@ -40,46 +67,51 @@ export async function POST(request: Request) {
 
     const body = requestSchema.safeParse(await request.json());
     if (!body.success) {
-      return NextResponse.json({ error: "invalid request body" }, { status: 400 });
-    }
-
-    const data = body.data;
-
-    // create session
-    const [newSession] = await db
-      .insert(sessions)
-      .values({
-        userId: session.user.id,
-        jobTitle: data.jobTitle,
-        interviewType: data.interviewType,
-        mode: data.mode,
-        status: "completed",
-        durationSec: data.durationSec,
-        resumeFileId: data.resumeFileId ?? null,
-      })
-      .returning({ id: sessions.id });
-
-    // insert questions
-    if (data.questions.length > 0) {
-      await db.insert(questionsTable).values(
-        data.questions.map((q) => ({
-          sessionId: newSession.id,
-          type: q.type,
-          text: q.text,
-          answer: q.answer,
-          order: q.order,
-        })),
+      return NextResponse.json(
+        { error: "invalid request body" },
+        { status: 400 },
       );
     }
 
-    // insert metrics
-    if (data.metrics) {
-      await db.insert(metricSnapshots).values({
-        sessionId: newSession.id,
-        snapshotsJson: data.metrics.snapshots,
-        eventsJson: data.metrics.events,
-      });
-    }
+    const data = body.data;
+    const userId = session.user.id;
+
+    const newSession = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(sessions)
+        .values({
+          userId,
+          jobTitle: data.jobTitle,
+          interviewType: data.interviewType,
+          mode: data.mode,
+          status: "completed",
+          durationSec: data.durationSec,
+          resumeFileId: data.resumeFileId ?? null,
+        })
+        .returning({ id: sessions.id });
+
+      if (data.questions.length > 0) {
+        await tx.insert(questionsTable).values(
+          data.questions.map((q) => ({
+            sessionId: created.id,
+            type: q.type,
+            text: q.text,
+            answer: q.answer,
+            order: q.order,
+          })),
+        );
+      }
+
+      if (data.metrics) {
+        await tx.insert(metricSnapshots).values({
+          sessionId: created.id,
+          snapshotsJson: data.metrics.snapshots,
+          eventsJson: data.metrics.events,
+        });
+      }
+
+      return created;
+    });
 
     return NextResponse.json({ sessionId: newSession.id });
   } catch (error) {
