@@ -34,6 +34,8 @@ export function InterviewScreen() {
   const startTime = useSessionStore((s) => s.startTime);
   const mode = useSessionStore((s) => s.mode);
   const jobTitle = useSessionStore((s) => s.jobTitle);
+  const companyName = useSessionStore((s) => s.companyName);
+  const jobResearch = useSessionStore((s) => s.jobResearch);
 
   const streamRef = useRef<MediaStream | null>(null);
   const streamReadyRef = useRef<(() => void) | null>(null);
@@ -187,6 +189,8 @@ export function InterviewScreen() {
           interviewType: state.interviewType,
           mode: state.mode,
           durationSec: duration,
+          companyName: state.companyName,
+          jobResearchJson: state.jobResearch,
           resumeFileId: state.resumeFileId,
           questions: state.questions.map((q, i) => ({
             type: q.type,

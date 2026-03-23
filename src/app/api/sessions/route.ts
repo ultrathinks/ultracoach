@@ -41,6 +41,8 @@ const requestSchema = z.object({
   interviewType: z.string(),
   mode: z.string(),
   durationSec: z.number(),
+  companyName: z.string().max(100).nullable().optional(),
+  jobResearchJson: z.unknown().nullable().optional(),
   resumeFileId: z.string().nullable().optional(),
   questions: z.array(
     z.object({
@@ -86,6 +88,8 @@ export async function POST(request: Request) {
           mode: data.mode,
           status: "completed",
           durationSec: data.durationSec,
+          companyName: data.companyName ?? null,
+          jobResearchJson: data.jobResearchJson ?? null,
           resumeFileId: data.resumeFileId ?? null,
         })
         .returning({ id: sessions.id });
