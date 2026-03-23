@@ -27,7 +27,7 @@ export function useInterviewEngine(config?: InterviewConfig) {
   );
   const [audioLevel, setAudioLevel] = useState(0);
 
-  const gracePeriod = config?.gracePeriod ?? 800;
+  const gracePeriod = config?.gracePeriod ?? 1500;
   const vadThreshold = config?.vadThreshold ?? 0.035;
   const silenceDelay = config?.silenceDelay ?? 2500;
   const minSpeechDuration = config?.minSpeechDuration ?? 1000;
@@ -121,9 +121,9 @@ export function useInterviewEngine(config?: InterviewConfig) {
           mediaRecorder.start(1000);
 
           vadRef.current = createVad({
-            threshold: calibratedThreshold ?? vadThreshold,
+            threshold: calibratedThreshold ?? Math.max(vadThreshold, 0.05),
             silenceDelay,
-            minSpeechDuration,
+            minSpeechDuration: Math.max(minSpeechDuration, 2000),
             onLevel: (rms) => setAudioLevel(rms),
             onSpeechStart: () => {},
             onSpeechEnd: async () => {
