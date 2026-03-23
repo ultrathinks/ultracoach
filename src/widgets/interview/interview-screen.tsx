@@ -256,6 +256,41 @@ export function InterviewScreen() {
 
   const normalizedLevel = Math.min(audioLevel / 0.1, 1);
 
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    const video = avatarVideoRef.current;
+    if (!video) return;
+
+    const logDimensions = () => {
+      const iw = video.videoWidth;
+      const ih = video.videoHeight;
+      if (iw === 0 || ih === 0) return;
+      const rect = video.getBoundingClientRect();
+      const ratio = iw / ih;
+      const orientation =
+        ratio > 1.05 ? "landscape" : ratio < 0.95 ? "portrait" : "square";
+      const scaleContain = Math.min(rect.width / iw, rect.height / ih);
+      console.info(
+        "[ultracoach] avatar <video>",
+        `intrinsic ${iw}x${ih}`,
+        `ratio ${ratio.toFixed(3)} (${orientation})`,
+        `display ${Math.round(rect.width)}x${Math.round(rect.height)}px`,
+        `object-contain scale ~${scaleContain.toFixed(2)}x`,
+      );
+    };
+
+    video.addEventListener("loadedmetadata", logDimensions);
+    video.addEventListener("resize", logDimensions);
+    const ro = new ResizeObserver(logDimensions);
+    ro.observe(video);
+
+    return () => {
+      video.removeEventListener("loadedmetadata", logDimensions);
+      video.removeEventListener("resize", logDimensions);
+      ro.disconnect();
+    };
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[100] bg-[#1a1a1a] flex flex-col">
       {/* top bar */}
@@ -288,45 +323,47 @@ export function InterviewScreen() {
       {/* main — speaker view */}
       <div className="flex-1 relative p-2 min-h-0">
         {/* interviewer (avatar) — full */}
-        <div className="relative w-full h-full rounded-lg overflow-hidden bg-[#202020]">
-          <video
-            ref={avatarVideoRef}
-            autoPlay
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <audio ref={avatarAudioRef} autoPlay />
-          {!avatarConnected && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo to-purple flex items-center justify-center text-3xl font-bold text-white">
-                AI
-              </div>
-              {phase === "speaking" && (
-                <div className="flex items-center gap-1">
-                  {[0, 1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className="w-1.5 h-1.5 rounded-full bg-blue animate-pulse"
-                      style={{ animationDelay: `${i * 150}ms` }}
-                    />
-                  ))}
+        <div className="relative w-full h-full rounded-lg overflow-hidden bg-[#e3d9aa] flex items-center justify-center">
+          <div className="relative w-full max-h-full aspect-video rounded-lg overflow-hidden bg-[#e3d9aa]">
+            <video
+              ref={avatarVideoRef}
+              autoPlay
+              playsInline
+              className="absolute inset-0 w-full h-full object-contain bg-[#e3d9aa] scale-[1.01]"
+            />
+            <audio ref={avatarAudioRef} autoPlay />
+            {!avatarConnected && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo to-purple flex items-center justify-center text-3xl font-bold text-white">
+                  AI
                 </div>
+                {phase === "speaking" && (
+                  <div className="flex items-center gap-1">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="w-1.5 h-1.5 rounded-full bg-blue animate-pulse"
+                        style={{ animationDelay: `${i * 150}ms` }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="absolute bottom-3 left-3 flex items-center gap-2">
+              <span className="bg-black/60 text-white text-[12px] px-2 py-0.5 rounded">
+                AI 면접관
+              </span>
+              {(phase === "speaking" || avatarIsSpeaking) && (
+                <span className="bg-green/20 text-green text-[11px] px-1.5 py-0.5 rounded">
+                  발언 중
+                </span>
               )}
             </div>
-          )}
-          <div className="absolute bottom-3 left-3 flex items-center gap-2">
-            <span className="bg-black/60 text-white text-[12px] px-2 py-0.5 rounded">
-              AI 면접관
-            </span>
             {(phase === "speaking" || avatarIsSpeaking) && (
-              <span className="bg-green/20 text-green text-[11px] px-1.5 py-0.5 rounded">
-                발언 중
-              </span>
+              <div className="absolute inset-0 rounded-lg ring-2 ring-green/40 pointer-events-none" />
             )}
           </div>
-          {(phase === "speaking" || avatarIsSpeaking) && (
-            <div className="absolute inset-0 rounded-lg ring-2 ring-green/40 pointer-events-none" />
-          )}
         </div>
 
         {/* user (webcam) — PIP top-right */}
