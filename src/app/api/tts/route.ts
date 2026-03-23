@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     const res = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream?output_format=pcm_16000`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`,
       {
         method: "POST",
         headers: {
@@ -51,8 +51,8 @@ export async function POST(request: Request) {
 
     return new Response(res.body, {
       headers: {
-        "Content-Type": "audio/pcm",
-        "Transfer-Encoding": "chunked",
+        "Content-Type": "audio/mpeg",
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {

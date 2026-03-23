@@ -1,57 +1,40 @@
 const TTS_TIMEOUT = 30000;
 
-interface TTSCallbacks {
-  onAudioChunk: (pcm16: Uint8Array) => void;
-  onDone: () => void;
-  onError: (error: string) => void;
-}
-
 export function createElevenLabsTTS() {
   let abortController: AbortController | null = null;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  function speak(text: string, callbacks: TTSCallbacks) {
+  async function speak(text: string): Promise<ArrayBuffer> {
     abortController = new AbortController();
 
-    timeoutId = setTimeout(() => {
-      abortController?.abort();
-      callbacks.onError("tts timeout");
-    }, TTS_TIMEOUT);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        abortController?.abort();
+        reject(new Error("tts timeout"));
+      }, TTS_TIMEOUT);
+    });
 
-    (async () => {
-      try {
-        const res = await fetch("/api/tts", {
+    try {
+      const res = await Promise.race([
+        fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text }),
-          signal: abortController!.signal,
-        });
+          signal: abortController.signal,
+        }),
+        timeoutPromise,
+      ]);
 
-        if (!res.ok || !res.body) {
-          if (timeoutId) clearTimeout(timeoutId);
-          callbacks.onError("tts request failed");
-          return;
-        }
+      if (!res.ok) throw new Error("tts request failed");
 
-        const reader = res.body.getReader();
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          callbacks.onAudioChunk(value);
-        }
-
-        if (timeoutId) clearTimeout(timeoutId);
-        callbacks.onDone();
-      } catch (err) {
-        if (timeoutId) clearTimeout(timeoutId);
-        if (err instanceof Error && err.name === "AbortError") {
-          callbacks.onDone();
-        } else {
-          callbacks.onError("tts stream error");
-        }
+      const buffer = await res.arrayBuffer();
+      return buffer;
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
       }
-    })();
+    }
   }
 
   function stop() {

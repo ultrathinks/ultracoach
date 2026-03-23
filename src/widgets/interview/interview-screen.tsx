@@ -66,7 +66,11 @@ export function InterviewScreen() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
-          audio: { echoCancellation: true },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
         });
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
@@ -124,6 +128,11 @@ export function InterviewScreen() {
 
         if (data.shouldEnd || loopAbortRef.current) break;
 
+        // 면접관이 말하는 동안 마이크 뮤트 (스피커→마이크 에코 차단)
+        for (const track of stream.getAudioTracks()) {
+          track.enabled = false;
+        }
+
         useSessionStore.getState().setPhase("speaking");
         try {
           await avatarSpeak(data.question);
@@ -132,6 +141,11 @@ export function InterviewScreen() {
         }
 
         if (loopAbortRef.current) break;
+
+        // 답변 받기 전에 마이크 다시 켜기
+        for (const track of stream.getAudioTracks()) {
+          track.enabled = true;
+        }
 
         startSpeech();
         await startListening(stream);
