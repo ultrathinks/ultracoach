@@ -40,9 +40,10 @@ export function useAvatar() {
         avatarRef.current = avatar;
       } catch (err) {
         console.warn("simli unavailable, using direct audio playback:", err);
+        avatarRef.current = null;
       }
 
-      setIsConnected(true);
+      setIsConnected(avatarRef.current !== null);
     },
     [],
   );
