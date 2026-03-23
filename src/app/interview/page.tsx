@@ -32,7 +32,7 @@ export default function InterviewPage() {
   }
 
   return (
-    <div className="px-6 py-12">
+    <div className="min-h-[calc(100dvh-4rem)] flex items-center justify-center px-6">
       <SetupForm onStart={handleStart} />
     </div>
   );

@@ -33,6 +33,7 @@ export function SetupForm({ onStart }: SetupFormProps) {
     useState<InterviewType>("personality");
   const [mode, setMode] = useState<InterviewMode>("real");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeError, setResumeError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
   async function handleStart() {
@@ -42,6 +43,7 @@ export function SetupForm({ onStart }: SetupFormProps) {
 
     if (resumeFile) {
       setUploading(true);
+      setResumeError(null);
       try {
         const formData = new FormData();
         formData.append("file", resumeFile);
@@ -49,12 +51,18 @@ export function SetupForm({ onStart }: SetupFormProps) {
           method: "POST",
           body: formData,
         });
+        const data = await res.json();
         if (res.ok) {
-          const data = await res.json();
           resumeFileId = data.fileId;
+        } else {
+          setResumeError(data.error ?? "이력서 업로드에 실패했습니다");
+          setUploading(false);
+          return;
         }
       } catch {
-        // continue without resume
+        setResumeError("이력서 업로드에 실패했습니다");
+        setUploading(false);
+        return;
       }
       setUploading(false);
     }
@@ -71,14 +79,14 @@ export function SetupForm({ onStart }: SetupFormProps) {
 
   return (
     <motion.div
-      className="max-w-md mx-auto py-16 space-y-8"
+      className="w-full max-w-xl space-y-8"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <div>
-        <h1 className="text-xl font-semibold mb-1">면접 준비</h1>
-        <p className="text-sm text-muted">직무와 면접 유형을 선택하세요</p>
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-3">면접 준비</h1>
+        <p className="text-muted text-lg">직무와 면접 유형을 선택하세요</p>
       </div>
 
       <div className="space-y-5">
@@ -167,9 +175,22 @@ export function SetupForm({ onStart }: SetupFormProps) {
               type="file"
               accept=".pdf,.docx"
               className="hidden"
-              onChange={(e) => setResumeFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                setResumeError(null);
+                if (file && file.size > 50 * 1024 * 1024) {
+                  setResumeError("파일 크기가 50MB를 초과합니다");
+                  e.target.value = "";
+                  setResumeFile(null);
+                  return;
+                }
+                setResumeFile(file);
+              }}
             />
           </label>
+          {resumeError && (
+            <p className="text-[13px] text-red-400 mt-1.5">{resumeError}</p>
+          )}
         </div>
 
         {mode === "practice" && (
