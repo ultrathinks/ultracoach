@@ -186,7 +186,7 @@ export async function POST(request: Request) {
       : parts.join("\n");
 
     const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-5.4",
+      model: "gpt-5.4-mini",
       messages: [
         { role: "system", content: buildSystemPrompt(interviewType, targetQuestionCount) },
         { role: "user", content: userContent },
