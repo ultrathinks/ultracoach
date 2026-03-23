@@ -28,3 +28,10 @@ export interface QuestionEntry {
   startTime: number;
   endTime: number | null;
 }
+
+export interface JobResearch {
+  jobRequirements: string[];
+  companyInfo?: string;
+  recentNews?: string[];
+  interviewTrends: string[];
+}

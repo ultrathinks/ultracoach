@@ -5,6 +5,7 @@ export type {
   HistoryEntry,
   InterviewMode,
   InterviewType,
+  JobResearch,
   QuestionEntry,
 } from "./types";
 export { deriveConfig } from "./interview-config";
