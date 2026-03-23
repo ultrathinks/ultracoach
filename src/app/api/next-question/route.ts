@@ -17,6 +17,15 @@ const requestSchema = z.object({
   questionCount: z.number().optional(),
   targetQuestionCount: z.number().optional(),
   maxQuestionCount: z.number().optional(),
+  jobResearch: z
+    .object({
+      jobRequirements: z.array(z.string()),
+      companyInfo: z.string().optional(),
+      recentNews: z.array(z.string()).optional(),
+      interviewTrends: z.array(z.string()),
+    })
+    .nullable()
+    .optional(),
 });
 
 const nextQuestionSchema = z.object({
@@ -77,6 +86,35 @@ function buildSystemPrompt(target: number) {
 }`;
 }
 
+function buildResearchContext(research: {
+  jobRequirements: string[];
+  companyInfo?: string;
+  recentNews?: string[];
+  interviewTrends: string[];
+}): string {
+  const sections: string[] = ["\n## 직무 조사 결과 (질문 생성에 참고)"];
+
+  sections.push(
+    `\n### 핵심 역량/요구사항\n${research.jobRequirements.map((r) => `- ${r}`).join("\n")}`,
+  );
+
+  if (research.companyInfo) {
+    sections.push(`\n### 회사 정보\n${research.companyInfo}`);
+  }
+
+  if (research.recentNews && research.recentNews.length > 0) {
+    sections.push(
+      `\n### 최근 동향\n${research.recentNews.map((n) => `- ${n}`).join("\n")}`,
+    );
+  }
+
+  sections.push(
+    `\n### 면접 출제 경향\n${research.interviewTrends.map((t) => `- ${t}`).join("\n")}`,
+  );
+
+  return sections.join("\n");
+}
+
 export async function POST(request: Request) {
   try {
     const body = requestSchema.safeParse(await request.json());
@@ -94,6 +132,7 @@ export async function POST(request: Request) {
       questionCount = 0,
       targetQuestionCount = 15,
       maxQuestionCount = 20,
+      jobResearch,
     } = body.data;
 
     // hard limit
@@ -144,10 +183,15 @@ export async function POST(request: Request) {
         ]
       : parts.join("\n");
 
+    let systemPrompt = buildSystemPrompt(targetQuestionCount);
+    if (jobResearch) {
+      systemPrompt += buildResearchContext(jobResearch);
+    }
+
     const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: buildSystemPrompt(targetQuestionCount) },
+        { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
       ],
       response_format: { type: "json_object" },
