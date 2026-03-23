@@ -28,6 +28,7 @@ interface SetupFormProps {
 export function SetupForm({ onStart }: SetupFormProps) {
   const setSetup = useSessionStore((s) => s.setSetup);
   const [jobTitle, setJobTitle] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [interviewType, setInterviewType] =
     useState<InterviewType>("personality");
   const [mode, setMode] = useState<InterviewMode>("real");
@@ -63,6 +64,7 @@ export function SetupForm({ onStart }: SetupFormProps) {
       interviewType,
       mode,
       resumeFileId,
+      companyName: companyName.trim() || null,
     });
     onStart();
   }
@@ -86,6 +88,15 @@ export function SetupForm({ onStart }: SetupFormProps) {
           placeholder="예: 프론트엔드 개발자"
           value={jobTitle}
           onChange={(e) => setJobTitle(e.target.value)}
+        />
+
+        <Input
+          id="companyName"
+          label="지원 회사 (선택)"
+          placeholder="예: 네이버"
+          value={companyName}
+          onChange={(e) => setCompanyName(e.target.value)}
+          maxLength={100}
         />
 
         <div>
