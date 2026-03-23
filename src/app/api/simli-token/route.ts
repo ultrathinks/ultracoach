@@ -4,7 +4,7 @@ import {
 } from "simli-client";
 import { NextResponse } from "next/server";
 
-const FACE_ID = "tmp9i8bbq7c";
+const FACE_ID = "14de6eb1-0ea6-4fde-9522-8552ce691cb6";
 
 export async function POST() {
   try {
@@ -20,6 +20,8 @@ export async function POST() {
       {
         config: {
           faceId: FACE_ID,
+          // Simli compose token currently exposes session controls only.
+          // Aspect ratio / width / height are not available config fields.
           handleSilence: true,
           maxSessionLength: 3600,
           maxIdleTime: 60,
