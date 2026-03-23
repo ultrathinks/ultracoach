@@ -5,6 +5,7 @@ import type {
   HistoryEntry,
   InterviewMode,
   InterviewType,
+  JobResearch,
   QuestionEntry,
 } from "./types";
 
@@ -13,6 +14,8 @@ interface SessionState {
   interviewType: InterviewType;
   mode: InterviewMode;
   resumeFileId: string | null;
+  companyName: string | null;
+  jobResearch: JobResearch | null;
 
   phase: EnginePhase;
   error: EngineError | null;
@@ -27,7 +30,9 @@ interface SessionState {
     interviewType: InterviewType;
     mode: InterviewMode;
     resumeFileId?: string | null;
+    companyName?: string | null;
   }) => void;
+  setJobResearch: (research: JobResearch | null) => void;
   setPhase: (phase: EnginePhase) => void;
   setError: (error: EngineError) => void;
   clearError: () => void;
@@ -45,6 +50,8 @@ const initialState = {
   interviewType: "personality" as InterviewType,
   mode: "real" as InterviewMode,
   resumeFileId: null,
+  companyName: null as string | null,
+  jobResearch: null as JobResearch | null,
   phase: "idle" as EnginePhase,
   error: null as EngineError | null,
   history: [] as HistoryEntry[],
@@ -57,13 +64,12 @@ const initialState = {
 export const useSessionStore = create<SessionState>((set) => ({
   ...initialState,
   setSetup: (setup) => set(setup),
+  setJobResearch: (research) => set({ jobResearch: research }),
   setPhase: (phase) => set({ phase }),
   setError: (error) => set({ error }),
   clearError: () => set({ error: null }),
-  addHistory: (entry) =>
-    set((s) => ({ history: [...s.history, entry] })),
-  addQuestion: (q) =>
-    set((s) => ({ questions: [...s.questions, q] })),
+  addHistory: (entry) => set((s) => ({ history: [...s.history, entry] })),
+  addQuestion: (q) => set((s) => ({ questions: [...s.questions, q] })),
   updateLastAnswer: (answer) =>
     set((s) => {
       const questions = [...s.questions];

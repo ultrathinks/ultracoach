@@ -1,12 +1,12 @@
-import { db } from "@/shared/db";
-import {
-  sessions,
-  questions as questionsTable,
-  metricSnapshots,
-} from "@/shared/db/schema";
-import { auth } from "@/shared/lib/auth";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { db } from "@/shared/db";
+import {
+  metricSnapshots,
+  questions as questionsTable,
+  sessions,
+} from "@/shared/db/schema";
+import { auth } from "@/shared/lib/auth";
 
 const metricSnapshotSchema = z.object({
   timestamp: z.number(),
@@ -41,6 +41,8 @@ const requestSchema = z.object({
   interviewType: z.string(),
   mode: z.string(),
   durationSec: z.number(),
+  companyName: z.string().max(100).nullable().optional(),
+  jobResearchJson: z.unknown().nullable().optional(),
   resumeFileId: z.string().nullable().optional(),
   questions: z.array(
     z.object({
@@ -86,6 +88,8 @@ export async function POST(request: Request) {
           mode: data.mode,
           status: "completed",
           durationSec: data.durationSec,
+          companyName: data.companyName ?? null,
+          jobResearchJson: data.jobResearchJson ?? null,
           resumeFileId: data.resumeFileId ?? null,
         })
         .returning({ id: sessions.id });

@@ -45,6 +45,7 @@ export function useInterviewEngine(config?: InterviewConfig) {
         jobTitle: store.jobTitle,
         interviewType: store.interviewType,
         resumeFileId: store.resumeFileId,
+        jobResearch: store.jobResearch,
         history: store.history,
         questionCount: questionCountRef.current,
         targetQuestionCount,

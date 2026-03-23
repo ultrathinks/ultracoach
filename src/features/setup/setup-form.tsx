@@ -1,14 +1,14 @@
 "use client";
 
+import { motion } from "motion/react";
+import { useState } from "react";
 import {
   type InterviewMode,
   type InterviewType,
   useSessionStore,
 } from "@/entities/session";
-import { Button, Card, Chip, Input } from "@/shared/ui";
 import { cn } from "@/shared/lib/cn";
-import { useState } from "react";
-import { motion } from "motion/react";
+import { Button, Card, Chip, Input } from "@/shared/ui";
 
 const interviewTypes: { value: InterviewType; label: string }[] = [
   { value: "personality", label: "인성" },
@@ -28,6 +28,7 @@ interface SetupFormProps {
 export function SetupForm({ onStart }: SetupFormProps) {
   const setSetup = useSessionStore((s) => s.setSetup);
   const [jobTitle, setJobTitle] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [interviewType, setInterviewType] =
     useState<InterviewType>("personality");
   const [mode, setMode] = useState<InterviewMode>("real");
@@ -71,20 +72,21 @@ export function SetupForm({ onStart }: SetupFormProps) {
       interviewType,
       mode,
       resumeFileId,
+      companyName: companyName.trim() || null,
     });
     onStart();
   }
 
   return (
     <motion.div
-      className="max-w-md mx-auto py-16 space-y-8"
+      className="w-full max-w-xl space-y-8"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <div>
-        <h1 className="text-xl font-semibold mb-1">면접 준비</h1>
-        <p className="text-sm text-muted">직무와 면접 유형을 선택하세요</p>
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-3">면접 준비</h1>
+        <p className="text-muted text-lg">직무와 면접 유형을 선택하세요</p>
       </div>
 
       <div className="space-y-5">
@@ -94,6 +96,15 @@ export function SetupForm({ onStart }: SetupFormProps) {
           placeholder="예: 프론트엔드 개발자"
           value={jobTitle}
           onChange={(e) => setJobTitle(e.target.value)}
+        />
+
+        <Input
+          id="companyName"
+          label="지원 회사 (선택)"
+          placeholder="예: 네이버"
+          value={companyName}
+          onChange={(e) => setCompanyName(e.target.value)}
+          maxLength={100}
         />
 
         <div>
@@ -135,9 +146,27 @@ export function SetupForm({ onStart }: SetupFormProps) {
         <div>
           <p className="text-[13px] text-muted mb-2">이력서 (선택)</p>
           <label className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border cursor-pointer hover:border-white/[0.08] transition-colors">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-muted shrink-0">
-              <path d="M8 1v10M4 5l4-4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M2 11v2a2 2 0 002 2h8a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              className="text-muted shrink-0"
+            >
+              <path
+                d="M8 1v10M4 5l4-4 4 4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M2 11v2a2 2 0 002 2h8a2 2 0 002-2v-2"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
             <span className="text-[13px] text-muted truncate">
               {resumeFile ? resumeFile.name : "PDF 또는 DOCX 파일"}
@@ -167,8 +196,8 @@ export function SetupForm({ onStart }: SetupFormProps) {
         {mode === "practice" && (
           <div className="rounded-xl border border-indigo/20 bg-indigo/[0.04] px-4 py-3">
             <p className="text-[13px] text-indigo/80 leading-relaxed">
-              연습 모드에서는 이어폰 착용을 권장합니다.
-              코칭 음성이 마이크에 잡힐 수 있습니다.
+              연습 모드에서는 이어폰 착용을 권장합니다. 코칭 음성이 마이크에
+              잡힐 수 있습니다.
             </p>
           </div>
         )}

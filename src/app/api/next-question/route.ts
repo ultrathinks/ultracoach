@@ -1,6 +1,6 @@
-import { getOpenAI, parseJsonResponse } from "@/shared/lib/openai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getOpenAI, parseJsonResponse } from "@/shared/lib/openai";
 
 const requestSchema = z.object({
   jobTitle: z.string().max(200),
@@ -17,6 +17,15 @@ const requestSchema = z.object({
   questionCount: z.number().optional(),
   targetQuestionCount: z.number().optional(),
   maxQuestionCount: z.number().optional(),
+  jobResearch: z
+    .object({
+      jobRequirements: z.array(z.string()),
+      companyInfo: z.string().optional(),
+      recentNews: z.array(z.string()).optional(),
+      interviewTrends: z.array(z.string()),
+    })
+    .nullable()
+    .optional(),
 });
 
 const nextQuestionSchema = z.object({
@@ -108,6 +117,8 @@ ${extra}
 - "STAR 기법으로 답변해주세요" 같은 면접 기법 언급
 - 지나치게 긴 질문 (2문장 이내)
 - 답변 평가나 코칭 (면접관은 판단하되 드러내지 않음)
+- 지원자의 이름이나 직무를 면접관이 대신 말하지 말 것 (예: "저는 OO입니다" 금지)
+- 지원자 역할을 하지 말 것. 당신은 항상 면접관입니다
 
 ## 출력 (JSON)
 
@@ -116,6 +127,35 @@ ${extra}
   "type": "intro|follow-up|deep-dive|new-topic|pressure|closing",
   "shouldEnd": false
 }`;
+}
+
+function buildResearchContext(research: {
+  jobRequirements: string[];
+  companyInfo?: string;
+  recentNews?: string[];
+  interviewTrends: string[];
+}): string {
+  const sections: string[] = ["\n## 직무 조사 결과 (질문 생성에 참고)"];
+
+  sections.push(
+    `\n### 핵심 역량/요구사항\n${research.jobRequirements.map((r) => `- ${r}`).join("\n")}`,
+  );
+
+  if (research.companyInfo) {
+    sections.push(`\n### 회사 정보\n${research.companyInfo}`);
+  }
+
+  if (research.recentNews && research.recentNews.length > 0) {
+    sections.push(
+      `\n### 최근 동향\n${research.recentNews.map((n) => `- ${n}`).join("\n")}`,
+    );
+  }
+
+  sections.push(
+    `\n### 면접 출제 경향\n${research.interviewTrends.map((t) => `- ${t}`).join("\n")}`,
+  );
+
+  return sections.join("\n");
 }
 
 export async function POST(request: Request) {
@@ -135,6 +175,7 @@ export async function POST(request: Request) {
       questionCount = 0,
       targetQuestionCount = 15,
       maxQuestionCount = 20,
+      jobResearch,
     } = body.data;
 
     // hard limit
@@ -185,10 +226,15 @@ export async function POST(request: Request) {
         ]
       : parts.join("\n");
 
+    let systemPrompt = buildSystemPrompt(interviewType, targetQuestionCount);
+    if (jobResearch) {
+      systemPrompt += buildResearchContext(jobResearch);
+    }
+
     const completion = await getOpenAI().chat.completions.create({
       model: "gpt-5.4-mini",
       messages: [
-        { role: "system", content: buildSystemPrompt(interviewType, targetQuestionCount) },
+        { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
       ],
       response_format: { type: "json_object" },

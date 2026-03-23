@@ -34,6 +34,8 @@ export function InterviewScreen() {
   const startTime = useSessionStore((s) => s.startTime);
   const mode = useSessionStore((s) => s.mode);
   const jobTitle = useSessionStore((s) => s.jobTitle);
+  const companyName = useSessionStore((s) => s.companyName);
+  const jobResearch = useSessionStore((s) => s.jobResearch);
 
   const streamRef = useRef<MediaStream | null>(null);
   const streamReadyRef = useRef<(() => void) | null>(null);
@@ -187,6 +189,8 @@ export function InterviewScreen() {
           interviewType: state.interviewType,
           mode: state.mode,
           durationSec: duration,
+          companyName: state.companyName,
+          jobResearchJson: state.jobResearch,
           resumeFileId: state.resumeFileId,
           questions: state.questions.map((q, i) => ({
             type: q.type,
@@ -292,18 +296,16 @@ export function InterviewScreen() {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#1a1a1a] flex flex-col">
+    <div className="fixed inset-0 z-[100] bg-background flex flex-col">
       {/* top bar */}
-      <div className="h-10 bg-[#232323] flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green animate-pulse" />
-          <span className="text-[12px] text-[#aaa]">{jobTitle} 면접</span>
+      <div className="h-12 flex items-center justify-between px-5 border-b border-border shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-2 h-2 rounded-full bg-red animate-pulse" />
+          <span className="text-sm text-muted font-mono tabular-nums">{formatTime(elapsed)}</span>
         </div>
-        <span className="text-[12px] text-[#666] font-mono tabular-nums">
-          {formatTime(elapsed)}
-        </span>
+        <span className="text-sm text-muted">{jobTitle}</span>
         <div className={cn(
-          "px-2 py-0.5 rounded text-[11px] font-medium",
+          "px-2.5 py-1 rounded text-xs font-medium",
           phase === "listening" && "bg-green/15 text-green",
           phase === "speaking" && "bg-blue/15 text-blue",
           phase === "generating" && "bg-purple/15 text-purple",
@@ -334,7 +336,7 @@ export function InterviewScreen() {
             <audio ref={avatarAudioRef} autoPlay />
             {!avatarConnected && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo to-purple flex items-center justify-center text-3xl font-bold text-white">
+                <div className="w-24 h-24 rounded-full bg-card border border-white/[0.1] flex items-center justify-center text-3xl font-bold text-foreground">
                   AI
                 </div>
                 {phase === "speaking" && (
@@ -351,11 +353,11 @@ export function InterviewScreen() {
               </div>
             )}
             <div className="absolute bottom-3 left-3 flex items-center gap-2">
-              <span className="bg-black/60 text-white text-[12px] px-2 py-0.5 rounded">
+              <span className="bg-card/90 border border-border text-foreground text-sm px-2.5 py-1 rounded-lg">
                 AI 면접관
               </span>
               {(phase === "speaking" || avatarIsSpeaking) && (
-                <span className="bg-green/20 text-green text-[11px] px-1.5 py-0.5 rounded">
+                <span className="bg-green/10 text-green text-xs px-2 py-1 rounded-lg border border-green/20">
                   발언 중
                 </span>
               )}
@@ -382,8 +384,8 @@ export function InterviewScreen() {
               </div>
             </div>
           )}
-          <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1">
-            <span className="bg-black/60 text-white text-[11px] px-1.5 py-0.5 rounded">
+          <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
+            <span className="bg-card/90 border border-border text-foreground text-xs px-2 py-0.5 rounded-lg">
               나
             </span>
             {micMuted && (
@@ -407,7 +409,7 @@ export function InterviewScreen() {
         </div>
       </div>
 
-      {/* question subtitle overlay */}
+      {/* question subtitle */}
       <AnimatePresence mode="wait">
         {currentQuestion && phase !== "ended" && (
           <motion.div
@@ -417,9 +419,9 @@ export function InterviewScreen() {
             exit={{ opacity: 0 }}
             className="absolute top-14 inset-x-0 flex justify-center z-10 pointer-events-none"
           >
-            <div className="bg-black/70 backdrop-blur rounded-lg px-4 py-2 max-w-xl mx-4">
-              <p className="text-[11px] text-[#888] mb-0.5">Q{questions.length}</p>
-              <p className="text-[14px] text-white leading-relaxed">{currentQuestion}</p>
+            <div className="bg-card border border-border rounded-xl px-5 py-3 max-w-2xl mx-4 shadow-lg">
+              <p className="text-xs text-muted mb-1">Q{questions.length}</p>
+              <p className="text-base text-foreground leading-relaxed">{currentQuestion}</p>
             </div>
           </motion.div>
         )}
@@ -432,10 +434,10 @@ export function InterviewScreen() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute bottom-[72px] inset-x-0 flex justify-center z-10 pointer-events-none"
+            className="absolute bottom-20 inset-x-0 flex justify-center z-10 pointer-events-none"
           >
-            <div className="bg-black/70 backdrop-blur rounded-lg px-4 py-1.5 max-w-lg mx-4">
-              <p className="text-[13px] text-[#ccc] text-center">{liveCaption}</p>
+            <div className="bg-card border border-border rounded-xl px-5 py-2.5 max-w-xl mx-4 shadow-lg">
+              <p className="text-sm text-secondary text-center">{liveCaption}</p>
             </div>
           </motion.div>
         )}
@@ -445,10 +447,9 @@ export function InterviewScreen() {
       {mode === "practice" && <CoachOverlay />}
 
       {/* bottom toolbar — Zoom style */}
-      <div className="h-14 bg-[#232323] flex items-center justify-center gap-2 shrink-0 relative">
-        {/* left: meeting info */}
-        <div className="absolute left-4 flex items-center gap-2">
-          <span className="text-[12px] text-[#666]">
+      <div className="h-16 flex items-center justify-center gap-3 border-t border-border shrink-0 relative">
+        <div className="absolute left-5 flex items-center gap-2">
+          <span className="text-sm text-muted">
             Q{questions.length}
           </span>
         </div>
@@ -458,7 +459,7 @@ export function InterviewScreen() {
           onClick={toggleMic}
           className={cn(
             "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
-            micMuted ? "bg-red text-white" : "bg-[#333] text-white hover:bg-[#444]",
+            micMuted ? "bg-red text-white" : "bg-card border border-border text-foreground hover:bg-card-hover",
           )}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -481,7 +482,7 @@ export function InterviewScreen() {
           onClick={toggleCam}
           className={cn(
             "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
-            camOff ? "bg-red text-white" : "bg-[#333] text-white hover:bg-[#444]",
+            camOff ? "bg-red text-white" : "bg-card border border-border text-foreground hover:bg-card-hover",
           )}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -502,14 +503,14 @@ export function InterviewScreen() {
 
         <button
           onClick={handleEnd}
-          className="h-10 px-5 rounded-full bg-red text-white text-[13px] font-medium hover:bg-red/90 transition-colors"
+          className="h-11 px-6 rounded-full bg-red text-white text-sm font-medium hover:bg-red/90 transition-colors cursor-pointer"
         >
           면접 종료
         </button>
 
         {/* right: timer */}
-        <div className="absolute right-4">
-          <span className="text-[12px] text-[#666] font-mono tabular-nums">
+        <div className="absolute right-5">
+          <span className="text-sm text-muted font-mono tabular-nums">
             {formatTime(elapsed)}
           </span>
         </div>

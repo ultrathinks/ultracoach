@@ -1,6 +1,6 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
-  "organizeImports": { "enabled": true },
+  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -23,6 +23,7 @@
     }
   },
   "files": {
-    "ignore": [".next", "node_modules", "drizzle"]
+    "includes": ["**"],
+    "experimentalScannerIgnores": [".next", "node_modules", "drizzle"]
   }
 }

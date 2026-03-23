@@ -52,6 +52,8 @@ export const sessions = pgTable("sessions", {
   deliveryScore: integer("delivery_score"),
   contentScore: integer("content_score"),
   resumeFileId: text("resume_file_id"),
+  companyName: varchar("company_name", { length: 255 }),
+  jobResearchJson: jsonb("job_research_json"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 

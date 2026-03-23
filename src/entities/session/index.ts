@@ -1,3 +1,5 @@
+export type { InterviewConfig } from "./interview-config";
+export { deriveConfig } from "./interview-config";
 export { useSessionStore } from "./store";
 export type {
   EngineError,
@@ -5,7 +7,6 @@ export type {
   HistoryEntry,
   InterviewMode,
   InterviewType,
+  JobResearch,
   QuestionEntry,
 } from "./types";
-export { deriveConfig } from "./interview-config";
-export type { InterviewConfig } from "./interview-config";
