@@ -14,7 +14,6 @@ export function useJobResearch() {
   const interviewType = useSessionStore((s) => s.interviewType);
 
   const start = useCallback(async () => {
-    console.log("[useJobResearch] start:", { jobTitle, companyName, interviewType });
     setStatus("loading");
     abortRef.current = new AbortController();
 
@@ -35,14 +34,11 @@ export function useJobResearch() {
 
       if (res.ok) {
         const data = await res.json();
-        console.log("[useJobResearch] response:", data.research ? "received" : "null");
         setJobResearch(data.research ?? null);
       } else {
-        console.log("[useJobResearch] fetch failed:", res.status);
         setJobResearch(null);
       }
-    } catch (err) {
-      console.log("[useJobResearch] error:", err);
+    } catch {
       setJobResearch(null);
     } finally {
       setStatus("done");

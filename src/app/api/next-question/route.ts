@@ -185,14 +185,7 @@ export async function POST(request: Request) {
 
     let systemPrompt = buildSystemPrompt(targetQuestionCount);
     if (jobResearch) {
-      console.log("[next-question] using job research context:", {
-        requirements: jobResearch.jobRequirements.length,
-        hasCompanyInfo: !!jobResearch.companyInfo,
-        trends: jobResearch.interviewTrends.length,
-      });
       systemPrompt += buildResearchContext(jobResearch);
-    } else {
-      console.log("[next-question] no job research context");
     }
 
     const completion = await getOpenAI().chat.completions.create({

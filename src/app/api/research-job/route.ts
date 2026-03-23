@@ -57,22 +57,19 @@ export async function POST(request: Request) {
     }
 
     const { jobTitle, companyName, interviewType } = body.data;
-    console.log("[research-job] started:", { jobTitle, companyName, interviewType });
     const openai = getOpenAI();
 
     const response = await openai.responses.create({
       model: "gpt-4o-mini",
       tools: [{ type: "web_search_preview" }],
       input: buildResearchPrompt(jobTitle, interviewType, companyName),
-      text: {
-        format: { type: "json_object" },
-      },
     });
 
-    const text = response.output_text;
-    console.log("[research-job] raw response:", text?.slice(0, 500));
+    const raw = response.output_text;
+    // Extract JSON from response (may be wrapped in markdown code block)
+    const jsonMatch = raw?.match(/\{[\s\S]*\}/);
+    const text = jsonMatch ? jsonMatch[0] : raw;
     if (!text) {
-      console.log("[research-job] empty response");
       return NextResponse.json({ research: null });
     }
 
@@ -80,17 +77,14 @@ export async function POST(request: Request) {
     try {
       parsed = JSON.parse(text);
     } catch {
-      console.log("[research-job] json parse error");
       return NextResponse.json({ research: null });
     }
 
     const result = researchSchema.safeParse(parsed);
     if (!result.success) {
-      console.log("[research-job] parse failed:", result.error.flatten());
       return NextResponse.json({ research: null });
     }
 
-    console.log("[research-job] success:", JSON.stringify(result.data, null, 2));
     return NextResponse.json({ research: result.data });
   } catch (error) {
     console.error("job research failed:", error);
