@@ -1,77 +1,81 @@
 "use client";
 
-import { Button, Card } from "@/shared/ui";
+import { Button } from "@/shared/ui";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { motion } from "motion/react";
 
 const features = [
+  { emoji: "🧠", category: "면접", title: "산업심리학 기반 구조화 면접" },
+  { emoji: "🎙️", category: "음성", title: "실시간 음성 인식 & TTS" },
+  { emoji: "👁️", category: "분석", title: "시선·자세·표정 실시간 추적" },
+  { emoji: "🗣️", category: "코칭", title: "비언어적 문제 즉시 피드백" },
+  { emoji: "📝", category: "리포트", title: "상세 분석 리포트 & 점수" },
+  { emoji: "🔄", category: "반복", title: "매번 새로운 질문 동적 생성" },
+  { emoji: "🎭", category: "아바타", title: "Simli 립싱크 실전 면접관" },
+  { emoji: "📄", category: "이력서", title: "이력서 기반 맞춤 질문" },
+];
+
+const steps = [
   {
-    title: "AI 면접관",
-    description: "산업심리학 기반 구조화 면접. 매번 다른 질문을 동적으로 생성",
+    label: "이력서 업로드",
+    description: "PDF 이력서를 업로드하면 AI가 직무와 경험을 분석합니다",
   },
   {
-    title: "실시간 아바타",
-    description: "Simli 립싱크 아바타가 음성으로 질문. 실전 면접 환경 제공",
+    label: "면접 모드 선택",
+    description: "실전 모드 또는 연습 모드를 선택합니다",
   },
   {
-    title: "비언어 분석",
-    description: "시선, 자세, 표정, 제스처를 실시간으로 추적하고 분석",
+    label: "AI 면접 진행",
+    description: "아바타 면접관이 음성으로 질문하고 답변을 평가합니다",
   },
   {
-    title: "음성 코칭",
-    description: "연습 모드에서 비언어적 문제를 즉시 음성으로 코칭",
+    label: "피드백 확인",
+    description: "언어·비언어 분석 리포트와 개선점을 확인합니다",
   },
 ];
+
+function Pill({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-block px-4 py-1.5 text-sm text-muted rounded-full border border-white/[0.08] mb-6">
+      {children}
+    </span>
+  );
+}
 
 export function LandingHero() {
   const { data: session } = useSession();
 
   return (
-    <div className="relative overflow-hidden">
-      {/* background effects */}
-      <div className="hero-glow bg-indigo top-[-200px] left-1/2 -translate-x-1/2" />
-      <div className="hero-glow bg-purple top-[-100px] left-[30%]" />
-      <div className="hero-glow bg-pink top-[-100px] right-[30%]" />
-      <div className="absolute inset-0 grid-pattern" />
-
-      <div className="relative max-w-5xl mx-auto px-6">
-        <section className="flex flex-col items-center text-center pt-28 pb-20">
-          <motion.p
-            className="text-[13px] text-muted mb-8 tracking-widest uppercase"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
-          >
-            AI-Powered Interview Coaching
-          </motion.p>
-
+    <div>
+      {/* ── Hero ── */}
+      <section className="py-36 lg:py-52">
+        <div className="max-w-4xl mx-auto px-6 text-center">
           <motion.h1
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.15] mb-5"
-            initial={{ opacity: 0, y: 16 }}
+            className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight leading-[1.1] mb-7"
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+            transition={{ duration: 0.5 }}
           >
-            면접, <span className="gradient-text">AI와 함께</span>
+            AI 면접관과 함께
             <br />
-            완벽하게 준비하세요
+            실전처럼 준비하세요
           </motion.h1>
 
           <motion.p
-            className="text-secondary text-base max-w-md mb-10 leading-relaxed"
-            initial={{ opacity: 0, y: 16 }}
+            className="text-secondary text-lg sm:text-xl mb-12 leading-relaxed"
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            transition={{ duration: 0.5, delay: 0.08 }}
           >
-            AI 면접관이 실전처럼 질문하고,
-            표정·자세·시선까지 분석해 맞춤 피드백을 제공합니다.
+            면접 예상 질문부터 표정·자세 분석, 맞춤 피드백까지
           </motion.p>
 
           <motion.div
-            className="flex gap-3"
-            initial={{ opacity: 0, y: 16 }}
+            className="flex items-center justify-center gap-4"
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.16 }}
           >
             {session?.user ? (
               <Link href="/interview">
@@ -83,29 +87,123 @@ export function LandingHero() {
               </Button>
             )}
             <Link href="/history">
-              <Button variant="ghost" size="lg">
+              <Button variant="secondary" size="lg">
                 기록 보기
               </Button>
             </Link>
           </motion.div>
-        </section>
+        </div>
+      </section>
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pb-28">
-          {features.map((feature, i) => (
+      {/* ── 면접 과정 ── */}
+      <section className="py-28 lg:py-40">
+        <div className="max-w-4xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5 }}
+          >
+            <Pill>면접 과정</Pill>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+              간단한 4단계
+            </h2>
+            <p className="text-secondary text-lg mb-16">
+              복잡한 설정 없이, 바로 시작할 수 있어요.
+            </p>
+          </motion.div>
+
+          {steps.map((step, i) => (
             <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.4 + i * 0.08 }}
+              key={step.label}
+              className="flex gap-8 py-7 border-b border-white/[0.06] last:border-b-0"
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
             >
-              <Card className="h-full shimmer hover:border-white/[0.08] transition-colors">
-                <h3 className="text-sm font-medium mb-1.5">{feature.title}</h3>
-                <p className="text-[13px] text-muted leading-relaxed">{feature.description}</p>
-              </Card>
+              <span className="text-indigo text-base font-semibold shrink-0 w-14">
+                0{i + 1}
+              </span>
+              <div>
+                <p className="text-lg font-semibold mb-1">{step.label}</p>
+                <p className="text-muted">{step.description}</p>
+              </div>
             </motion.div>
           ))}
-        </section>
-      </div>
+        </div>
+      </section>
+
+      {/* ── 주요 기능 ── */}
+      <section className="py-28 lg:py-40">
+        <div className="max-w-5xl mx-auto px-6">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5 }}
+          >
+            <Pill>주요 기능</Pill>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
+              면접의 모든 것을
+              <br />
+              AI가 코칭합니다
+            </h2>
+          </motion.div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-10 gap-y-12">
+            {features.map((f, i) => (
+              <motion.div
+                key={f.title}
+                className="flex items-center gap-4"
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.3, delay: i * 0.04 }}
+              >
+                <span
+                  className="w-12 h-12 shrink-0 flex items-center justify-center text-2xl rounded-xl bg-white/[0.04]"
+                  style={{ fontFamily: "Tossface, sans-serif" }}
+                >
+                  {f.emoji}
+                </span>
+                <div>
+                  <p className="text-muted text-sm mb-1">{f.category}</p>
+                  <p className="font-medium leading-snug">{f.title}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="py-28 lg:py-40">
+        <motion.div
+          className="text-center max-w-3xl mx-auto px-6"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-5">
+            지금 바로 시작하세요
+          </h2>
+          <p className="text-secondary text-lg mb-10">
+            AI와 함께 면접을 준비하고, 자신감을 키우세요.
+          </p>
+          {session?.user ? (
+            <Link href="/interview">
+              <Button size="lg">면접 시작하기</Button>
+            </Link>
+          ) : (
+            <Button size="lg" onClick={() => signIn("google")}>
+              무료로 시작하기
+            </Button>
+          )}
+        </motion.div>
+      </section>
     </div>
   );
 }
