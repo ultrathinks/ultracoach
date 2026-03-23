@@ -1,12 +1,12 @@
-import { db } from "@/shared/db";
-import {
-  sessions,
-  questions as questionsTable,
-  metricSnapshots,
-} from "@/shared/db/schema";
-import { auth } from "@/shared/lib/auth";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { db } from "@/shared/db";
+import {
+  metricSnapshots,
+  questions as questionsTable,
+  sessions,
+} from "@/shared/db/schema";
+import { auth } from "@/shared/lib/auth";
 
 const metricSnapshotSchema = z.object({
   timestamp: z.number(),

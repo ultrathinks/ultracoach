@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { useJobResearch } from "./use-job-research";
 
@@ -12,7 +12,7 @@ export function Countdown({ onComplete }: CountdownProps) {
   const [count, setCount] = useState(3);
   const { status, start } = useJobResearch();
   const startedRef = useRef(false);
-  const countdownDoneRef = useRef(false);
+  const countdownDone = count === 0;
 
   // Start research on mount
   useEffect(() => {
@@ -24,20 +24,17 @@ export function Countdown({ onComplete }: CountdownProps) {
 
   // Countdown timer
   useEffect(() => {
-    if (count === 0) {
-      countdownDoneRef.current = true;
-      return;
-    }
+    if (count === 0) return;
     const timer = setTimeout(() => setCount(count - 1), 1000);
     return () => clearTimeout(timer);
   }, [count]);
 
   // Complete when both countdown and research are done
   useEffect(() => {
-    if (countdownDoneRef.current && status === "done") {
+    if (countdownDone && status === "done") {
       onComplete();
     }
-  }, [count, status, onComplete]);
+  }, [countdownDone, status, onComplete]);
 
   const showResearching = count === 0 && status === "loading";
 

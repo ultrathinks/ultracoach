@@ -68,10 +68,8 @@ export const useSessionStore = create<SessionState>((set) => ({
   setPhase: (phase) => set({ phase }),
   setError: (error) => set({ error }),
   clearError: () => set({ error: null }),
-  addHistory: (entry) =>
-    set((s) => ({ history: [...s.history, entry] })),
-  addQuestion: (q) =>
-    set((s) => ({ questions: [...s.questions, q] })),
+  addHistory: (entry) => set((s) => ({ history: [...s.history, entry] })),
+  addQuestion: (q) => set((s) => ({ questions: [...s.questions, q] })),
   updateLastAnswer: (answer) =>
     set((s) => {
       const questions = [...s.questions];

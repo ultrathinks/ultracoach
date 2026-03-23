@@ -1,14 +1,14 @@
 "use client";
 
+import { motion } from "motion/react";
+import { useState } from "react";
 import {
   type InterviewMode,
   type InterviewType,
   useSessionStore,
 } from "@/entities/session";
-import { Button, Card, Chip, Input } from "@/shared/ui";
 import { cn } from "@/shared/lib/cn";
-import { useState } from "react";
-import { motion } from "motion/react";
+import { Button, Card, Chip, Input } from "@/shared/ui";
 
 const interviewTypes: { value: InterviewType; label: string }[] = [
   { value: "personality", label: "인성" },
@@ -138,9 +138,27 @@ export function SetupForm({ onStart }: SetupFormProps) {
         <div>
           <p className="text-[13px] text-muted mb-2">이력서 (선택)</p>
           <label className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border cursor-pointer hover:border-white/[0.08] transition-colors">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-muted shrink-0">
-              <path d="M8 1v10M4 5l4-4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M2 11v2a2 2 0 002 2h8a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              className="text-muted shrink-0"
+            >
+              <path
+                d="M8 1v10M4 5l4-4 4 4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M2 11v2a2 2 0 002 2h8a2 2 0 002-2v-2"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
             <span className="text-[13px] text-muted truncate">
               {resumeFile ? resumeFile.name : "PDF 또는 DOCX 파일"}
@@ -157,8 +175,8 @@ export function SetupForm({ onStart }: SetupFormProps) {
         {mode === "practice" && (
           <div className="rounded-xl border border-indigo/20 bg-indigo/[0.04] px-4 py-3">
             <p className="text-[13px] text-indigo/80 leading-relaxed">
-              연습 모드에서는 이어폰 착용을 권장합니다.
-              코칭 음성이 마이크에 잡힐 수 있습니다.
+              연습 모드에서는 이어폰 착용을 권장합니다. 코칭 음성이 마이크에
+              잡힐 수 있습니다.
             </p>
           </div>
         )}

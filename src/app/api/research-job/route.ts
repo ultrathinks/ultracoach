@@ -1,6 +1,6 @@
-import { getOpenAI } from "@/shared/lib/openai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getOpenAI } from "@/shared/lib/openai";
 
 const requestSchema = z.object({
   jobTitle: z.string().max(200),

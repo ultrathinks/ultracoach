@@ -1,7 +1,7 @@
 "use client";
 
-import { useSessionStore } from "@/entities/session";
 import { useCallback, useRef, useState } from "react";
+import { useSessionStore } from "@/entities/session";
 
 type ResearchStatus = "idle" | "loading" | "done";
 
