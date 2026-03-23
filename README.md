@@ -84,6 +84,15 @@ src/
 셋업 → 카운트다운 → [질문 생성 → TTS 발화 → VAD 대기 → Whisper 전사]×N → 세션 저장 → GPT-4o 피드백 → 리포트
 ```
 
+## Simli 영상 비율 정책
+
+- Simli Compose token (`/compose/token`)의 공개 필드에는 `faceId`, `handleSilence`, `maxSessionLength`, `maxIdleTime`, `startFrame`, `audioInputFormat`만 존재하며, `aspectRatio`/`width`/`height` 설정은 제공되지 않습니다.
+- `simli-client@3.0.1`의 `SimliSessionRequest` 타입도 동일하게 비율 설정 필드가 없습니다.
+- 따라서 UltraCoach는 면접관 뷰를 UI에서 `16:9`(`aspect-video`)로 고정하고, 세로 원본에서도 얼굴 잘림을 최소화하기 위해 `object-contain`으로 렌더링합니다.
+- 개발 환경에서 실제 원본 비율은 브라우저 콘솔 로그로 확인할 수 있습니다.
+  - `[ultracoach] simli video_info: raw <w>x<h> ratio <r> (<orientation>)`
+  - `[ultracoach] avatar <video> intrinsic <w>x<h> ...`
+
 ## 스크립트
 
 | 명령어 | 설명 |
