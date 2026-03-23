@@ -10,17 +10,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<Variant, string> = {
-  primary:
-    "bg-gradient-to-r from-indigo to-purple text-white shadow-lg shadow-indigo/20 hover:shadow-indigo/30 hover:brightness-110",
+  primary: "bg-foreground text-background hover:bg-foreground/90",
   secondary:
     "bg-card border border-border text-foreground hover:bg-card-hover hover:border-white/[0.08]",
   ghost: "text-muted hover:text-secondary hover:bg-white/[0.04]",
 };
 
 const sizeStyles: Record<Size, string> = {
-  sm: "px-3 py-1 text-[13px] rounded-lg",
-  md: "px-4 py-1.5 text-sm rounded-lg",
-  lg: "px-5 py-2 text-sm rounded-xl",
+  sm: "px-4 py-1.5 text-sm rounded-lg",
+  md: "px-5 py-2.5 text-sm rounded-lg",
+  lg: "px-7 py-3 text-base rounded-xl",
 };
 
 export function Button({
