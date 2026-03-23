@@ -2,14 +2,14 @@ import { getOpenAI } from "@/shared/lib/openai";
 import { NextResponse } from "next/server";
 import { toFile } from "openai";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_TYPES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 const ALLOWED_EXTENSIONS = [".pdf", ".docx"];
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   try {
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: "file too large, max 5MB" },
+        { error: "file too large, max 50MB" },
         { status: 400 },
       );
     }
