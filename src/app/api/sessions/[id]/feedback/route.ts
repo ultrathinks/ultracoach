@@ -26,6 +26,77 @@ const requestSchema = z.object({
     .optional(),
 });
 
+const questionInputSchema = z.object({
+  id: z.number(),
+  text: z.string().optional(),
+  questionText: z.string().optional(),
+});
+
+const suggestedAnswerItemSchema = z.object({
+  questionId: z.number(),
+  suggestedAnswer: z.string(),
+});
+
+const suggestedAnswersResponseSchema = z.object({
+  answers: z.array(suggestedAnswerItemSchema),
+});
+
+async function generateSuggestedAnswers(
+  questions: z.infer<typeof questionInputSchema>[],
+  context: {
+    jobTitle: string;
+    interviewType: string;
+    companyName: string | null;
+    jobResearchJson: unknown;
+    resumeFileId: string | null;
+  },
+): Promise<Map<number, string>> {
+  const systemPrompt = `당신은 한국 면접 전문 코치입니다. 각 면접 질문에 대해 모범 답안을 작성하세요.
+
+## 규칙
+- 실제 면접에서 말하는 것처럼 자연스러운 구어체로 작성
+- 각 답안은 3-5문장으로 간결하게
+- STAR 구조가 적합한 질문이면 STAR 구조를 활용
+- 추상적 미사여구 금지 — 구체적이고 실전적인 답변만
+- 지원 직무와 기업 맥락을 반영
+
+## 맥락
+- 직무: ${context.jobTitle}
+- 면접 유형: ${context.interviewType}
+${context.companyName ? `- 기업: ${context.companyName}` : ""}
+${context.jobResearchJson ? `- 기업 조사:\n${JSON.stringify(context.jobResearchJson)}` : ""}
+
+## 출력 (JSON)
+{
+  "answers": [{ "questionId": number, "suggestedAnswer": "모범 답안" }]
+}`;
+
+  const questionList = questions
+    .map((q, i) => `${i + 1}. [ID: ${q.id}] ${q.text ?? q.questionText ?? ""}`)
+    .join("\n");
+
+  const textPart = `다음 질문들에 대한 모범 답안을 작성하세요:\n\n${questionList}`;
+
+  const userContent = context.resumeFileId
+    ? [
+        { type: "file" as const, file: { file_id: context.resumeFileId } },
+        { type: "text" as const, text: textPart },
+      ]
+    : textPart;
+
+  const completion = await getOpenAI().chat.completions.create({
+    model: "gpt-5.4-mini",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userContent },
+    ],
+    response_format: { type: "json_object" },
+  });
+
+  const result = parseJsonResponse(completion, suggestedAnswersResponseSchema);
+  return new Map(result.answers.map((a) => [a.questionId, a.suggestedAnswer]));
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -40,7 +111,14 @@ export async function POST(
     }
 
     const [target] = await db
-      .select({ userId: sessions.userId })
+      .select({
+        userId: sessions.userId,
+        jobTitle: sessions.jobTitle,
+        interviewType: sessions.interviewType,
+        companyName: sessions.companyName,
+        jobResearchJson: sessions.jobResearchJson,
+        resumeFileId: sessions.resumeFileId,
+      })
       .from(sessions)
       .where(eq(sessions.id, id))
       .limit(1);
@@ -139,34 +217,79 @@ ${growthInstruction}
       `질문 목록:\n${JSON.stringify(questions)}`,
     ].join("\n\n---\n\n");
 
-    const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-5.4",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
+    const feedbackCall = getOpenAI()
+      .chat.completions.create({
+        model: "gpt-5.4",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        response_format: { type: "json_object" },
+      })
+      .then((c) => parseJsonResponse(c, sessionFeedbackSchema));
+
+    const parsedQuestions = questions
+      .map((q) => questionInputSchema.safeParse(q))
+      .filter((r) => r.success)
+      .map((r) => r.data);
+
+    const suggestedCall = generateSuggestedAnswers(parsedQuestions, {
+      jobTitle: target.jobTitle,
+      interviewType: target.interviewType,
+      companyName: target.companyName,
+      jobResearchJson: target.jobResearchJson,
+      resumeFileId: target.resumeFileId,
     });
 
-    const feedbackData = parseJsonResponse(completion, sessionFeedbackSchema);
+    const [feedbackResult, suggestedResult] = await Promise.allSettled([
+      feedbackCall,
+      suggestedCall,
+    ]);
+
+    if (feedbackResult.status === "rejected") {
+      throw feedbackResult.reason;
+    }
+
+    const feedbackData = feedbackResult.value;
+
+    const suggestedMap =
+      suggestedResult.status === "fulfilled"
+        ? suggestedResult.value
+        : (() => {
+            console.error(
+              "suggestedAnswer generation failed:",
+              suggestedResult.reason,
+            );
+            return new Map<number, string>();
+          })();
+
+    const mergedAnalyses = feedbackData.questionAnalyses.map((qa) => ({
+      ...qa,
+      suggestedAnswer: suggestedMap.get(qa.questionId),
+    }));
+
+    const mergedFeedback = {
+      ...feedbackData,
+      questionAnalyses: mergedAnalyses,
+    };
 
     await db.insert(feedbackTable).values({
       sessionId: id,
-      summaryJson: feedbackData,
-      keyMomentsJson: feedbackData.keyMoments,
-      actionItemsJson: feedbackData.actionItems,
-      questionAnalysesJson: feedbackData.questionAnalyses,
+      summaryJson: mergedFeedback,
+      keyMomentsJson: mergedFeedback.keyMoments,
+      actionItemsJson: mergedFeedback.actionItems,
+      questionAnalysesJson: mergedFeedback.questionAnalyses,
     });
 
     await db
       .update(sessions)
       .set({
-        deliveryScore: feedbackData.deliveryScore,
-        contentScore: feedbackData.contentScore,
+        deliveryScore: mergedFeedback.deliveryScore,
+        contentScore: mergedFeedback.contentScore,
       })
       .where(eq(sessions.id, id));
 
-    return NextResponse.json(feedbackData);
+    return NextResponse.json(mergedFeedback);
   } catch (error) {
     console.error("feedback generation failed:", error);
     return NextResponse.json(
