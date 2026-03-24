@@ -1,6 +1,6 @@
 "use client";
 
-import type { SessionFeedback } from "@/entities/feedback";
+import { sessionFeedbackSchema } from "@/entities/feedback";
 import { ReportView } from "@/widgets/report/report-view";
 
 interface ResultsClientProps {
@@ -27,11 +27,19 @@ export function ResultsClient({ session, feedback }: ResultsClientProps) {
     );
   }
 
-  const parsed = feedback.summaryJson as SessionFeedback;
+  const result = sessionFeedbackSchema.safeParse(feedback.summaryJson);
+  if (!result.success) {
+    return (
+      <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center px-6 text-center">
+        <h1 className="text-2xl font-bold mb-2">피드백 데이터가 손상되었습니다</h1>
+        <p className="text-muted">결과를 표시할 수 없습니다</p>
+      </div>
+    );
+  }
 
   return (
     <ReportView
-      feedback={parsed}
+      feedback={result.data}
       jobTitle={session.jobTitle}
       duration={session.durationSec ?? 0}
     />
