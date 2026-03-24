@@ -20,9 +20,9 @@ interface ResultsClientProps {
 export function ResultsClient({ session, feedback }: ResultsClientProps) {
   if (!feedback) {
     return (
-      <div className="max-w-4xl mx-auto px-6 py-12">
-        <h1 className="text-2xl font-bold mb-4">피드백 생성 중...</h1>
-        <p className="text-secondary">잠시 기다려주세요.</p>
+      <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center px-6 text-center">
+        <h1 className="text-2xl font-bold mb-2">피드백을 찾을 수 없습니다</h1>
+        <p className="text-muted">면접 결과가 아직 생성되지 않았습니다</p>
       </div>
     );
   }
