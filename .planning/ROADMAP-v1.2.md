@@ -40,6 +40,7 @@
 3. ~~**"재연습하기" CTA**: 아쉬운 답변 항목에 `/drill/[sessionId]?q=[questionId]` 링크 버튼~~ ✓ Plan 01 complete (c9f15d3)
 4. ~~**구 세션 처리**: suggestedAnswer가 없는 세션에서 아쉬운 답변 섹션 전체 숨김 (CONTEXT 결정: 안내 메시지 없음)~~ ✓ Plan 01 complete (c9f15d3)
 5. ~~**드릴 피드백 API** (`src/app/api/sessions/[id]/drill/route.ts`): POST, auth + 소유권 체크, 단일 질문 LLM 분석, ephemeral 응답 (DB 미저장). gpt-5.4-mini 사용~~ ✓ Plan 02 complete (a648119)
+6. ~~**드릴 페이지 스켈레톤** (`src/app/drill/[sessionId]/page.tsx`): Server Component, auth + 소유권 체크, ?q= searchParam, job title 표시, "재연습하기" CTA의 유효한 라우트 타겟~~ ✓ Plan 03 complete (06a7c5e)
 
 ### Success criteria
 
