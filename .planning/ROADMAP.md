@@ -15,10 +15,10 @@
 ### What to build
 
 1. ~~**Type layer** (`src/entities/analytics/types.ts`): `ScoreTrend`, `TypeComparison`, `DashboardAnalytics` 인터페이스 정의~~ ✓ Plan 01 complete (50e5af6)
-2. **Compute layer** (`src/features/analytics/compute-analytics.ts`): `zod` `safeParse` 기반 순수 함수. `as` 캐스트 없음
-3. **Data fetch** (`src/app/history/page.tsx`): `Promise.all([sessionsQuery, feedbackQuery])` + `computeAnalytics()` 호출
-4. **Score trend chart** (`src/widgets/history/score-trend-chart.tsx`): Recharts `LineChart`, `dynamic({ ssr: false })` 래핑
-5. **Type comparison chart** (`src/widgets/history/type-comparison-chart.tsx`): Recharts `BarChart`, 인성/기술/컬처핏 그룹 비교
+2. ~~**Compute layer** (`src/features/analytics/compute-analytics.ts`): `zod` `safeParse` 기반 순수 함수. `as` 캐스트 없음~~ ✓ Plan 02 complete (f4abfc1)
+3. ~~**Data fetch** (`src/app/history/page.tsx`): `Promise.all([sessionsQuery, feedbackQuery])` + `computeAnalytics()` 호출~~ ✓ Plan 03 complete
+4. ~~**Score trend chart** (`src/widgets/history/score-trend-chart.tsx`): Recharts `LineChart`, `dynamic({ ssr: false })` 래핑~~ ✓ Plan 03 complete
+5. ~~**Type comparison chart** (`src/widgets/history/type-comparison-chart.tsx`): Recharts `BarChart`, 인성/기술/컬처핏 그룹 비교~~ ✓ Plan 04 complete (266efa0)
 6. **Stat cards**: 총 세션 수, 변화율, 연습 빈도 — 기존 카드 교체
 
 ### Success criteria
