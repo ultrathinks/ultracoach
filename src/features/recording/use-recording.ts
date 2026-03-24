@@ -15,9 +15,32 @@ export function useRecording() {
     }
 
     chunksRef.current = [];
-    const recorder = new MediaRecorder(stream, {
-      mimeType: "video/webm;codecs=vp9,opus",
-    });
+
+    const mimeTypes = [
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm",
+    ];
+
+    let recorder: MediaRecorder | null = null;
+    for (const mt of mimeTypes) {
+      if (!MediaRecorder.isTypeSupported(mt)) continue;
+      try {
+        recorder = new MediaRecorder(stream, { mimeType: mt });
+        break;
+      } catch {
+        continue;
+      }
+    }
+
+    if (!recorder) {
+      try {
+        recorder = new MediaRecorder(stream);
+      } catch (err) {
+        console.warn("MediaRecorder not available, skipping recording:", err);
+        return;
+      }
+    }
 
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
