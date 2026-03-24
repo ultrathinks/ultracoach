@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-24T12:05:00.000Z"
+last_updated: "2026-03-24T12:15:00.000Z"
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 ## Current Position
 
 Phase: 06 (infra-score-trend-type-comparison) — EXECUTING
-Plan: 2 of 5 (plan 01 complete)
+Plan: 3 of 5 (plans 01, 02 complete)
 
 ## Project Reference
 
@@ -35,7 +35,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 Phase 6 진행 중:
 
 - [x] Plan 01: `src/entities/analytics/types.ts` + `index.ts` — 타입 정의 완료 (50e5af6)
-- [ ] Plan 02: `src/features/analytics/compute-analytics.ts` — 순수 함수 + zod 파싱
+- [x] Plan 02: `src/features/analytics/compute-analytics.ts` + `index.ts` — 순수 함수 + zod 파싱 완료 (f4abfc1, acea83f)
 - [ ] Plan 03: `src/app/history/page.tsx` 수정 — 데이터 fetch 추가
 - [ ] Plan 04: `src/widgets/history/score-trend-chart.tsx` + `type-comparison-chart.tsx`
 - [ ] Plan 05: `src/widgets/history/analytics-overview.tsx` — stat cards + 컴포지션
@@ -48,3 +48,6 @@ Phase 6 진행 중:
 - 새 데이터 수집 없이 기존 데이터만으로 대시보드 구현 가능
 - recharts@2.15.4 (v2) 결정 — v3은 redux 번들로 인해 제외
 - 모든 차트: dynamic({ ssr: false }) 필수 (SSR hydration mismatch 방지)
+- computeAnalytics: completed 세션만 (non-null scores) 추이/비교 계산에 투입
+- 변화율: 퍼센트 아닌 절대 점수 차이 (latest - first) — 0-100 스케일에 더 직관적
+- parseFeedback() 헬퍼 export로 sessionFeedbackSchema Phase 7 확장 포인트 명시
