@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useSessionStore } from "@/entities/session";
 
 type ResearchStatus = "idle" | "loading" | "done";
 
 export function useJobResearch() {
   const [status, setStatus] = useState<ResearchStatus>("idle");
-  const abortRef = useRef<AbortController | null>(null);
   const setJobResearch = useSessionStore((s) => s.setJobResearch);
   const jobTitle = useSessionStore((s) => s.jobTitle);
   const companyName = useSessionStore((s) => s.companyName);
@@ -15,7 +14,6 @@ export function useJobResearch() {
 
   const start = useCallback(async () => {
     setStatus("loading");
-    abortRef.current = new AbortController();
 
     try {
       const res = await fetch("/api/research-job", {
@@ -26,10 +24,7 @@ export function useJobResearch() {
           companyName: companyName || undefined,
           interviewType,
         }),
-        signal: AbortSignal.any([
-          abortRef.current.signal,
-          AbortSignal.timeout(15_000),
-        ]),
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (res.ok) {
@@ -45,9 +40,5 @@ export function useJobResearch() {
     }
   }, [jobTitle, companyName, interviewType, setJobResearch]);
 
-  const abort = useCallback(() => {
-    abortRef.current?.abort();
-  }, []);
-
-  return { status, start, abort };
+  return { status, start };
 }

@@ -31,13 +31,11 @@ export async function createSimliAvatar(options: SimliAvatarOptions) {
   if (onSpeaking) client.on("speaking", onSpeaking);
   if (onSilent) client.on("silent", onSilent);
   if (onDisconnected) {
+    const emitter = client as { on: (event: string, cb: () => void) => void };
     const markDisconnected = (reason: string) => () => onDisconnected(reason);
-    client.on("disconnected", markDisconnected("disconnected"));
-    client.on("disconnect", markDisconnected("disconnect"));
-    client.on("closed", markDisconnected("closed"));
-    client.on("close", markDisconnected("close"));
-    client.on("failed", markDisconnected("failed"));
-    client.on("error", markDisconnected("error"));
+    for (const event of ["disconnected", "disconnect", "closed", "close", "failed", "error"]) {
+      emitter.on(event, markDisconnected(event));
+    }
   }
   if (process.env.NODE_ENV === "development") {
     client.on("video_info", (serialized) => {
