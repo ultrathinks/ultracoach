@@ -170,9 +170,6 @@ export function InterviewScreen() {
     loopAbortRef.current = true;
     stopListening();
     stopSpeech();
-    stopMediaPipe();
-    disconnectAvatar();
-    useSessionStore.getState().setPhase("ended");
 
     const state = useSessionStore.getState();
     const metricsState = useMetricsStore.getState();
@@ -205,34 +202,49 @@ export function InterviewScreen() {
         }),
       });
 
-      if (res.ok) {
-        const { sessionId } = await res.json();
-        await stopRecording(sessionId);
-
-        const transcript = state.history
-          .map(
-            (h) =>
-              `${h.role === "interviewer" ? "면접관" : "지원자"}: ${h.content}`,
-          )
-          .join("\n");
-
-        fetch(`/api/sessions/${sessionId}/feedback`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            metrics: {
-              snapshots: metricsState.snapshots,
-              events: metricsState.events,
-            },
-            transcript,
-            questions: state.questions,
-          }),
-        });
-
-        router.push(`/results/${sessionId}`);
+      if (!res.ok) {
+        console.error("session save failed:", res.status, await res.text());
+        stopMediaPipe();
+        disconnectAvatar();
+        useSessionStore.getState().setPhase("ended");
+        router.push("/history");
+        return;
       }
+
+      const { sessionId } = await res.json();
+      await stopRecording(sessionId);
+
+      stopMediaPipe();
+      disconnectAvatar();
+      useSessionStore.getState().setPhase("analyzing");
+
+      const transcript = state.history
+        .map(
+          (h) =>
+            `${h.role === "interviewer" ? "면접관" : "지원자"}: ${h.content}`,
+        )
+        .join("\n");
+
+      await fetch(`/api/sessions/${sessionId}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          metrics: {
+            snapshots: metricsState.snapshots,
+            events: metricsState.events,
+          },
+          transcript,
+          questions: state.questions,
+        }),
+      });
+
+      router.push(`/results/${sessionId}`);
     } catch (err) {
       console.error("session save failed:", err);
+      stopMediaPipe();
+      disconnectAvatar();
+      useSessionStore.getState().setPhase("ended");
+      router.push("/history");
     }
   }, [stopListening, stopSpeech, stopMediaPipe, disconnectAvatar, stopRecording, router]);
 
@@ -294,6 +306,16 @@ export function InterviewScreen() {
       ro.disconnect();
     };
   }, []);
+
+  if (phase === "analyzing") {
+    return (
+      <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center">
+        <div className="w-6 h-6 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin mb-6" />
+        <h2 className="text-2xl font-bold mb-2">결과 분석 중</h2>
+        <p className="text-muted">AI가 면접 결과를 분석하고 있습니다</p>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col">

@@ -8,7 +8,8 @@ export type EnginePhase =
   | "processing"
   | "paused"
   | "error"
-  | "ended";
+  | "ended"
+  | "analyzing";
 
 export interface EngineError {
   type: "permission" | "network" | "api" | "timeout";
