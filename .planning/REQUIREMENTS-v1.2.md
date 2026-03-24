@@ -50,21 +50,21 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REWRT-01 | — | Pending |
-| REWRT-02 | — | Pending |
-| REWRT-03 | — | Pending |
-| REWRT-04 | — | Pending |
-| REWRT-05 | — | Pending |
-| DRILL-01 | — | Pending |
-| DRILL-02 | — | Pending |
-| DRILL-03 | — | Pending |
-| DRILL-04 | — | Pending |
+| REWRT-01 | Phase 8 | Pending |
+| REWRT-02 | Phase 8 | Pending |
+| REWRT-03 | Phase 9 | Pending |
+| REWRT-04 | Phase 9 | Pending |
+| REWRT-05 | Phase 9 | Pending |
+| DRILL-01 | Phase 10 | Pending |
+| DRILL-02 | Phase 9 | Pending |
+| DRILL-03 | Phase 10 | Pending |
+| DRILL-04 | Phase 10 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 9 total
-- Mapped to phases: 0 (awaiting roadmap)
-- Unmapped: 9
+- Mapped to phases: 9
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-24*
-*Last updated: 2026-03-24 — initial definition*
+*Last updated: 2026-03-24 — phase assignments from ROADMAP-v1.2.md*
