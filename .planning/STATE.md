@@ -14,7 +14,7 @@ progress:
 ## Current Position
 
 Phase: 07 (weakness-action-empty) — EXECUTING
-Plan: 2 of 7
+Plan: 2 of 7 — COMPLETE, ready for Plan 03
 
 ## Project Reference
 
@@ -28,14 +28,14 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 | Phase | Goal | Status |
 |-------|------|--------|
 | 6 | 인프라 + 점수 추이 + 유형 비교 | Not started |
-| 7 | 약점 분석 + 액션 추적 + 빈 상태 완결 | Not started |
+| 7 | 약점 분석 + 액션 추적 + 빈 상태 완결 | In progress (2/7) |
 
 ## Next Action
 
 Phase 7 진행 중:
 
 - [x] Plan 01: `src/entities/analytics/types.ts` + `index.ts` + `src/entities/metrics/schema.ts` — Phase 7 타입 정의 + zod 스키마 추출 완료 (6dccdd6)
-- [ ] Plan 02: `src/features/analytics/compute-analytics.ts` — buildStarRadar, buildFillerHeatmap, buildActionTracker, buildAiRecommendation 추가
+- [x] Plan 02: `src/features/analytics/compute-analytics.ts` — buildStarRadar, buildFillerHeatmap, buildActionTracker, buildAiRecommendation, computeBodyLanguage 완료 (b08e19a)
 - [ ] Plan 03: `src/widgets/history/star-radar-chart.tsx` — RadarChart inner component
 - [ ] Plan 04: `src/widgets/history/filler-heatmap.tsx` — SVG heatmap
 - [ ] Plan 05: `src/widgets/history/body-language-panel.tsx` — progress bars + trend arrows
@@ -56,4 +56,7 @@ Phase 7 진행 중:
 - Phase 7 Plan 01 완료: StarRadarData, FillerHeatmapData, BodyLanguageData, ActionTrackerData, AiRecommendationData 타입 정의됨
 - DashboardAnalytics에 starRadar, fillerHeatmap, actionTracker, aiRecommendation 필드 추가됨 (BodyLanguageData는 별도 prop — Option A)
 - metricSnapshotSchema는 entities/metrics/schema.ts에서 export — history/page.tsx에서 @/entities/metrics로 import 가능
-- compute-analytics.ts에 예상된 타입 에러 존재 (Plan 02에서 해결)
+- Phase 7 Plan 02 완료: computeAnalytics가 전체 DashboardAnalytics 반환 (타입에러 없음)
+- computeBodyLanguage는 standalone export — page.tsx가 snapshotRows를 desc 순으로 직접 전달
+- allAscending: 모든 세션(완료/미완료) ascending sort — filler/action 분석용
+- Jaccard 0.5 threshold로 액션 아이템 fuzzy 중복 감지 (computeWordOverlap)
