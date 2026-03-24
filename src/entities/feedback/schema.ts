@@ -16,6 +16,7 @@ export const questionAnalysisSchema = z.object({
   durationSec: z.number(),
   contentScore: z.number(),
   feedback: z.string(),
+  suggestedAnswer: z.string().optional(),
 });
 
 export const sessionFeedbackSchema = z.object({
