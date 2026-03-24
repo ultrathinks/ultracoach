@@ -66,22 +66,26 @@ export async function POST(request: Request) {
     });
 
     const raw = response.output_text;
-    // Extract JSON from response (may be wrapped in markdown code block)
+    console.log("[research-job] raw output:", raw?.slice(0, 500));
+
     const jsonMatch = raw?.match(/\{[\s\S]*\}/);
     const text = jsonMatch ? jsonMatch[0] : raw;
     if (!text) {
+      console.warn("[research-job] no text in response");
       return NextResponse.json({ research: null });
     }
 
     let parsed: unknown;
     try {
       parsed = JSON.parse(text);
-    } catch {
+    } catch (e) {
+      console.warn("[research-job] json parse failed:", e, "text:", text.slice(0, 300));
       return NextResponse.json({ research: null });
     }
 
     const result = researchSchema.safeParse(parsed);
     if (!result.success) {
+      console.warn("[research-job] schema validation failed:", result.error.issues);
       return NextResponse.json({ research: null });
     }
 
