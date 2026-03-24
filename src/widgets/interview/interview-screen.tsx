@@ -427,54 +427,72 @@ export function InterviewScreen() {
     );
   }
 
+  const phaseLabel: Record<string, string> = {
+    listening: "듣는 중",
+    speaking: "면접관 발언 중",
+    generating: "질문 생성 중",
+    processing: "답변 처리 중",
+    ended: "종료",
+    idle: "준비 중",
+  };
+
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col">
-      {/* ── videos ── */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-3 p-4 lg:p-6 min-h-0">
-        {/* avatar */}
-        <div className="relative flex-[2] rounded-2xl overflow-hidden bg-card border border-border">
+      {/* ── video area ── */}
+      <div className="flex-1 relative min-h-0 p-3 lg:p-5">
+        <div className="relative w-full h-full rounded-2xl overflow-hidden bg-card border border-border">
           <video
             ref={avatarVideoRef}
             autoPlay
             playsInline
-            className="absolute inset-0 w-full h-full object-contain bg-[#e3d9aa] scale-[1.01]"
+            className="absolute inset-0 w-full h-full object-contain bg-[#e3d9aa]"
           />
           <audio ref={avatarAudioRef} autoPlay />
+
           {!avatarConnected && (
-            <div className="absolute inset-0 bg-card flex flex-col items-center justify-center gap-3">
+            <div className="absolute inset-0 bg-card flex items-center justify-center">
               <div className="w-20 h-20 rounded-full bg-white/[0.04] border border-border flex items-center justify-center text-2xl font-bold text-muted">
                 AI
               </div>
-              {phase === "speaking" && (
-                <div className="flex items-center gap-1.5">
-                  {[0, 1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-pulse"
-                      style={{ animationDelay: `${i * 150}ms` }}
-                    />
-                  ))}
-                </div>
-              )}
             </div>
           )}
-          <div className="absolute bottom-4 left-4 flex items-center gap-2">
-            <span className="bg-background/80 backdrop-blur-sm text-foreground text-sm px-3 py-1 rounded-lg">
-              AI 면접관
-            </span>
-            {(phase === "speaking" || avatarIsSpeaking) && (
-              <span className="bg-green/10 text-green text-xs px-2 py-1 rounded-lg border border-green/20">
-                발언 중
-              </span>
-            )}
-          </div>
+
           {(phase === "speaking" || avatarIsSpeaking) && (
-            <div className="absolute inset-0 rounded-2xl ring-2 ring-green/30 pointer-events-none" />
+            <div className="absolute inset-0 rounded-2xl ring-1 ring-white/10 pointer-events-none" />
           )}
+
+          {/* question/caption overlay — bottom of video */}
+          <div className="absolute bottom-0 inset-x-0 pointer-events-none">
+            <div className="bg-gradient-to-t from-background/90 via-background/60 to-transparent pt-16 pb-5 px-6">
+              <AnimatePresence mode="wait">
+                {liveCaption && phase === "listening" ? (
+                  <motion.p
+                    key="caption"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-secondary text-center max-w-2xl mx-auto"
+                  >
+                    {liveCaption}
+                  </motion.p>
+                ) : currentQuestion && phase !== "ended" ? (
+                  <motion.p
+                    key={currentQuestion}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-foreground text-center max-w-2xl mx-auto leading-relaxed"
+                  >
+                    {currentQuestion}
+                  </motion.p>
+                ) : null}
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
 
-        {/* webcam */}
-        <div className="relative flex-1 rounded-2xl overflow-hidden bg-card border border-border">
+        {/* webcam PIP */}
+        <div className="absolute bottom-20 right-6 lg:bottom-24 lg:right-8 w-36 lg:w-48 aspect-video rounded-xl overflow-hidden border border-white/10 shadow-2xl z-10">
           <video
             ref={webcamRef}
             autoPlay
@@ -483,86 +501,49 @@ export function InterviewScreen() {
             className={cn("w-full h-full object-cover", camOff && "opacity-0")}
           />
           {camOff && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-16 h-16 rounded-full bg-white/[0.04] flex items-center justify-center text-muted font-bold text-lg">
-                나
-              </div>
-            </div>
-          )}
-          <div className="absolute bottom-4 left-4">
-            <span className="bg-background/80 backdrop-blur-sm text-foreground text-sm px-3 py-1 rounded-lg">
-              나
-            </span>
-          </div>
-          {phase === "listening" && normalizedLevel > 0.05 && (
-            <div className="absolute inset-0 rounded-2xl ring-2 ring-green/30 pointer-events-none" />
-          )}
-          {phase === "listening" && (
-            <div className="absolute bottom-0 inset-x-0 h-1 pointer-events-none rounded-b-2xl overflow-hidden">
-              <div
-                className="h-full bg-green/60 transition-all duration-75"
-                style={{ width: `${normalizedLevel * 100}%` }}
-              />
+            <div className="absolute inset-0 bg-card flex items-center justify-center">
+              <span className="text-muted text-sm font-medium">카메라 꺼짐</span>
             </div>
           )}
         </div>
-      </div>
-
-      {/* ── question + caption ── */}
-      <div className="shrink-0 px-6 pb-2 min-h-[48px]">
-        <AnimatePresence mode="wait">
-          {currentQuestion && phase !== "ended" && (
-            <motion.div
-              key={currentQuestion}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="text-center"
-            >
-              <span className="text-xs text-muted mr-2">Q{questions.length}</span>
-              <span className="text-foreground">{currentQuestion}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {liveCaption && phase === "listening" && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-sm text-muted text-center mt-1"
-            >
-              {liveCaption}
-            </motion.p>
-          )}
-        </AnimatePresence>
       </div>
 
       {mode === "practice" && <CoachOverlay />}
 
       {/* ── controls ── */}
-      <div className="shrink-0 flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-red animate-pulse" />
+      <div className="shrink-0 h-16 flex items-center justify-between px-6">
+        <div className="flex items-center gap-2.5 w-40">
+          <div className="w-1.5 h-1.5 rounded-full bg-red" />
           <span className="text-sm text-muted font-mono tabular-nums">
             {formatTime(elapsed)}
           </span>
-          <span className="text-sm text-muted">·</span>
-          <span className="text-sm text-muted">{jobTitle}</span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-end gap-[2px] h-4 mr-1">
+            {[0.15, 0.35, 0.55, 0.75, 0.9].map((t, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "w-[3px] rounded-full transition-colors duration-75",
+                  normalizedLevel > t ? "bg-green" : "bg-white/[0.06]",
+                )}
+                style={{ height: `${6 + i * 2.5}px` }}
+              />
+            ))}
+          </div>
+
           <button
             type="button"
             onClick={toggleMic}
             className={cn(
-              "w-11 h-11 rounded-full flex items-center justify-center transition-colors cursor-pointer",
+              "w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer",
               micMuted
                 ? "bg-red text-white"
                 : "bg-card border border-border text-foreground hover:bg-card-hover",
             )}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <rect x="9" y="1" width="6" height="12" rx="3" />
               <path d="M19 10v1a7 7 0 01-14 0v-1M12 19v4M8 23h8" />
               {micMuted && <line x1="2" y1="2" x2="22" y2="22" />}
@@ -573,13 +554,13 @@ export function InterviewScreen() {
             type="button"
             onClick={toggleCam}
             className={cn(
-              "w-11 h-11 rounded-full flex items-center justify-center transition-colors cursor-pointer",
+              "w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer",
               camOff
                 ? "bg-red text-white"
                 : "bg-card border border-border text-foreground hover:bg-card-hover",
             )}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <rect x="2" y="4" width="14" height="14" rx="2" />
               <path d="M23 7l-7 5 7 5V7z" />
               {camOff && <line x1="2" y1="2" x2="22" y2="22" />}
@@ -589,29 +570,16 @@ export function InterviewScreen() {
           <button
             type="button"
             onClick={handleEnd}
-            className="h-11 px-6 rounded-full bg-red/10 text-red border border-red/20 text-sm font-medium hover:bg-red hover:text-white transition-colors cursor-pointer"
+            className="h-10 px-5 rounded-full text-red text-sm font-medium hover:bg-red/10 transition-colors cursor-pointer"
           >
-            면접 종료
+            종료
           </button>
         </div>
 
-        <div
-          className={cn(
-            "px-3 py-1.5 rounded-lg text-xs font-medium",
-            phase === "listening" && "bg-green/10 text-green",
-            phase === "speaking" && "bg-blue/10 text-blue",
-            phase === "generating" && "bg-white/[0.04] text-muted",
-            phase === "processing" && "bg-yellow/10 text-yellow",
-            phase === "ended" && "bg-red/10 text-red",
-            phase === "idle" && "bg-white/[0.04] text-muted",
-          )}
-        >
-          {phase === "listening" && "듣는 중"}
-          {phase === "speaking" && "면접관 발언 중"}
-          {phase === "generating" && "질문 생성 중"}
-          {phase === "processing" && "답변 처리 중"}
-          {phase === "ended" && "종료"}
-          {phase === "idle" && "준비 중"}
+        <div className="w-40 text-right">
+          <span className="text-sm text-muted">
+            {phaseLabel[phase] ?? ""}
+          </span>
         </div>
       </div>
     </div>
