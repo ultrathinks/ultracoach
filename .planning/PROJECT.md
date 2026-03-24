@@ -28,7 +28,8 @@ AI 면접 코칭 플랫폼. 실시간 음성 면접을 진행하면서 AI가 발
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] 대시보드 강화 (v1.1 마일스톤)
+- [ ] 대시보드 강화 (v1.1 마일스톤, 별도 세션 진행 중)
+- [ ] 코칭 루프 (v1.2 마일스톤)
 
 ### Out of Scope
 
@@ -51,7 +52,7 @@ AI 면접 코칭 플랫폼. 실시간 음성 면접을 진행하면서 AI가 발
 - **Data**: 새 데이터 수집 없이 기존 DB 데이터만 활용
 - **Purpose**: 시연/투자 심사에서 "프로덕트"로 인식되도록
 
-## Current Milestone: v1.1 Dashboard
+## Current Milestone: v1.1 Dashboard (별도 세션 진행 중)
 
 **Goal:** 대시보드를 강화하여 "한 번 쓰고 끝나는 도구"가 아닌 "계속 돌아오는 서비스"로 보이게 만든다.
 
@@ -64,12 +65,22 @@ AI 면접 코칭 플랫폼. 실시간 음성 면접을 진행하면서 AI가 발
 - 액션아이템 트래킹 (이전 피드백 개선 추적)
 - AI 다음 세션 추천
 
+## Current Milestone: v1.2 Coaching Loop
+
+**Goal:** "채점표"에서 "진짜 코칭"으로 전환. 모범 답안을 보여주고 재연습할 수 있게 한다.
+
+**Target features:**
+- 모범 답안 생성 (feedback API 확장, 질문별 suggestedAnswer)
+- 재연습 드릴 (질문 선택 → 카메라 + 질문 텍스트 → 음성 답변 → Whisper → LLM 피드백)
+
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | 기존 데이터만 활용 | 새 수집 없이 빠른 구현, 이미 풍부한 jsonb 데이터 보유 | — Pending |
 | 히스토리 페이지 확장 | 별도 대시보드 페이지 vs 기존 히스토리 강화 → 결정 필요 | — Pending |
+| v1.2 재연습 아바타 미사용 | 드릴 모드는 자기 카메라만. Simli 호출 없이 가벼운 UX | — Pending |
+| v1.2 실시간 내용 코칭 제외 | v1.2는 사후 코칭에 집중. 실시간 내용 코칭은 다음 마일스톤 | — Pending |
 
 ---
-*Last updated: 2026-03-24 after v1.1 milestone start*
+*Last updated: 2026-03-24 after v1.2 milestone start*
