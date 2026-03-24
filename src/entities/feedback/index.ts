@@ -6,3 +6,4 @@ export type {
   StarFulfillment,
 } from "./types";
 export { sessionFeedbackSchema } from "./schema";
+export { identifyWeakAnswers } from "./lib";
