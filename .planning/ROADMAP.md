@@ -42,7 +42,7 @@
 1. ~~**Type layer** (`src/entities/analytics/types.ts`, `src/entities/metrics/schema.ts`): Phase 7 타입 정의 + zod 스키마 추출~~ ✓ Plan 01 complete (6dccdd6)
 2. ~~**Compute layer** (`src/features/analytics/compute-analytics.ts`): buildStarRadar, buildFillerHeatmap, buildActionTracker, buildAiRecommendation, computeBodyLanguage 순수 함수~~ ✓ Plan 02 complete (b08e19a)
 3. **STAR radar chart** (`src/widgets/history/star-radar.tsx`): Recharts `RadarChart`, 전체 세션 STAR 충족률 시각화
-2. **Body language panel** (`src/widgets/history/body-language-panel.tsx`): 시선/자세/표정/제스처 4개 진행바 + 추세 화살표
+2. ~~**Body language panel** (`src/widgets/history/body-language-panel.tsx`): 시선/자세/표정/제스처 4개 진행바 + 추세 화살표~~ ✓ Plan 04 complete (be1e3c0)
 3. **Filler word heatmap** (`src/widgets/history/filler-word-heatmap.tsx`): 인라인 SVG `<rect>` 그리드, 분당 추임새 빈도
 4. **Action item tracker** (`src/widgets/history/action-item-tracker.tsx`): 최근 세션 액션아이템 목록 + 이전 대비 델타 표시
 5. **AI recommendation card**: `feedback.summaryJson.nextSessionSuggestion` 데이터 표면화, `analytics-overview.tsx` 내 카드 또는 독립 컴포넌트

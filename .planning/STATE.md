@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-24T15:00:00.000Z"
+last_updated: "2026-03-24T17:30:00.000Z"
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 12
-  completed_plans: 6
+  completed_plans: 10
 ---
 
 ## Current Position
 
 Phase: 07 (weakness-action-empty) — EXECUTING
-Plan: 2 of 7 — COMPLETE, ready for Plan 03
+Plan: 6 of 7 — COMPLETE, ready for Plan 07
 
 ## Project Reference
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 | Phase | Goal | Status |
 |-------|------|--------|
 | 6 | 인프라 + 점수 추이 + 유형 비교 | Not started |
-| 7 | 약점 분석 + 액션 추적 + 빈 상태 완결 | In progress (2/7) |
+| 7 | 약점 분석 + 액션 추적 + 빈 상태 완결 | In progress (6/7) |
 
 ## Next Action
 
@@ -36,10 +36,10 @@ Phase 7 진행 중:
 
 - [x] Plan 01: `src/entities/analytics/types.ts` + `index.ts` + `src/entities/metrics/schema.ts` — Phase 7 타입 정의 + zod 스키마 추출 완료 (6dccdd6)
 - [x] Plan 02: `src/features/analytics/compute-analytics.ts` — buildStarRadar, buildFillerHeatmap, buildActionTracker, buildAiRecommendation, computeBodyLanguage 완료 (b08e19a)
-- [ ] Plan 03: `src/widgets/history/star-radar-chart.tsx` — RadarChart inner component
-- [ ] Plan 04: `src/widgets/history/filler-heatmap.tsx` — SVG heatmap
-- [ ] Plan 05: `src/widgets/history/body-language-panel.tsx` — progress bars + trend arrows
-- [ ] Plan 06: `src/widgets/history/action-tracker.tsx` + `ai-recommendation-card.tsx`
+- [x] Plan 03: `src/widgets/history/star-radar-chart.tsx` — RadarChart inner component (ced0927)
+- [x] Plan 04: `src/widgets/history/body-language-panel.tsx` — BodyLanguagePanelInner, progress bars + trend arrows 완료 (be1e3c0)
+- [x] Plan 05: `src/widgets/history/filler-heatmap.tsx` — SVG heatmap 완료 (3642494)
+- [x] Plan 06: `src/widgets/history/action-tracker.tsx` + `ai-recommendation-card.tsx` — ActionTrackerInner + AiRecommendationCardInner 완료 (02570a3, 02582e3)
 - [ ] Plan 07: history page integration + empty states
 
 ## Accumulated Context
