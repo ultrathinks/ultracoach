@@ -1,7 +1,17 @@
 export type {
+  ActionItemEntry,
+  ActionTrackerData,
+  AiRecommendationData,
+  BodyLanguageCategory,
+  BodyLanguageData,
   ChangeRate,
   DashboardAnalytics,
   DashboardStats,
+  FillerHeatmapCell,
+  FillerHeatmapData,
+  FillerHeatmapSession,
   ScoreTrendPoint,
+  StarRadarData,
+  StarRadarPoint,
   TypeComparisonGroup,
 } from "./types";
