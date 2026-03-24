@@ -37,21 +37,23 @@ const metricEventSchema = z.object({
 });
 
 const requestSchema = z.object({
-  jobTitle: z.string(),
-  interviewType: z.string(),
-  mode: z.string(),
-  durationSec: z.number(),
+  jobTitle: z.string().max(200),
+  interviewType: z.string().max(50),
+  mode: z.string().max(20),
+  durationSec: z.number().int().min(0).max(86400),
   companyName: z.string().max(100).nullable().optional(),
-  jobResearchJson: z.unknown().nullable().optional(),
-  resumeFileId: z.string().nullable().optional(),
-  questions: z.array(
-    z.object({
-      type: z.string(),
-      text: z.string(),
-      answer: z.string().nullable(),
-      order: z.number(),
-    }),
-  ),
+  jobResearchJson: z.record(z.unknown()).nullable().optional(),
+  resumeFileId: z.string().max(200).nullable().optional(),
+  questions: z
+    .array(
+      z.object({
+        type: z.string().max(50),
+        text: z.string().max(5000),
+        answer: z.string().max(10000).nullable(),
+        order: z.number().int().min(0),
+      }),
+    )
+    .max(50),
   metrics: z
     .object({
       snapshots: z.array(metricSnapshotSchema),

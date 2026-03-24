@@ -1,5 +1,9 @@
+import { auth } from "@/shared/lib/auth";
+import { rateLimit } from "@/shared/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+
+const checkRate = rateLimit({ windowMs: 60_000, max: 60 });
 
 const VOICE_ID = "pNInz6obpgDQGcFmaJgB";
 const MODEL_ID = "eleven_multilingual_v2";
@@ -10,6 +14,14 @@ const requestSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+
+    const limited = checkRate(session.user.id, "tts");
+    if (limited) return limited;
+
     const body = requestSchema.safeParse(await request.json());
     if (!body.success) {
       return NextResponse.json(

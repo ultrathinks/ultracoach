@@ -1,6 +1,10 @@
+import { auth } from "@/shared/lib/auth";
+import { rateLimit } from "@/shared/lib/rate-limit";
 import { getOpenAI } from "@/shared/lib/openai";
 import { NextResponse } from "next/server";
 import { toFile } from "openai";
+
+const checkRate = rateLimit({ windowMs: 60_000, max: 10 });
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_TYPES = [
@@ -13,6 +17,14 @@ export const maxDuration = 60;
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+
+    const limited = checkRate(session.user.id, "upload-resume");
+    if (limited) return limited;
+
     const formData = await request.formData();
     const file = formData.get("file");
     if (!(file instanceof File)) {

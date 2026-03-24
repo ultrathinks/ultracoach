@@ -18,7 +18,12 @@ export default async function ResultsPage({
   const { id } = await params;
 
   const [dbSession] = await db
-    .select()
+    .select({
+      id: sessions.id,
+      userId: sessions.userId,
+      jobTitle: sessions.jobTitle,
+      durationSec: sessions.durationSec,
+    })
     .from(sessions)
     .where(eq(sessions.id, id))
     .limit(1);
