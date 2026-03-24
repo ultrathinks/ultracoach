@@ -140,6 +140,51 @@ export function HistoryDashboard({
         <TypeComparisonChart data={analytics.typeComparison} />
       </div>
 
+      {/* === Phase 7: Weakness Analysis Section === */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+      >
+        <div className="mt-12 mb-6">
+          <h2 className="text-xl font-bold">약점 분석</h2>
+          <p className="text-secondary text-sm mt-1">
+            STAR 충족률, 추임새, 바디랭귀지를 분석합니다
+          </p>
+        </div>
+
+        {/* STAR radar + Body language (2-column grid) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+          <StarRadarChart data={analytics.starRadar} />
+          <BodyLanguagePanelInner data={bodyLanguage} />
+        </div>
+
+        {/* Filler word heatmap (full-width) */}
+        <div className="mb-10">
+          <FillerHeatmapInner data={analytics.fillerHeatmap} />
+        </div>
+      </motion.div>
+
+      {/* === Phase 7: Action Plan Section === */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <div className="mt-12 mb-6">
+          <h2 className="text-xl font-bold">액션 플랜</h2>
+          <p className="text-secondary text-sm mt-1">
+            AI가 제안하는 다음 단계입니다
+          </p>
+        </div>
+
+        {/* Action items + AI recommendation (2-column grid) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
+          <ActionTrackerInner data={analytics.actionTracker} />
+          <AiRecommendationCardInner data={analytics.aiRecommendation} />
+        </div>
+      </motion.div>
+
       <div className="space-y-3">
         {sessions.map((session, i) => (
           <motion.div
