@@ -1,1 +1,1 @@
-export { computeAnalytics } from "./compute-analytics";
+export { computeAnalytics, computeBodyLanguage } from "./compute-analytics";
