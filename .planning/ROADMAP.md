@@ -43,9 +43,9 @@
 2. ~~**Compute layer** (`src/features/analytics/compute-analytics.ts`): buildStarRadar, buildFillerHeatmap, buildActionTracker, buildAiRecommendation, computeBodyLanguage 순수 함수~~ ✓ Plan 02 complete (b08e19a)
 3. ~~**STAR radar chart** (`src/widgets/history/star-radar-chart.tsx`): Recharts `RadarChart`, 전체 세션 STAR 충족률 시각화~~ ✓ Plan 03 complete (ced0927)
 2. ~~**Body language panel** (`src/widgets/history/body-language-panel.tsx`): 시선/자세/표정/제스처 4개 진행바 + 추세 화살표~~ ✓ Plan 04 complete (be1e3c0)
-3. **Filler word heatmap** (`src/widgets/history/filler-word-heatmap.tsx`): 인라인 SVG `<rect>` 그리드, 분당 추임새 빈도
-4. **Action item tracker** (`src/widgets/history/action-item-tracker.tsx`): 최근 세션 액션아이템 목록 + 이전 대비 델타 표시
-5. **AI recommendation card**: `feedback.summaryJson.nextSessionSuggestion` 데이터 표면화, `analytics-overview.tsx` 내 카드 또는 독립 컴포넌트
+3. ~~**Filler word heatmap** (`src/widgets/history/filler-heatmap.tsx`): 인라인 SVG `<rect>` 그리드, 분당 추임새 빈도~~ ✓ Plan 05 complete (3642494)
+4. ~~**Action item tracker** (`src/widgets/history/action-tracker.tsx`): 최근 세션 액션아이템 목록 + 이전 대비 델타 표시~~ ✓ Plan 06 complete (02570a3)
+5. ~~**AI recommendation card** (`src/widgets/history/ai-recommendation-card.tsx`): `feedback.summaryJson.nextSessionSuggestion` 데이터 표면화~~ ✓ Plan 06 complete (02582e3)
 6. **Empty state 완결** (`INFR-01`): 세션 0개 → 전체 안내, 1개 → 차트별 최소 데이터 안내, 2개 → 부분 렌더링
 7. **Compose** (`src/widgets/history/history-dashboard.tsx`): 모든 패널 조합, `SessionList` 아래 배치
 
