@@ -25,7 +25,7 @@ export function InterviewScreen() {
     isConnected: avatarConnected,
     isSpeaking: avatarIsSpeaking,
   } = useAvatar();
-  const { start: startMediaPipe, stop: stopMediaPipe } = useMediaPipe();
+  const { start: startMediaPipe, stop: stopMediaPipe, landmarks } = useMediaPipe();
   const {
     start: startRecording,
     stop: stopRecording,
@@ -45,11 +45,13 @@ export function InterviewScreen() {
   const avatarVideoRef = useRef<HTMLVideoElement>(null);
   const avatarAudioRef = useRef<HTMLAudioElement>(null);
   const loopAbortRef = useRef(false);
+  const landmarkCanvasRef = useRef<HTMLCanvasElement>(null);
   /** true while a live stream is attached after successful getUserMedia */
   const mediaInitializedRef = useRef(false);
   const [elapsed, setElapsed] = useState(0);
   const [micMuted, setMicMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
+  const [showLandmarks, setShowLandmarks] = useState(false);
 
   useEffect(() => {
     if (!startTime || phase === "ended") return;
@@ -206,7 +208,6 @@ export function InterviewScreen() {
 
   useEffect(() => {
     loopAbortRef.current = false;
-    useSessionStore.getState().setStartTime(Date.now());
 
     (async () => {
       const stream = await waitForStream();
@@ -214,6 +215,18 @@ export function InterviewScreen() {
         useSessionStore.getState().setPhase("ended");
         return;
       }
+
+      // wait for avatar video to have frames (up to 10s)
+      const avatarDeadline = Date.now() + 10_000;
+      while (Date.now() < avatarDeadline && !loopAbortRef.current) {
+        const video = avatarVideoRef.current;
+        if (video && video.readyState >= 2 && video.videoWidth > 0) break;
+        await new Promise((r) => setTimeout(r, 300));
+      }
+
+      if (loopAbortRef.current) return;
+
+      useSessionStore.getState().setStartTime(Date.now());
 
       while (!loopAbortRef.current) {
         let data: { question: string; type: string; shouldEnd: boolean };
@@ -417,6 +430,61 @@ export function InterviewScreen() {
     };
   }, []);
 
+  // draw landmarks on webcam PIP canvas
+  useEffect(() => {
+    if (!showLandmarks || !landmarks || !landmarkCanvasRef.current) return;
+    const canvas = landmarkCanvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // face — small cyan dots
+    if (landmarks.face.length > 0) {
+      ctx.fillStyle = "rgba(34, 211, 238, 0.6)";
+      for (let i = 0; i < landmarks.face.length; i += 3) {
+        const [x, y] = landmarks.face[i];
+        ctx.beginPath();
+        ctx.arc(x * w, y * h, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // pose — green dots + lines for shoulders
+    if (landmarks.pose.length > 0) {
+      ctx.fillStyle = "rgba(52, 211, 153, 0.7)";
+      const keyPoints = [0, 11, 12, 13, 14, 15, 16, 23, 24];
+      for (const idx of keyPoints) {
+        if (!landmarks.pose[idx]) continue;
+        const [x, y] = landmarks.pose[idx];
+        ctx.beginPath();
+        ctx.arc(x * w, y * h, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // shoulder line
+      if (landmarks.pose[11] && landmarks.pose[12]) {
+        ctx.strokeStyle = "rgba(52, 211, 153, 0.4)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(landmarks.pose[11][0] * w, landmarks.pose[11][1] * h);
+        ctx.lineTo(landmarks.pose[12][0] * w, landmarks.pose[12][1] * h);
+        ctx.stroke();
+      }
+    }
+
+    // hands — pink dots
+    for (const hand of landmarks.hands) {
+      ctx.fillStyle = "rgba(244, 114, 182, 0.7)";
+      for (const [x, y] of hand) {
+        ctx.beginPath();
+        ctx.arc(x * w, y * h, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }, [landmarks, showLandmarks]);
+
   if (phase === "analyzing") {
     return (
       <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center">
@@ -492,7 +560,10 @@ export function InterviewScreen() {
         </div>
 
         {/* webcam PIP */}
-        <div className="absolute bottom-20 right-6 lg:bottom-24 lg:right-8 w-36 lg:w-48 aspect-video rounded-xl overflow-hidden border border-white/10 shadow-2xl z-10">
+        <div
+          onClick={() => setShowLandmarks((v) => !v)}
+          className="absolute bottom-6 right-6 lg:bottom-8 lg:right-8 w-56 lg:w-80 aspect-video rounded-xl overflow-hidden border border-white/10 shadow-2xl z-10 cursor-pointer"
+        >
           <video
             ref={webcamRef}
             autoPlay
@@ -500,6 +571,14 @@ export function InterviewScreen() {
             playsInline
             className={cn("w-full h-full object-cover", camOff && "opacity-0")}
           />
+          {showLandmarks && (
+            <canvas
+              ref={landmarkCanvasRef}
+              width={320}
+              height={180}
+              className="absolute inset-0 w-full h-full pointer-events-none"
+            />
+          )}
           {camOff && (
             <div className="absolute inset-0 bg-card flex items-center justify-center">
               <span className="text-muted text-sm font-medium">카메라 꺼짐</span>
