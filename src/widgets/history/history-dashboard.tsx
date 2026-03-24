@@ -1,9 +1,27 @@
 "use client";
 
+import type { DashboardAnalytics } from "@/entities/analytics";
 import { Button } from "@/shared/ui";
 import { cn } from "@/shared/lib/cn";
 import { motion } from "motion/react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+
+const ScoreTrendChart = dynamic(
+  () =>
+    import("@/widgets/history/score-trend-chart").then((m) => ({
+      default: m.ScoreTrendChartInner,
+    })),
+  { ssr: false },
+);
+
+const TypeComparisonChart = dynamic(
+  () =>
+    import("@/widgets/history/type-comparison-chart").then((m) => ({
+      default: m.TypeComparisonChartInner,
+    })),
+  { ssr: false },
+);
 
 interface SessionSummary {
   id: string;
@@ -18,6 +36,7 @@ interface SessionSummary {
 
 interface HistoryDashboardProps {
   sessions: SessionSummary[];
+  analytics: DashboardAnalytics;
 }
 
 const typeLabel: Record<string, string> = {
@@ -38,61 +57,6 @@ function getScoreColor(score: number | null) {
   return "text-red";
 }
 
-function MiniChart({ sessions }: { sessions: SessionSummary[] }) {
-  const scores = sessions
-    .filter((s) => s.deliveryScore !== null)
-    .slice(-10)
-    .map((s) => ({
-      delivery: s.deliveryScore ?? 0,
-      content: s.contentScore ?? 0,
-    }));
-
-  if (scores.length < 2) return null;
-
-  const max = 100;
-  const width = 300;
-  const height = 100;
-  const step = width / (scores.length - 1);
-
-  const toPath = (values: number[]) =>
-    values
-      .map(
-        (v, i) =>
-          `${i === 0 ? "M" : "L"} ${i * step} ${height - (v / max) * height}`,
-      )
-      .join(" ");
-
-  return (
-    <div className="rounded-xl bg-card border border-white/[0.1] p-6">
-      <h3 className="font-semibold mb-6">점수 추이</h3>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-28">
-        <path
-          d={toPath(scores.map((s) => s.delivery))}
-          fill="none"
-          stroke="var(--color-indigo)"
-          strokeWidth="2"
-        />
-        <path
-          d={toPath(scores.map((s) => s.content))}
-          fill="none"
-          stroke="var(--color-pink)"
-          strokeWidth="2"
-        />
-      </svg>
-      <div className="flex gap-6 mt-5 text-sm text-secondary">
-        <span className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-indigo" />
-          전달력
-        </span>
-        <span className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-pink" />
-          답변력
-        </span>
-      </div>
-    </div>
-  );
-}
-
 function formatDuration(sec: number | null) {
   if (!sec) return "-";
   const m = Math.floor(sec / 60);
@@ -100,7 +64,7 @@ function formatDuration(sec: number | null) {
   return `${m}분 ${s}초`;
 }
 
-export function HistoryDashboard({ sessions }: HistoryDashboardProps) {
+export function HistoryDashboard({ sessions, analytics }: HistoryDashboardProps) {
   if (sessions.length === 0) {
     return (
       <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center px-6 text-center">
@@ -113,47 +77,48 @@ export function HistoryDashboard({ sessions }: HistoryDashboardProps) {
     );
   }
 
-  const completed = sessions.filter((s) => s.deliveryScore !== null);
-  const avgDelivery =
-    completed.length > 0
-      ? Math.round(
-          completed.reduce((sum, s) => sum + (s.deliveryScore ?? 0), 0) /
-            completed.length,
-        )
-      : null;
-  const avgContent =
-    completed.length > 0
-      ? Math.round(
-          completed.reduce((sum, s) => sum + (s.contentScore ?? 0), 0) /
-            completed.length,
-        )
-      : null;
+  const avgChange =
+    (analytics.stats.changeRate.deliveryChange +
+      analytics.stats.changeRate.contentChange) /
+    2;
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-20 lg:py-28">
       <h1 className="text-4xl font-bold mb-12">면접 기록</h1>
 
+      {/* Stat cards */}
       <div className="grid grid-cols-3 gap-5 mb-8">
         <div className="rounded-xl bg-card border border-white/[0.1] p-5 text-center">
-          <p className="text-3xl font-bold">{sessions.length}</p>
+          <p className="text-3xl font-bold">{analytics.stats.totalSessions}</p>
           <p className="text-sm text-secondary mt-1.5">총 세션</p>
         </div>
         <div className="rounded-xl bg-card border border-white/[0.1] p-5 text-center">
-          <p className={cn("text-3xl font-bold", getScoreColor(avgDelivery))}>
-            {avgDelivery ?? "-"}
+          <p
+            className={cn(
+              "text-3xl font-bold",
+              !analytics.stats.changeRate.hasEnoughData
+                ? "text-muted"
+                : avgChange >= 0
+                  ? "text-green"
+                  : "text-red",
+            )}
+          >
+            {analytics.stats.changeRate.hasEnoughData
+              ? `${avgChange >= 0 ? "+" : ""}${Math.round(avgChange)}`
+              : "-"}
           </p>
-          <p className="text-sm text-secondary mt-1.5">평균 전달력</p>
+          <p className="text-sm text-secondary mt-1.5">첫 세션 대비 변화</p>
         </div>
         <div className="rounded-xl bg-card border border-white/[0.1] p-5 text-center">
-          <p className={cn("text-3xl font-bold", getScoreColor(avgContent))}>
-            {avgContent ?? "-"}
-          </p>
-          <p className="text-sm text-secondary mt-1.5">평균 답변력</p>
+          <p className="text-3xl font-bold">{analytics.stats.recentWeekSessions}</p>
+          <p className="text-sm text-secondary mt-1.5">최근 7일</p>
         </div>
       </div>
 
-      <div className="mb-10">
-        <MiniChart sessions={sessions} />
+      {/* Charts */}
+      <div className="space-y-6 mb-10">
+        <ScoreTrendChart data={analytics.scoreTrends} />
+        <TypeComparisonChart data={analytics.typeComparison} />
       </div>
 
       <div className="space-y-3">
