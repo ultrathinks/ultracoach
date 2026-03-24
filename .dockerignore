@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+.claude
+.vscode
+scripts
+drizzle
+*.md
+LICENSE
