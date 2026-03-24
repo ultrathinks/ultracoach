@@ -1,12 +1,19 @@
 "use client";
 
 import { useMetricsStore, type MetricSnapshot } from "@/entities/metrics";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
+
+export interface Landmarks {
+  face: number[][];
+  pose: number[][];
+  hands: number[][][];
+}
 
 export function useMediaPipe() {
   const workerRef = useRef<Worker | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const push = useMetricsStore((s) => s.push);
+  const [landmarks, setLandmarks] = useState<Landmarks | null>(null);
 
   const start = useCallback(
     (videoElement: HTMLVideoElement) => {
@@ -18,13 +25,14 @@ export function useMediaPipe() {
       worker.onmessage = (e) => {
         if (e.data.type === "snapshot") {
           push(e.data.data as MetricSnapshot);
+        } else if (e.data.type === "landmarks") {
+          setLandmarks(e.data.data as Landmarks);
         }
       };
 
       worker.postMessage({ type: "init" });
       workerRef.current = worker;
 
-      // send frames at ~5fps
       intervalRef.current = setInterval(async () => {
         if (
           videoElement.readyState < 2 ||
@@ -53,7 +61,8 @@ export function useMediaPipe() {
     }
     workerRef.current?.terminate();
     workerRef.current = null;
+    setLandmarks(null);
   }, []);
 
-  return { start, stop };
+  return { start, stop, landmarks };
 }
