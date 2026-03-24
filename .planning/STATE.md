@@ -60,3 +60,6 @@ Phase 7 진행 중:
 - computeBodyLanguage는 standalone export — page.tsx가 snapshotRows를 desc 순으로 직접 전달
 - allAscending: 모든 세션(완료/미완료) ascending sort — filler/action 분석용
 - Jaccard 0.5 threshold로 액션 아이템 fuzzy 중복 감지 (computeWordOverlap)
+- Phase 7 Plan 06 완료: ActionTrackerInner (신규/반복 태그, 2 empty states) + AiRecommendationCardInner (80자 truncation, 접기/펼치기, 키보드 접근성) 완료
+- AI card: 80자 초과 시 스마트 word-boundary 잘라내기 + chevron 180deg rotate 200ms ease
+- tag null = 세션 1개 (비교 불가), "new" = indigo pill, "repeat" = pink pill
