@@ -73,6 +73,8 @@ AI 면접 코칭 플랫폼. 실시간 음성 면접을 진행하면서 AI가 발
 - 모범 답안 생성 (feedback API 확장, 질문별 suggestedAnswer)
 - 재연습 드릴 (질문 선택 → 카메라 + 질문 텍스트 → 음성 답변 → Whisper → LLM 피드백)
 
+**Phase 9 complete:** 결과 리포트에 "아쉬운 답변" 섹션 추가 (STAR 배지, 모범답안 접기/펼치기, 재연습 CTA), drill feedback API (`POST /api/sessions/[id]/drill`), drill 페이지 스켈레톤 (`/drill/[sessionId]`)
+
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
@@ -83,4 +85,4 @@ AI 면접 코칭 플랫폼. 실시간 음성 면접을 진행하면서 AI가 발
 | v1.2 실시간 내용 코칭 제외 | v1.2는 사후 코칭에 집중. 실시간 내용 코칭은 다음 마일스톤 | — Pending |
 
 ---
-*Last updated: 2026-03-24 after v1.2 milestone start*
+*Last updated: 2026-03-25 after phase 9 completion*
