@@ -9,6 +9,11 @@ export function useRecording() {
   const [isRecording, setIsRecording] = useState(false);
 
   const start = useCallback((stream: MediaStream) => {
+    const prevRecorder = recorderRef.current;
+    if (prevRecorder && prevRecorder.state !== "inactive") {
+      prevRecorder.stop();
+    }
+
     chunksRef.current = [];
     const recorder = new MediaRecorder(stream, {
       mimeType: "video/webm;codecs=vp9,opus",
@@ -47,5 +52,21 @@ export function useRecording() {
     });
   }, []);
 
-  return { start, stop, isRecording };
+  const dispose = useCallback(() => {
+    const recorder = recorderRef.current;
+    if (!recorder) return;
+
+    recorder.ondataavailable = null;
+    recorder.onstop = null;
+
+    if (recorder.state !== "inactive") {
+      recorder.stop();
+    }
+
+    recorderRef.current = null;
+    chunksRef.current = [];
+    setIsRecording(false);
+  }, []);
+
+  return { start, stop, dispose, isRecording };
 }

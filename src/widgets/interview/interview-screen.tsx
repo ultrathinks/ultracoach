@@ -1,5 +1,8 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useMetricsStore } from "@/entities/metrics";
 import { useSessionStore } from "@/entities/session";
 import { useAvatar } from "@/features/avatar";
@@ -9,9 +12,6 @@ import { useWebSpeech } from "@/features/interview-engine/use-web-speech";
 import { useRecording } from "@/features/recording";
 import { CoachOverlay } from "@/features/voice-coach";
 import { cn } from "@/shared/lib/cn";
-import { AnimatePresence, motion } from "motion/react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
 
 export function InterviewScreen() {
   const router = useRouter();
@@ -26,7 +26,11 @@ export function InterviewScreen() {
     isSpeaking: avatarIsSpeaking,
   } = useAvatar();
   const { start: startMediaPipe, stop: stopMediaPipe } = useMediaPipe();
-  const { start: startRecording, stop: stopRecording } = useRecording();
+  const {
+    start: startRecording,
+    stop: stopRecording,
+    dispose: disposeRecording,
+  } = useRecording();
 
   const phase = useSessionStore((s) => s.phase);
   const currentQuestion = useSessionStore((s) => s.currentQuestion);
@@ -34,8 +38,6 @@ export function InterviewScreen() {
   const startTime = useSessionStore((s) => s.startTime);
   const mode = useSessionStore((s) => s.mode);
   const jobTitle = useSessionStore((s) => s.jobTitle);
-  const companyName = useSessionStore((s) => s.companyName);
-  const jobResearch = useSessionStore((s) => s.jobResearch);
 
   const streamRef = useRef<MediaStream | null>(null);
   const streamReadyRef = useRef<(() => void) | null>(null);
@@ -43,6 +45,8 @@ export function InterviewScreen() {
   const avatarVideoRef = useRef<HTMLVideoElement>(null);
   const avatarAudioRef = useRef<HTMLAudioElement>(null);
   const loopAbortRef = useRef(false);
+  /** true while a live stream is attached after successful getUserMedia */
+  const mediaInitializedRef = useRef(false);
   const [elapsed, setElapsed] = useState(0);
   const [micMuted, setMicMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
@@ -64,21 +68,58 @@ export function InterviewScreen() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let initInFlight = false;
+
+    const hasActiveStream = () => {
+      const stream = streamRef.current;
+      if (!stream) return false;
+      return stream.getTracks().some((track) => track.readyState === "live");
+    };
+
+    const requestMediaStream = async (): Promise<MediaStream> => {
+      const preferred = {
+        video: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      };
+
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+        return await navigator.mediaDevices.getUserMedia(preferred);
+      } catch (err) {
+        const mediaError = err as DOMException;
+        if (mediaError?.name !== "NotFoundError") throw err;
+
+        // 일부 환경에서는 카메라가 잠시 사라져도 오디오는 사용 가능하므로 폴백한다.
+        return navigator.mediaDevices.getUserMedia({
+          video: false,
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true,
           },
         });
+      }
+    };
+
+    const initMedia = async (isRetry = false) => {
+      if (initInFlight || hasActiveStream()) return;
+      initInFlight = true;
+      try {
+        const stream = await requestMediaStream();
         if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop());
+          stream.getTracks().forEach((t) => {
+            t.stop();
+          });
           return;
         }
         streamRef.current = stream;
+        mediaInitializedRef.current = true;
+        const hasVideo = stream.getVideoTracks().length > 0;
+        setCamOff(!hasVideo);
         if (webcamRef.current) webcamRef.current.srcObject = stream;
 
         streamReadyRef.current?.();
@@ -92,21 +133,76 @@ export function InterviewScreen() {
           }
         }
 
-        if (webcamRef.current) startMediaPipe(webcamRef.current);
+        if (hasVideo && webcamRef.current) {
+          startMediaPipe(webcamRef.current);
+        }
         startRecording(stream);
-      } catch {
-        console.error("camera/mic access denied");
+      } catch (err) {
+        const mediaError = err as DOMException;
+        const code = mediaError?.name ?? "unknown";
+        const message = mediaError?.message ?? "unknown error";
+        console.error(`camera/mic init failed: ${code} - ${message}`);
+
+        if (
+          !isRetry &&
+          (code === "NotReadableError" || code === "AbortError")
+        ) {
+          retryTimer = setTimeout(() => {
+            retryTimer = null;
+            void initMedia(true);
+          }, 1200);
+          return;
+        }
+
         streamReadyRef.current?.();
         streamReadyRef.current = null;
+      } finally {
+        initInFlight = false;
       }
-    })();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return;
+      if (hasActiveStream()) return;
+      void initMedia();
+    };
+
+    void initMedia();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       cancelled = true;
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
+      stopListening();
+      stopSpeech();
       disconnectAvatar();
       stopMediaPipe();
+      disposeRecording();
+      mediaInitializedRef.current = false;
+      streamRef.current?.getTracks().forEach((t) => {
+        t.stop();
+      });
+      streamRef.current = null;
+      if (webcamRef.current) {
+        webcamRef.current.srcObject = null;
+      }
+      const notifyStreamWaiters = streamReadyRef.current;
+      streamReadyRef.current = null;
+      notifyStreamWaiters?.();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    connectAvatar,
+    disconnectAvatar,
+    disposeRecording,
+    startMediaPipe,
+    startRecording,
+    stopListening,
+    stopMediaPipe,
+    stopSpeech,
+  ]);
 
   useEffect(() => {
     loopAbortRef.current = false;
@@ -170,6 +266,18 @@ export function InterviewScreen() {
     loopAbortRef.current = true;
     stopListening();
     stopSpeech();
+    stopMediaPipe();
+    disconnectAvatar();
+    disposeRecording();
+    mediaInitializedRef.current = false;
+    streamRef.current?.getTracks().forEach((t) => {
+      t.stop();
+    });
+    streamRef.current = null;
+    if (webcamRef.current) {
+      webcamRef.current.srcObject = null;
+    }
+    useSessionStore.getState().setPhase("analyzing");
 
     const state = useSessionStore.getState();
     const metricsState = useMetricsStore.getState();
@@ -214,10 +322,6 @@ export function InterviewScreen() {
       const { sessionId } = await res.json();
       await stopRecording(sessionId);
 
-      stopMediaPipe();
-      disconnectAvatar();
-      useSessionStore.getState().setPhase("analyzing");
-
       const transcript = state.history
         .map(
           (h) =>
@@ -241,12 +345,18 @@ export function InterviewScreen() {
       router.push(`/results/${sessionId}`);
     } catch (err) {
       console.error("session save failed:", err);
-      stopMediaPipe();
-      disconnectAvatar();
       useSessionStore.getState().setPhase("ended");
       router.push("/history");
     }
-  }, [stopListening, stopSpeech, stopMediaPipe, disconnectAvatar, stopRecording, router]);
+  }, [
+    stopListening,
+    stopSpeech,
+    stopMediaPipe,
+    disconnectAvatar,
+    disposeRecording,
+    stopRecording,
+    router,
+  ]);
 
   const toggleMic = useCallback(() => {
     const track = streamRef.current?.getAudioTracks()[0];
@@ -320,21 +430,25 @@ export function InterviewScreen() {
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col">
       {/* top bar */}
-      <div className="h-12 flex items-center justify-between px-5 border-b border-border shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-2 h-2 rounded-full bg-red animate-pulse" />
-          <span className="text-sm text-muted font-mono tabular-nums">{formatTime(elapsed)}</span>
+      <div className="h-12 border-b border-border flex items-center justify-between px-4 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-green animate-pulse" />
+          <span className="text-sm text-muted">{jobTitle} 면접</span>
         </div>
-        <span className="text-sm text-muted">{jobTitle}</span>
-        <div className={cn(
-          "px-2.5 py-1 rounded text-xs font-medium",
-          phase === "listening" && "bg-green/15 text-green",
-          phase === "speaking" && "bg-blue/15 text-blue",
-          phase === "generating" && "bg-purple/15 text-purple",
-          phase === "processing" && "bg-yellow/15 text-yellow",
-          phase === "ended" && "bg-red/15 text-red",
-          phase === "idle" && "bg-white/5 text-[#666]",
-        )}>
+        <span className="text-sm text-muted font-mono tabular-nums">
+          {formatTime(elapsed)}
+        </span>
+        <div
+          className={cn(
+            "px-2.5 py-1 rounded-lg text-xs font-medium",
+            phase === "listening" && "bg-green/15 text-green",
+            phase === "speaking" && "bg-blue/15 text-blue",
+            phase === "generating" && "bg-purple/15 text-purple",
+            phase === "processing" && "bg-yellow/15 text-yellow",
+            phase === "ended" && "bg-red/15 text-red",
+            phase === "idle" && "bg-white/5 text-[#666]",
+          )}
+        >
           {phase === "listening" && "듣는 중"}
           {phase === "speaking" && "면접관 발언 중"}
           {phase === "generating" && "질문 생성 중"}
@@ -401,17 +515,24 @@ export function InterviewScreen() {
           />
           {camOff && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-12 h-12 rounded-full bg-[#333] flex items-center justify-center text-[#888] text-sm font-bold">
+              <div className="w-12 h-12 rounded-full bg-white/[0.06] flex items-center justify-center text-muted text-sm font-bold">
                 나
               </div>
             </div>
           )}
-          <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
+          <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1">
             <span className="bg-card/90 border border-border text-foreground text-xs px-2 py-0.5 rounded-lg">
               나
             </span>
             {micMuted && (
-              <svg className="w-3.5 h-3.5 bg-red rounded-full p-0.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <svg
+                className="w-3.5 h-3.5 bg-red rounded-full p-0.5 text-white"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              >
                 <rect x="9" y="1" width="6" height="12" rx="3" />
                 <line x1="2" y1="2" x2="22" y2="22" />
               </svg>
@@ -431,7 +552,7 @@ export function InterviewScreen() {
         </div>
       </div>
 
-      {/* question subtitle */}
+      {/* question subtitle overlay */}
       <AnimatePresence mode="wait">
         {currentQuestion && phase !== "ended" && (
           <motion.div
@@ -441,9 +562,13 @@ export function InterviewScreen() {
             exit={{ opacity: 0 }}
             className="absolute top-14 inset-x-0 flex justify-center z-10 pointer-events-none"
           >
-            <div className="bg-card border border-border rounded-xl px-5 py-3 max-w-2xl mx-4 shadow-lg">
-              <p className="text-xs text-muted mb-1">Q{questions.length}</p>
-              <p className="text-base text-foreground leading-relaxed">{currentQuestion}</p>
+            <div className="bg-card border border-border rounded-xl px-5 py-3 max-w-2xl shadow-lg mx-4">
+              <p className="text-xs text-muted mb-1">
+                Q{questions.length}
+              </p>
+              <p className="text-base text-foreground leading-relaxed">
+                {currentQuestion}
+              </p>
             </div>
           </motion.div>
         )}
@@ -456,10 +581,12 @@ export function InterviewScreen() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute bottom-20 inset-x-0 flex justify-center z-10 pointer-events-none"
+            className="absolute bottom-[72px] inset-x-0 flex justify-center z-10 pointer-events-none"
           >
-            <div className="bg-card border border-border rounded-xl px-5 py-2.5 max-w-xl mx-4 shadow-lg">
-              <p className="text-sm text-secondary text-center">{liveCaption}</p>
+            <div className="bg-card border border-border rounded-xl px-5 py-2.5 max-w-xl shadow-lg mx-4">
+              <p className="text-sm text-secondary text-center">
+                {liveCaption}
+              </p>
             </div>
           </motion.div>
         )}
@@ -469,22 +596,31 @@ export function InterviewScreen() {
       {mode === "practice" && <CoachOverlay />}
 
       {/* bottom toolbar — Zoom style */}
-      <div className="h-16 flex items-center justify-center gap-3 border-t border-border shrink-0 relative">
-        <div className="absolute left-5 flex items-center gap-2">
-          <span className="text-sm text-muted">
-            Q{questions.length}
-          </span>
+      <div className="h-16 border-t border-border flex items-center justify-center gap-2 shrink-0 relative">
+        {/* left: meeting info */}
+        <div className="absolute left-4 flex items-center gap-2">
+          <span className="text-sm text-muted">Q{questions.length}</span>
         </div>
 
         {/* center controls */}
         <button
           onClick={toggleMic}
           className={cn(
-            "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
-            micMuted ? "bg-red text-white" : "bg-card border border-border text-foreground hover:bg-card-hover",
+            "w-11 h-11 rounded-full flex items-center justify-center transition-colors",
+            micMuted
+              ? "bg-red text-white"
+              : "bg-card border border-border text-foreground hover:bg-card-hover",
           )}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          >
             {micMuted ? (
               <>
                 <rect x="9" y="1" width="6" height="12" rx="3" />
@@ -503,11 +639,21 @@ export function InterviewScreen() {
         <button
           onClick={toggleCam}
           className={cn(
-            "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
-            camOff ? "bg-red text-white" : "bg-card border border-border text-foreground hover:bg-card-hover",
+            "w-11 h-11 rounded-full flex items-center justify-center transition-colors",
+            camOff
+              ? "bg-red text-white"
+              : "bg-card border border-border text-foreground hover:bg-card-hover",
           )}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          >
             {camOff ? (
               <>
                 <rect x="2" y="4" width="14" height="14" rx="2" />
@@ -525,13 +671,13 @@ export function InterviewScreen() {
 
         <button
           onClick={handleEnd}
-          className="h-11 px-6 rounded-full bg-red text-white text-sm font-medium hover:bg-red/90 transition-colors cursor-pointer"
+          className="h-11 px-6 rounded-full bg-red text-white text-sm font-medium hover:bg-red/90 transition-colors"
         >
           면접 종료
         </button>
 
         {/* right: timer */}
-        <div className="absolute right-5">
+        <div className="absolute right-4">
           <span className="text-sm text-muted font-mono tabular-nums">
             {formatTime(elapsed)}
           </span>

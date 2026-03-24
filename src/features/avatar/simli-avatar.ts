@@ -7,6 +7,7 @@ interface SimliAvatarOptions {
   iceServers: RTCIceServer[];
   onSpeaking?: () => void;
   onSilent?: () => void;
+  onDisconnected?: (reason: string) => void;
 }
 
 export async function createSimliAvatar(options: SimliAvatarOptions) {
@@ -17,6 +18,7 @@ export async function createSimliAvatar(options: SimliAvatarOptions) {
     iceServers,
     onSpeaking,
     onSilent,
+    onDisconnected,
   } = options;
 
   const client = new SimliClient(
@@ -28,6 +30,13 @@ export async function createSimliAvatar(options: SimliAvatarOptions) {
 
   if (onSpeaking) client.on("speaking", onSpeaking);
   if (onSilent) client.on("silent", onSilent);
+  if (onDisconnected) {
+    const emitter = client as { on: (event: string, cb: () => void) => void };
+    const markDisconnected = (reason: string) => () => onDisconnected(reason);
+    for (const event of ["disconnected", "disconnect", "closed", "close", "failed", "error"]) {
+      emitter.on(event, markDisconnected(event));
+    }
+  }
   if (process.env.NODE_ENV === "development") {
     client.on("video_info", (serialized) => {
       let parsed: { width?: number; height?: number } | null = null;
