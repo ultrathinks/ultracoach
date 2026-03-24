@@ -14,7 +14,7 @@
 
 ### What to build
 
-1. **Type layer** (`src/entities/analytics/types.ts`): `ScoreTrend`, `TypeComparison`, `DashboardAnalytics` 인터페이스 정의
+1. ~~**Type layer** (`src/entities/analytics/types.ts`): `ScoreTrend`, `TypeComparison`, `DashboardAnalytics` 인터페이스 정의~~ ✓ Plan 01 complete (50e5af6)
 2. **Compute layer** (`src/features/analytics/compute-analytics.ts`): `zod` `safeParse` 기반 순수 함수. `as` 캐스트 없음
 3. **Data fetch** (`src/app/history/page.tsx`): `Promise.all([sessionsQuery, feedbackQuery])` + `computeAnalytics()` 호출
 4. **Score trend chart** (`src/widgets/history/score-trend-chart.tsx`): Recharts `LineChart`, `dynamic({ ssr: false })` 래핑

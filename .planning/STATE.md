@@ -1,16 +1,27 @@
+---
+gsd_state_version: 1.0
+milestone: v1.1
+milestone_name: milestone
+status: unknown
+last_updated: "2026-03-24T12:05:00.000Z"
+progress:
+  total_phases: 1
+  completed_phases: 0
+  total_plans: 5
+  completed_plans: 1
+---
+
 ## Current Position
 
-Phase: Phase 6 (not started)
-Plan: ROADMAP.md
-Status: Roadmap defined, ready to implement
-Last activity: 2026-03-24 — ROADMAP.md created for v1.1 Dashboard
+Phase: 06 (infra-score-trend-type-comparison) — EXECUTING
+Plan: 2 of 5 (plan 01 complete)
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** 사용자가 반복 연습을 통해 면접 실력이 향상되고 있다는 것을 데이터로 확인할 수 있다
-**Current focus:** v1.1 Dashboard milestone — Phase 6
+**Current focus:** Phase 06 — infra-score-trend-type-comparison
 
 ## Phase Summary
 
@@ -21,12 +32,13 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 
 ## Next Action
 
-Phase 6 시작:
-1. `src/entities/analytics/types.ts` — 타입 정의
-2. `src/features/analytics/compute-analytics.ts` — 순수 함수 + zod 파싱
-3. `src/app/history/page.tsx` 수정 — 데이터 fetch 추가
-4. `src/widgets/history/analytics-overview.tsx` — 점수 추이 차트
-5. `src/widgets/history/type-comparison.tsx` — 유형별 비교 차트
+Phase 6 진행 중:
+
+- [x] Plan 01: `src/entities/analytics/types.ts` + `index.ts` — 타입 정의 완료 (50e5af6)
+- [ ] Plan 02: `src/features/analytics/compute-analytics.ts` — 순수 함수 + zod 파싱
+- [ ] Plan 03: `src/app/history/page.tsx` 수정 — 데이터 fetch 추가
+- [ ] Plan 04: `src/widgets/history/score-trend-chart.tsx` + `type-comparison-chart.tsx`
+- [ ] Plan 05: `src/widgets/history/analytics-overview.tsx` — stat cards + 컴포지션
 
 ## Accumulated Context
 
