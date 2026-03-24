@@ -3,25 +3,25 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-24T15:05:02.922Z"
+last_updated: "2026-03-25T00:30:00.000Z"
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 2
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 15
+  completed_plans: 13
 ---
 
 ## Current Position
 
-Phase: 07 (weakness-action-empty) — COMPLETE
-Plan: 7 of 7 — COMPLETE
+Phase: 09 (results-expansion-drill-api) — EXECUTING
+Plan: 1 of 3 — COMPLETED (c9f15d3)
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** 사용자가 반복 연습을 통해 면접 실력이 향상되고 있다는 것을 데이터로 확인할 수 있다
-**Current focus:** Phase 07 — weakness-action-empty
+**Current focus:** Phase 09 — results-expansion-drill-api
 
 ## Phase Summary
 
@@ -32,15 +32,11 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 
 ## Next Action
 
-Phase 7 진행 중:
+Phase 09 진행 중:
 
-- [x] Plan 01: `src/entities/analytics/types.ts` + `index.ts` + `src/entities/metrics/schema.ts` — Phase 7 타입 정의 + zod 스키마 추출 완료 (6dccdd6)
-- [x] Plan 02: `src/features/analytics/compute-analytics.ts` — buildStarRadar, buildFillerHeatmap, buildActionTracker, buildAiRecommendation, computeBodyLanguage 완료 (b08e19a)
-- [x] Plan 03: `src/widgets/history/star-radar-chart.tsx` — RadarChart inner component (ced0927)
-- [x] Plan 04: `src/widgets/history/body-language-panel.tsx` — BodyLanguagePanelInner, progress bars + trend arrows 완료 (be1e3c0)
-- [x] Plan 05: `src/widgets/history/filler-heatmap.tsx` — SVG heatmap 완료 (3642494)
-- [x] Plan 06: `src/widgets/history/action-tracker.tsx` + `ai-recommendation-card.tsx` — ActionTrackerInner + AiRecommendationCardInner 완료 (02570a3, 02582e3)
-- [x] Plan 07: history page integration — metricSnapshots query, bodyLanguage prop, dashboard layout (9c5b21f, 2181b91, 7673221)
+- [x] Plan 01: weak answers section + drill CTA in ReportView — sessionId prop threading, WeakAnswerItem component, suggestedAnswer fold/unfold 완료 (c9f15d3)
+- [x] Plan 02: `src/app/api/sessions/[id]/drill/route.ts` — POST /api/sessions/[id]/drill, auth + ownership check + gpt-5.4-mini LLM analysis, ephemeral 완료 (a648119)
+- [ ] Plan 03: drill page client hook + form integration
 
 ## Accumulated Context
 
@@ -63,3 +59,6 @@ Phase 7 진행 중:
 - Phase 7 Plan 06 완료: ActionTrackerInner (신규/반복 태그, 2 empty states) + AiRecommendationCardInner (80자 truncation, 접기/펼치기, 키보드 접근성) 완료
 - AI card: 80자 초과 시 스마트 word-boundary 잘라내기 + chevron 180deg rotate 200ms ease
 - tag null = 세션 1개 (비교 불가), "new" = indigo pill, "repeat" = pink pill
+- Phase 09 Plan 02 완료: POST /api/sessions/[id]/drill — auth+ownership check, questionId+transcript zod validation, retrieves original QA from feedback summaryJson, calls gpt-5.4-mini, returns ephemeral { contentScore, feedback, starFulfillment }
+- drill API는 DB write 없음 (ephemeral). suggestedAnswer 있으면 LLM prompt에 포함
+- drillResponseSchema는 route 파일 내 inline 정의 (entities coupling 최소화)

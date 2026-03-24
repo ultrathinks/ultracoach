@@ -39,7 +39,7 @@
 2. **sessionId 전달** (`src/app/results/[id]/results-client.tsx`): ReportView에 sessionId prop 추가하여 드릴 링크 구성 가능
 3. **"재연습하기" CTA**: 아쉬운 답변 항목에 `/drill/[sessionId]?q=[questionId]` 링크 버튼
 4. **구 세션 처리**: suggestedAnswer가 없는 세션에 "이 세션에는 모범 답안이 제공되지 않습니다" 안내
-5. **드릴 피드백 API** (`src/app/api/sessions/[id]/drill/route.ts`): POST, auth + 소유권 체크, 단일 질문 LLM 분석, ephemeral 응답 (DB 미저장). gpt-5.4-mini 사용
+5. ~~**드릴 피드백 API** (`src/app/api/sessions/[id]/drill/route.ts`): POST, auth + 소유권 체크, 단일 질문 LLM 분석, ephemeral 응답 (DB 미저장). gpt-5.4-mini 사용~~ ✓ Plan 02 complete (a648119)
 
 ### Success criteria
 
