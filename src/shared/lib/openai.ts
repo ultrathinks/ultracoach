@@ -25,6 +25,9 @@ export function parseJsonResponse<T>(
   }
 
   const result = schema.safeParse(parsed);
-  if (!result.success) throw new Error("invalid completion response");
+  if (!result.success) {
+    console.error("[openai] schema validation failed:", JSON.stringify(result.error.issues, null, 2));
+    throw new Error("invalid completion response");
+  }
   return result.data;
 }
