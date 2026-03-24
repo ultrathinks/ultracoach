@@ -120,8 +120,8 @@ export function ReportView({ feedback, jobTitle, duration }: ReportViewProps) {
           <Card>
             <h2 className="font-semibold mb-4">질문별 분석</h2>
             <div className="space-y-6">
-              {feedback.questionAnalyses.map((qa) => (
-                <div key={qa.questionId} className="space-y-2">
+              {feedback.questionAnalyses.map((qa, i) => (
+                <div key={i} className="space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-secondary">
                       Q{qa.questionId}
