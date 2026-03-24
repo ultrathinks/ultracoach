@@ -5,6 +5,7 @@ title: "Stat Cards, Data Fetch, and Dashboard Integration"
 status: complete
 started: 2025-03-24
 completed: 2025-03-24
+requirements-completed: [GROW-02, GROW-03]
 ---
 
 ## What was built

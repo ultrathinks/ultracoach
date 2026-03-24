@@ -1,17 +1,20 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.1
-milestone_name: milestone
-status: unknown
-last_updated: "2026-03-24T23:39:01.729Z"
+milestone_name: Dashboard
+status: shipped
+last_updated: "2026-03-25"
 progress:
-  total_phases: 4
-  completed_phases: 3
-  total_plans: 15
-  completed_plans: 15
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 12
+  completed_plans: 12
 ---
 
 ## Current Position
+
+Milestone v1.1 Dashboard — SHIPPED (2026-03-25)
+Next: v1.2 Coaching Loop (see ROADMAP-v1.2.md, STATE-v1.2.md)
 
 Phase: 09 (results-expansion-drill-api) — COMPLETED (3/3 plans done)
 Plan: 3 of 3 — COMPLETED (06a7c5e)
@@ -28,7 +31,9 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 | Phase | Goal | Status |
 |-------|------|--------|
 | 6 | 인프라 + 점수 추이 + 유형 비교 | Not started |
-| 7 | 약점 분석 + 액션 추적 + 빈 상태 완결 | In progress (6/7) |
+| 7 | 약점 분석 + 액션 추적 + 빈 상태 완결 | Completed (7/7) |
+| 8 | 모범답안 생성 + 약점 식별 | Completed (3/3) |
+| 9 | results expansion + drill API | Completed (3/3) |
 
 ## Next Action
 

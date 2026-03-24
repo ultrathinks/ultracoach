@@ -4,6 +4,7 @@ title: "Type Comparison Chart Widget"
 status: completed
 commit: 266efa0
 date: "2026-03-24"
+requirements-completed: [COMP-01]
 ---
 
 ## What Was Built
