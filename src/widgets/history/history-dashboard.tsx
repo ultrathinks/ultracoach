@@ -1,11 +1,15 @@
 "use client";
 
-import type { DashboardAnalytics } from "@/entities/analytics";
+import type { BodyLanguageData, DashboardAnalytics } from "@/entities/analytics";
 import { Button } from "@/shared/ui";
 import { cn } from "@/shared/lib/cn";
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { BodyLanguagePanelInner } from "@/widgets/history/body-language-panel";
+import { FillerHeatmapInner } from "@/widgets/history/filler-heatmap";
+import { ActionTrackerInner } from "@/widgets/history/action-tracker";
+import { AiRecommendationCardInner } from "@/widgets/history/ai-recommendation-card";
 
 const ScoreTrendChart = dynamic(
   () =>
@@ -19,6 +23,14 @@ const TypeComparisonChart = dynamic(
   () =>
     import("@/widgets/history/type-comparison-chart").then((m) => ({
       default: m.TypeComparisonChartInner,
+    })),
+  { ssr: false },
+);
+
+const StarRadarChart = dynamic(
+  () =>
+    import("@/widgets/history/star-radar-chart").then((m) => ({
+      default: m.StarRadarChartInner,
     })),
   { ssr: false },
 );
@@ -37,6 +49,7 @@ interface SessionSummary {
 interface HistoryDashboardProps {
   sessions: SessionSummary[];
   analytics: DashboardAnalytics;
+  bodyLanguage: BodyLanguageData;
 }
 
 const typeLabel: Record<string, string> = {
@@ -64,7 +77,11 @@ function formatDuration(sec: number | null) {
   return `${m}분 ${s}초`;
 }
 
-export function HistoryDashboard({ sessions, analytics }: HistoryDashboardProps) {
+export function HistoryDashboard({
+  sessions,
+  analytics,
+  bodyLanguage,
+}: HistoryDashboardProps) {
   if (sessions.length === 0) {
     return (
       <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center px-6 text-center">
@@ -110,7 +127,9 @@ export function HistoryDashboard({ sessions, analytics }: HistoryDashboardProps)
           <p className="text-sm text-secondary mt-1.5">첫 세션 대비 변화</p>
         </div>
         <div className="rounded-xl bg-card border border-white/[0.1] p-5 text-center">
-          <p className="text-3xl font-bold">{analytics.stats.recentWeekSessions}</p>
+          <p className="text-3xl font-bold">
+            {analytics.stats.recentWeekSessions}
+          </p>
           <p className="text-sm text-secondary mt-1.5">최근 7일</p>
         </div>
       </div>
@@ -134,21 +153,31 @@ export function HistoryDashboard({ sessions, analytics }: HistoryDashboardProps)
                 <div>
                   <p className="font-semibold">{session.jobTitle}</p>
                   <p className="text-sm text-secondary mt-1">
-                    {typeLabel[session.interviewType] ?? session.interviewType} ·{" "}
-                    {modeLabel[session.mode] ?? session.mode} ·{" "}
+                    {typeLabel[session.interviewType] ?? session.interviewType}{" "}
+                    · {modeLabel[session.mode] ?? session.mode} ·{" "}
                     {formatDuration(session.durationSec)} ·{" "}
                     {new Date(session.createdAt).toLocaleDateString("ko-KR")}
                   </p>
                 </div>
                 <div className="flex gap-5 text-sm shrink-0">
                   <div className="text-right">
-                    <p className={cn("text-lg font-bold", getScoreColor(session.deliveryScore))}>
+                    <p
+                      className={cn(
+                        "text-lg font-bold",
+                        getScoreColor(session.deliveryScore),
+                      )}
+                    >
                       {session.deliveryScore ?? "-"}
                     </p>
                     <p className="text-xs text-muted">전달력</p>
                   </div>
                   <div className="text-right">
-                    <p className={cn("text-lg font-bold", getScoreColor(session.contentScore))}>
+                    <p
+                      className={cn(
+                        "text-lg font-bold",
+                        getScoreColor(session.contentScore),
+                      )}
+                    >
                       {session.contentScore ?? "-"}
                     </p>
                     <p className="text-xs text-muted">답변력</p>
