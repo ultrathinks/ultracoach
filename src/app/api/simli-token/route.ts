@@ -1,10 +1,22 @@
+import { auth } from "@/shared/lib/auth";
+import { rateLimit } from "@/shared/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { generateIceServers, generateSimliSessionToken } from "simli-client";
+
+const checkRate = rateLimit({ windowMs: 60_000, max: 10 });
 
 const FACE_ID = "14de6eb1-0ea6-4fde-9522-8552ce691cb6";
 
 export async function POST() {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+
+    const limited = checkRate(session.user.id, "simli-token");
+    if (limited) return limited;
+
     const apiKey = process.env.SIMLI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
