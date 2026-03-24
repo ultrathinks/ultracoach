@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-24T13:00:00.000Z"
+last_updated: "2026-03-24T11:54:38.974Z"
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 ## Current Position
 
 Phase: 06 (infra-score-trend-type-comparison) — EXECUTING
-Plan: 4 of 5 (plans 01, 02, 03, 04 complete)
+Plan: 4 of 5 (plans 01, 02, 03 complete; 04 pre-existing)
 
 ## Project Reference
 
@@ -36,7 +36,7 @@ Phase 6 진행 중:
 
 - [x] Plan 01: `src/entities/analytics/types.ts` + `index.ts` — 타입 정의 완료 (50e5af6)
 - [x] Plan 02: `src/features/analytics/compute-analytics.ts` + `index.ts` — 순수 함수 + zod 파싱 완료 (f4abfc1, acea83f)
-- [ ] Plan 03: `src/app/history/page.tsx` 수정 — 데이터 fetch 추가
+- [x] Plan 03: `src/widgets/history/score-trend-chart.tsx` — ScoreTrendChartInner Recharts LineChart 완료 (f84ba13, 86c0a2d)
 - [x] Plan 04: `src/widgets/history/type-comparison-chart.tsx` — grouped bar chart widget 완료 (266efa0)
 - [ ] Plan 05: `src/widgets/history/analytics-overview.tsx` — stat cards + 컴포지션
 
