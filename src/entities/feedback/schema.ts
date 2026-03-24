@@ -10,7 +10,7 @@ export const starFulfillmentSchema = z.object({
 export const questionAnalysisSchema = z.object({
   questionId: z.number(),
   questionText: z.string(),
-  answer: z.string(),
+  answer: z.string().nullable().default(""),
   starFulfillment: starFulfillmentSchema,
   fillerWords: z.array(z.object({ word: z.string(), count: z.number() })),
   durationSec: z.number(),
