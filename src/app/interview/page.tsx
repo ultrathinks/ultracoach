@@ -22,7 +22,12 @@ export default function InterviewPage() {
   }, []);
 
   if (stage === "countdown") {
-    return <Countdown researchStatus={research.status} onComplete={handleCountdownComplete} />;
+    return (
+      <Countdown
+        researchStatus={research.status}
+        onComplete={handleCountdownComplete}
+      />
+    );
   }
 
   if (stage === "interview") {
