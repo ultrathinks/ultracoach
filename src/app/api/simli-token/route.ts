@@ -1,8 +1,5 @@
-import {
-  generateSimliSessionToken,
-  generateIceServers,
-} from "simli-client";
 import { NextResponse } from "next/server";
+import { generateIceServers, generateSimliSessionToken } from "simli-client";
 
 const FACE_ID = "14de6eb1-0ea6-4fde-9522-8552ce691cb6";
 
@@ -24,7 +21,7 @@ export async function POST() {
           // Aspect ratio / width / height are not available config fields.
           handleSilence: true,
           maxSessionLength: 3600,
-          maxIdleTime: 60,
+          maxIdleTime: 120,
         },
         apiKey,
       },
