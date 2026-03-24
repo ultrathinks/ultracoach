@@ -79,7 +79,7 @@
 ### Integration Points
 - `src/app/history/page.tsx`: 현재 sessions만 쿼리. feedback 테이블 join 추가 필요
 - `src/widgets/history/history-dashboard.tsx`: 기존 stat cards + MiniChart 교체 대상
-- 새 위젯: `analytics-overview.tsx` (LineChart), `type-comparison.tsx` (BarChart) — ROADMAP.md 경로 참조
+- 새 위젯: `score-trend-chart.tsx` (LineChart), `type-comparison-chart.tsx` (BarChart) — ROADMAP.md 경로 참조
 
 </code_context>
 
