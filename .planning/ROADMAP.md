@@ -46,8 +46,8 @@
 3. ~~**Filler word heatmap** (`src/widgets/history/filler-heatmap.tsx`): 인라인 SVG `<rect>` 그리드, 분당 추임새 빈도~~ ✓ Plan 05 complete (3642494)
 4. ~~**Action item tracker** (`src/widgets/history/action-tracker.tsx`): 최근 세션 액션아이템 목록 + 이전 대비 델타 표시~~ ✓ Plan 06 complete (02570a3)
 5. ~~**AI recommendation card** (`src/widgets/history/ai-recommendation-card.tsx`): `feedback.summaryJson.nextSessionSuggestion` 데이터 표면화~~ ✓ Plan 06 complete (02582e3)
-6. **Empty state 완결** (`INFR-01`): 세션 0개 → 전체 안내, 1개 → 차트별 최소 데이터 안내, 2개 → 부분 렌더링
-7. **Compose** (`src/widgets/history/history-dashboard.tsx`): 모든 패널 조합, `SessionList` 아래 배치
+6. ~~**Empty state 완결** (`INFR-01`): 세션 0개 → 전체 안내, 1개 → 차트별 최소 데이터 안내, 2개 → 부분 렌더링~~ ✓ Plan 07 complete (7673221)
+7. ~~**Compose** (`src/widgets/history/history-dashboard.tsx`): 모든 패널 조합, `SessionList` 아래 배치~~ ✓ Plan 07 complete (7673221)
 
 ### Success criteria
 
