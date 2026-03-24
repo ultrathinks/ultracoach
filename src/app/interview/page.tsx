@@ -1,11 +1,11 @@
 "use client";
 
 import { useSessionStore } from "@/entities/session";
-import { Countdown, SetupForm, useJobResearch } from "@/features/setup";
+import { SetupForm, useJobResearch } from "@/features/setup";
 import { InterviewScreen } from "@/widgets/interview/interview-screen";
 import { useCallback, useState } from "react";
 
-type Stage = "setup" | "countdown" | "interview";
+type Stage = "setup" | "interview";
 
 export default function InterviewPage() {
   const [stage, setStage] = useState<Stage>("setup");
@@ -14,24 +14,11 @@ export default function InterviewPage() {
 
   const handleStart = useCallback(() => {
     research.start();
-    setStage("countdown");
+    setStage("interview");
   }, [research]);
 
-  const handleCountdownComplete = useCallback(() => {
-    setStage("interview");
-  }, []);
-
-  if (stage === "countdown") {
-    return (
-      <Countdown
-        researchStatus={research.status}
-        onComplete={handleCountdownComplete}
-      />
-    );
-  }
-
   if (stage === "interview") {
-    return <InterviewScreen />;
+    return <InterviewScreen researchStatus={research.status} />;
   }
 
   return (

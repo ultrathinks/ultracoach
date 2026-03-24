@@ -13,7 +13,11 @@ import { useRecording } from "@/features/recording";
 import { CoachOverlay } from "@/features/voice-coach";
 import { cn } from "@/shared/lib/cn";
 
-export function InterviewScreen() {
+interface InterviewScreenProps {
+  researchStatus?: "idle" | "loading" | "done";
+}
+
+export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProps) {
   const router = useRouter();
   const { fetchNextQuestion, startListening, stopListening, audioLevel } =
     useInterviewEngine();
@@ -56,9 +60,28 @@ export function InterviewScreen() {
   const [prepSteps, setPrepSteps] = useState<
     { label: string; status: "pending" | "loading" | "done" }[]
   >([
+    { label: "직무 분석", status: researchStatus === "done" ? "done" : "loading" },
+    { label: "면접 질문 최적화", status: "pending" },
     { label: "카메라·마이크 연결", status: "loading" },
     { label: "AI 면접관 준비", status: "pending" },
   ]);
+
+  // 직무 분석 완료 → 질문 최적화 완료
+  useEffect(() => {
+    if (researchStatus !== "done") return;
+    setPrepSteps((prev) =>
+      prev.map((s, i) =>
+        i === 0 ? { ...s, status: "done" as const } :
+        i === 1 ? { ...s, status: "loading" as const } : s,
+      ),
+    );
+    const timer = setTimeout(() => {
+      setPrepSteps((prev) =>
+        prev.map((s, i) => (i === 1 ? { ...s, status: "done" as const } : s)),
+      );
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [researchStatus]);
 
   useEffect(() => {
     if (!startTime || phase === "ended") return;
@@ -136,8 +159,8 @@ export function InterviewScreen() {
 
         setPrepSteps((prev) =>
           prev.map((s, i) =>
-            i === 0 ? { ...s, status: "done" as const } :
-            i === 1 ? { ...s, status: "loading" as const } : s,
+            i === 2 ? { ...s, status: "done" as const } :
+            i === 3 ? { ...s, status: "loading" as const } : s,
           ),
         );
 
@@ -150,7 +173,7 @@ export function InterviewScreen() {
         }
 
         setPrepSteps((prev) =>
-          prev.map((s, i) => (i === 1 ? { ...s, status: "done" as const } : s)),
+          prev.map((s, i) => (i === 3 ? { ...s, status: "done" as const } : s)),
         );
 
         if (hasVideo && webcamRef.current) {
@@ -562,7 +585,7 @@ export function InterviewScreen() {
                   >
                     {liveCaption}
                   </motion.p>
-                ) : currentQuestion && phase !== "ended" ? (
+                ) : currentQuestion && (phase === "speaking" || phase === "listening") ? (
                   <motion.p
                     key={currentQuestion}
                     initial={{ opacity: 0 }}

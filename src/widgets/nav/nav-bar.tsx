@@ -91,20 +91,21 @@ export function NavBar() {
         </Link>
 
         <div className="flex items-center gap-6">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "text-sm transition-colors",
-                pathname === link.href
-                  ? "text-foreground"
-                  : "text-muted hover:text-secondary",
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {session?.user &&
+            links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "text-sm transition-colors",
+                  pathname === link.href
+                    ? "text-foreground"
+                    : "text-muted hover:text-secondary",
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
 
           {session?.user ? (
             <ProfileDropdown />

@@ -1,12 +1,17 @@
 import { db } from "@/shared/db";
 import { sessions } from "@/shared/db/schema";
-import { desc } from "drizzle-orm";
+import { auth } from "@/shared/lib/auth";
+import { desc, eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
 import { HistoryDashboard } from "@/widgets/history/history-dashboard";
 
 export const dynamic = "force-dynamic";
 
 export default async function HistoryPage() {
-  const allSessions = await db
+  const session = await auth();
+  if (!session?.user?.id) redirect("/");
+
+  const userSessions = await db
     .select({
       id: sessions.id,
       jobTitle: sessions.jobTitle,
@@ -18,10 +23,11 @@ export default async function HistoryPage() {
       createdAt: sessions.createdAt,
     })
     .from(sessions)
+    .where(eq(sessions.userId, session.user.id))
     .orderBy(desc(sessions.createdAt))
     .limit(50);
 
-  const serialized = allSessions.map((s) => ({
+  const serialized = userSessions.map((s) => ({
     ...s,
     createdAt: s.createdAt.toISOString(),
   }));
