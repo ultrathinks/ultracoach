@@ -9,12 +9,19 @@ export function useRecording() {
   const [isRecording, setIsRecording] = useState(false);
 
   const start = useCallback((stream: MediaStream) => {
+    const liveTracks = stream.getTracks().filter((t) => t.readyState === "live");
+    if (liveTracks.length === 0) {
+      console.warn("no live tracks, skipping recording");
+      return;
+    }
+
     const prevRecorder = recorderRef.current;
     if (prevRecorder && prevRecorder.state !== "inactive") {
       prevRecorder.stop();
     }
 
     chunksRef.current = [];
+    const recordStream = new MediaStream(liveTracks);
 
     const mimeTypes = [
       "video/webm;codecs=vp9,opus",
@@ -26,7 +33,7 @@ export function useRecording() {
     for (const mt of mimeTypes) {
       if (!MediaRecorder.isTypeSupported(mt)) continue;
       try {
-        recorder = new MediaRecorder(stream, { mimeType: mt });
+        recorder = new MediaRecorder(recordStream, { mimeType: mt });
         break;
       } catch {
         continue;
@@ -35,7 +42,7 @@ export function useRecording() {
 
     if (!recorder) {
       try {
-        recorder = new MediaRecorder(stream);
+        recorder = new MediaRecorder(recordStream);
       } catch (err) {
         console.warn("MediaRecorder not available, skipping recording:", err);
         return;
@@ -47,8 +54,13 @@ export function useRecording() {
     };
 
     recorderRef.current = recorder;
-    recorder.start(1000);
-    setIsRecording(true);
+    try {
+      recorder.start(1000);
+      setIsRecording(true);
+    } catch (err) {
+      console.warn("MediaRecorder start failed:", err);
+      recorderRef.current = null;
+    }
   }, []);
 
   const stop = useCallback(async (sessionId: string) => {

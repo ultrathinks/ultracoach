@@ -8,12 +8,20 @@ import {
   useSessionStore,
 } from "@/entities/session";
 import { cn } from "@/shared/lib/cn";
-import { Button, Card, Chip, Input } from "@/shared/ui";
+import { Button, Input } from "@/shared/ui";
 
-const interviewTypes: { value: InterviewType; label: string }[] = [
-  { value: "personality", label: "인성" },
-  { value: "technical", label: "기술" },
-  { value: "culture-fit", label: "컬처핏" },
+const interviewTypes: {
+  value: InterviewType;
+  label: string;
+  desc: string;
+}[] = [
+  { value: "personality", label: "인성", desc: "가치관 · 동기 · 갈등 해결" },
+  { value: "technical", label: "기술", desc: "기술 스택 · 문제 해결 · 설계" },
+  {
+    value: "culture-fit",
+    label: "컬처핏",
+    desc: "조직 문화 · 협업 · 리더십",
+  },
 ];
 
 const modes: { value: InterviewMode; label: string; desc: string }[] = [
@@ -79,76 +87,89 @@ export function SetupForm({ onStart }: SetupFormProps) {
 
   return (
     <motion.div
-      className="w-full max-w-xl space-y-8"
+      className="w-full max-w-xl"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="text-center">
+      <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-3">면접 준비</h1>
         <p className="text-muted text-lg">직무와 면접 유형을 선택하세요</p>
       </div>
 
-      <div className="space-y-5">
-        <Input
-          id="jobTitle"
-          label="지원 직무"
-          placeholder="예: 프론트엔드 개발자"
-          value={jobTitle}
-          onChange={(e) => setJobTitle(e.target.value)}
-        />
-
-        <Input
-          id="companyName"
-          label="지원 회사 (선택)"
-          placeholder="예: 네이버"
-          value={companyName}
-          onChange={(e) => setCompanyName(e.target.value)}
-          maxLength={100}
-        />
-
-        <div>
-          <p className="text-[13px] text-muted mb-2">면접 유형</p>
-          <div className="flex gap-2">
-            {interviewTypes.map((t) => (
-              <Chip
-                key={t.value}
-                active={interviewType === t.value}
-                onClick={() => setInterviewType(t.value)}
-              >
-                {t.label}
-              </Chip>
-            ))}
-          </div>
+      <div className="space-y-7">
+        {/* 직무 + 회사 */}
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            id="jobTitle"
+            label="지원 직무"
+            placeholder="예: 프론트엔드 개발자"
+            value={jobTitle}
+            onChange={(e) => setJobTitle(e.target.value)}
+          />
+          <Input
+            id="companyName"
+            label="지원 회사 (선택)"
+            placeholder="예: 네이버"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            maxLength={100}
+          />
         </div>
 
+        {/* 면접 유형 */}
         <div>
-          <p className="text-[13px] text-muted mb-2">모드</p>
-          <div className="grid grid-cols-2 gap-2">
-            {modes.map((m) => (
+          <p className="text-sm text-secondary mb-3">면접 유형</p>
+          <div className="grid grid-cols-3 gap-3">
+            {interviewTypes.map((t) => (
               <button
-                key={m.value}
-                onClick={() => setMode(m.value)}
+                key={t.value}
+                type="button"
+                onClick={() => setInterviewType(t.value)}
                 className={cn(
-                  "text-left rounded-xl px-4 py-3 border transition-all",
-                  mode === m.value
-                    ? "border-indigo/40 bg-indigo/[0.06]"
-                    : "border-border bg-card hover:border-white/[0.08]",
+                  "text-left rounded-xl px-4 py-3.5 border transition-all cursor-pointer",
+                  interviewType === t.value
+                    ? "border-foreground/30 bg-white/[0.04]"
+                    : "border-white/[0.1] bg-card hover:border-white/[0.15]",
                 )}
               >
-                <p className="text-sm font-medium">{m.label}</p>
-                <p className="text-[12px] text-muted mt-0.5">{m.desc}</p>
+                <p className="text-sm font-semibold">{t.label}</p>
+                <p className="text-xs text-muted mt-1">{t.desc}</p>
               </button>
             ))}
           </div>
         </div>
 
+        {/* 모드 */}
         <div>
-          <p className="text-[13px] text-muted mb-2">이력서 (선택)</p>
-          <label className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border cursor-pointer hover:border-white/[0.08] transition-colors">
+          <p className="text-sm text-secondary mb-3">모드</p>
+          <div className="grid grid-cols-2 gap-3">
+            {modes.map((m) => (
+              <button
+                key={m.value}
+                type="button"
+                onClick={() => setMode(m.value)}
+                className={cn(
+                  "text-left rounded-xl px-4 py-3.5 border transition-all cursor-pointer",
+                  mode === m.value
+                    ? "border-foreground/30 bg-white/[0.04]"
+                    : "border-white/[0.1] bg-card hover:border-white/[0.15]",
+                )}
+              >
+                <p className="text-sm font-semibold">{m.label}</p>
+                <p className="text-xs text-muted mt-1">{m.desc}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 이력서 */}
+        <div>
+          <p className="text-sm text-secondary mb-3">이력서 (선택)</p>
+          <label className="flex items-center gap-3 px-5 py-4 rounded-xl bg-card border border-white/[0.1] cursor-pointer hover:border-white/[0.15] transition-colors">
             <svg
-              width="16"
-              height="16"
+              width="18"
+              height="18"
               viewBox="0 0 16 16"
               fill="none"
               className="text-muted shrink-0"
@@ -168,7 +189,7 @@ export function SetupForm({ onStart }: SetupFormProps) {
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="text-[13px] text-muted truncate">
+            <span className="text-sm text-muted truncate">
               {resumeFile ? resumeFile.name : "PDF 또는 DOCX 파일"}
             </span>
             <input
@@ -189,13 +210,14 @@ export function SetupForm({ onStart }: SetupFormProps) {
             />
           </label>
           {resumeError && (
-            <p className="text-[13px] text-red-400 mt-1.5">{resumeError}</p>
+            <p className="text-sm text-red mt-2">{resumeError}</p>
           )}
         </div>
 
+        {/* 연습 모드 안내 */}
         {mode === "practice" && (
-          <div className="rounded-xl border border-indigo/20 bg-indigo/[0.04] px-4 py-3">
-            <p className="text-[13px] text-indigo/80 leading-relaxed">
+          <div className="rounded-xl border border-white/[0.1] bg-white/[0.02] px-5 py-4">
+            <p className="text-sm text-secondary leading-relaxed">
               연습 모드에서는 이어폰 착용을 권장합니다. 코칭 음성이 마이크에
               잡힐 수 있습니다.
             </p>
@@ -203,14 +225,16 @@ export function SetupForm({ onStart }: SetupFormProps) {
         )}
       </div>
 
-      <Button
-        size="lg"
-        className="w-full"
-        disabled={!jobTitle.trim() || uploading}
-        onClick={handleStart}
-      >
-        {uploading ? "이력서 업로드 중..." : "면접 시작"}
-      </Button>
+      <div className="mt-10">
+        <Button
+          size="lg"
+          className="w-full py-3.5"
+          disabled={!jobTitle.trim() || uploading}
+          onClick={handleStart}
+        >
+          {uploading ? "이력서 업로드 중..." : "면접 시작"}
+        </Button>
+      </div>
     </motion.div>
   );
 }

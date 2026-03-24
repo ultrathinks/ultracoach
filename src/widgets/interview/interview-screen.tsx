@@ -52,6 +52,13 @@ export function InterviewScreen() {
   const [micMuted, setMicMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [showLandmarks, setShowLandmarks] = useState(false);
+  const [preparing, setPreparing] = useState(true);
+  const [prepSteps, setPrepSteps] = useState<
+    { label: string; status: "pending" | "loading" | "done" }[]
+  >([
+    { label: "카메라·마이크 연결", status: "loading" },
+    { label: "AI 면접관 준비", status: "pending" },
+  ]);
 
   useEffect(() => {
     if (!startTime || phase === "ended") return;
@@ -127,6 +134,13 @@ export function InterviewScreen() {
         streamReadyRef.current?.();
         streamReadyRef.current = null;
 
+        setPrepSteps((prev) =>
+          prev.map((s, i) =>
+            i === 0 ? { ...s, status: "done" as const } :
+            i === 1 ? { ...s, status: "loading" as const } : s,
+          ),
+        );
+
         if (avatarVideoRef.current && avatarAudioRef.current) {
           try {
             await connectAvatar(avatarVideoRef.current, avatarAudioRef.current);
@@ -134,6 +148,10 @@ export function InterviewScreen() {
             console.warn("avatar connection failed:", err);
           }
         }
+
+        setPrepSteps((prev) =>
+          prev.map((s, i) => (i === 1 ? { ...s, status: "done" as const } : s)),
+        );
 
         if (hasVideo && webcamRef.current) {
           startMediaPipe(webcamRef.current);
@@ -226,6 +244,7 @@ export function InterviewScreen() {
 
       if (loopAbortRef.current) return;
 
+      setPreparing(false);
       useSessionStore.getState().setStartTime(Date.now());
 
       while (!loopAbortRef.current) {
@@ -661,6 +680,64 @@ export function InterviewScreen() {
           </span>
         </div>
       </div>
+
+      {/* ── preparing overlay ── */}
+      <AnimatePresence>
+        {preparing && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="absolute inset-0 z-20 bg-background flex flex-col items-center justify-center"
+          >
+            <motion.div
+              className="w-full max-w-sm px-6"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <h2 className="text-2xl font-bold text-center mb-12">
+                {prepSteps.every((s) => s.status === "done")
+                  ? "면접을 시작합니다"
+                  : "면접을 준비하고 있어요"}
+              </h2>
+              <div className="space-y-5">
+                {prepSteps.map((step, i) => (
+                  <motion.div
+                    key={step.label}
+                    className="flex items-center gap-4"
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.15, duration: 0.3 }}
+                  >
+                    {step.status === "loading" ? (
+                      <div className="w-5 h-5 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin" />
+                    ) : step.status === "done" ? (
+                      <div className="w-5 h-5 rounded-full bg-green/15 flex items-center justify-center">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-green)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-white/[0.06]" />
+                    )}
+                    <span
+                      className={cn(
+                        "text-base transition-colors",
+                        step.status === "done" && "text-foreground",
+                        step.status === "loading" && "text-secondary",
+                        step.status === "pending" && "text-muted",
+                      )}
+                    >
+                      {step.label}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -20,6 +20,17 @@ interface HistoryDashboardProps {
   sessions: SessionSummary[];
 }
 
+const typeLabel: Record<string, string> = {
+  personality: "인성",
+  technical: "기술",
+  "culture-fit": "컬처핏",
+};
+
+const modeLabel: Record<string, string> = {
+  real: "실전",
+  practice: "연습",
+};
+
 function getScoreColor(score: number | null) {
   if (score === null) return "text-muted";
   if (score >= 80) return "text-green";
@@ -40,7 +51,7 @@ function MiniChart({ sessions }: { sessions: SessionSummary[] }) {
 
   const max = 100;
   const width = 300;
-  const height = 80;
+  const height = 100;
   const step = width / (scores.length - 1);
 
   const toPath = (values: number[]) =>
@@ -52,9 +63,9 @@ function MiniChart({ sessions }: { sessions: SessionSummary[] }) {
       .join(" ");
 
   return (
-    <div className="rounded-xl bg-card border border-white/[0.06] p-6">
-      <h3 className="font-medium mb-5">점수 추이</h3>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-24">
+    <div className="rounded-xl bg-card border border-white/[0.1] p-6">
+      <h3 className="font-semibold mb-6">점수 추이</h3>
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-28">
         <path
           d={toPath(scores.map((s) => s.delivery))}
           fill="none"
@@ -68,13 +79,13 @@ function MiniChart({ sessions }: { sessions: SessionSummary[] }) {
           strokeWidth="2"
         />
       </svg>
-      <div className="flex gap-5 mt-4 text-sm text-muted">
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-indigo" />
+      <div className="flex gap-6 mt-5 text-sm text-secondary">
+        <span className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-indigo" />
           전달력
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-pink" />
+        <span className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-pink" />
           답변력
         </span>
       </div>
@@ -123,21 +134,21 @@ export function HistoryDashboard({ sessions }: HistoryDashboardProps) {
       <h1 className="text-4xl font-bold mb-12">면접 기록</h1>
 
       <div className="grid grid-cols-3 gap-5 mb-8">
-        <div className="rounded-xl bg-card border border-white/[0.06] p-5 text-center">
+        <div className="rounded-xl bg-card border border-white/[0.1] p-5 text-center">
           <p className="text-3xl font-bold">{sessions.length}</p>
-          <p className="text-sm text-muted mt-1.5">총 세션</p>
+          <p className="text-sm text-secondary mt-1.5">총 세션</p>
         </div>
-        <div className="rounded-xl bg-card border border-white/[0.06] p-5 text-center">
+        <div className="rounded-xl bg-card border border-white/[0.1] p-5 text-center">
           <p className={cn("text-3xl font-bold", getScoreColor(avgDelivery))}>
             {avgDelivery ?? "-"}
           </p>
-          <p className="text-sm text-muted mt-1.5">평균 전달력</p>
+          <p className="text-sm text-secondary mt-1.5">평균 전달력</p>
         </div>
-        <div className="rounded-xl bg-card border border-white/[0.06] p-5 text-center">
+        <div className="rounded-xl bg-card border border-white/[0.1] p-5 text-center">
           <p className={cn("text-3xl font-bold", getScoreColor(avgContent))}>
             {avgContent ?? "-"}
           </p>
-          <p className="text-sm text-muted mt-1.5">평균 답변력</p>
+          <p className="text-sm text-secondary mt-1.5">평균 답변력</p>
         </div>
       </div>
 
@@ -154,22 +165,29 @@ export function HistoryDashboard({ sessions }: HistoryDashboardProps) {
             transition={{ delay: i * 0.04 }}
           >
             <Link href={`/results/${session.id}`}>
-              <div className="flex items-center justify-between rounded-xl bg-card border border-white/[0.06] px-6 py-5 hover:border-white/[0.12] transition-colors cursor-pointer">
+              <div className="flex items-center justify-between rounded-xl bg-card border border-white/[0.1] px-6 py-5 hover:border-white/[0.15] transition-colors cursor-pointer">
                 <div>
-                  <p className="font-medium">{session.jobTitle}</p>
-                  <p className="text-sm text-muted mt-1">
-                    {session.interviewType} · {session.mode} ·{" "}
+                  <p className="font-semibold">{session.jobTitle}</p>
+                  <p className="text-sm text-secondary mt-1">
+                    {typeLabel[session.interviewType] ?? session.interviewType} ·{" "}
+                    {modeLabel[session.mode] ?? session.mode} ·{" "}
                     {formatDuration(session.durationSec)} ·{" "}
                     {new Date(session.createdAt).toLocaleDateString("ko-KR")}
                   </p>
                 </div>
-                <div className="flex gap-6 text-base font-medium">
-                  <span className={getScoreColor(session.deliveryScore)}>
-                    {session.deliveryScore ?? "-"}
-                  </span>
-                  <span className={getScoreColor(session.contentScore)}>
-                    {session.contentScore ?? "-"}
-                  </span>
+                <div className="flex gap-5 text-sm shrink-0">
+                  <div className="text-right">
+                    <p className={cn("text-lg font-bold", getScoreColor(session.deliveryScore))}>
+                      {session.deliveryScore ?? "-"}
+                    </p>
+                    <p className="text-xs text-muted">전달력</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={cn("text-lg font-bold", getScoreColor(session.contentScore))}>
+                      {session.contentScore ?? "-"}
+                    </p>
+                    <p className="text-xs text-muted">답변력</p>
+                  </div>
                 </div>
               </div>
             </Link>
