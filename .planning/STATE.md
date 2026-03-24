@@ -3,25 +3,25 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-24T12:48:49.204Z"
+last_updated: "2026-03-24T15:00:00.000Z"
 progress:
-  total_phases: 1
+  total_phases: 3
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 12
+  completed_plans: 6
 ---
 
 ## Current Position
 
-Phase: 06 (infra-score-trend-type-comparison) — EXECUTING
-Plan: 4 of 5 (plans 01, 02, 03 complete; 04 pre-existing)
+Phase: 07 (weakness-action-empty) — EXECUTING
+Plan: 2 of 7
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** 사용자가 반복 연습을 통해 면접 실력이 향상되고 있다는 것을 데이터로 확인할 수 있다
-**Current focus:** Phase 06 — infra-score-trend-type-comparison
+**Current focus:** Phase 07 — weakness-action-empty
 
 ## Phase Summary
 
@@ -32,13 +32,15 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 
 ## Next Action
 
-Phase 6 진행 중:
+Phase 7 진행 중:
 
-- [x] Plan 01: `src/entities/analytics/types.ts` + `index.ts` — 타입 정의 완료 (50e5af6)
-- [x] Plan 02: `src/features/analytics/compute-analytics.ts` + `index.ts` — 순수 함수 + zod 파싱 완료 (f4abfc1, acea83f)
-- [x] Plan 03: `src/widgets/history/score-trend-chart.tsx` — ScoreTrendChartInner Recharts LineChart 완료 (f84ba13, 86c0a2d)
-- [x] Plan 04: `src/widgets/history/type-comparison-chart.tsx` — grouped bar chart widget 완료 (266efa0)
-- [ ] Plan 05: `src/widgets/history/analytics-overview.tsx` — stat cards + 컴포지션
+- [x] Plan 01: `src/entities/analytics/types.ts` + `index.ts` + `src/entities/metrics/schema.ts` — Phase 7 타입 정의 + zod 스키마 추출 완료 (6dccdd6)
+- [ ] Plan 02: `src/features/analytics/compute-analytics.ts` — buildStarRadar, buildFillerHeatmap, buildActionTracker, buildAiRecommendation 추가
+- [ ] Plan 03: `src/widgets/history/star-radar-chart.tsx` — RadarChart inner component
+- [ ] Plan 04: `src/widgets/history/filler-heatmap.tsx` — SVG heatmap
+- [ ] Plan 05: `src/widgets/history/body-language-panel.tsx` — progress bars + trend arrows
+- [ ] Plan 06: `src/widgets/history/action-tracker.tsx` + `ai-recommendation-card.tsx`
+- [ ] Plan 07: history page integration + empty states
 
 ## Accumulated Context
 
@@ -51,3 +53,7 @@ Phase 6 진행 중:
 - computeAnalytics: completed 세션만 (non-null scores) 추이/비교 계산에 투입
 - 변화율: 퍼센트 아닌 절대 점수 차이 (latest - first) — 0-100 스케일에 더 직관적
 - parseFeedback() 헬퍼 export로 sessionFeedbackSchema Phase 7 확장 포인트 명시
+- Phase 7 Plan 01 완료: StarRadarData, FillerHeatmapData, BodyLanguageData, ActionTrackerData, AiRecommendationData 타입 정의됨
+- DashboardAnalytics에 starRadar, fillerHeatmap, actionTracker, aiRecommendation 필드 추가됨 (BodyLanguageData는 별도 prop — Option A)
+- metricSnapshotSchema는 entities/metrics/schema.ts에서 export — history/page.tsx에서 @/entities/metrics로 import 가능
+- compute-analytics.ts에 예상된 타입 에러 존재 (Plan 02에서 해결)
