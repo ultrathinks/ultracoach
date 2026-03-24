@@ -1,14 +1,11 @@
-import { db } from "@/shared/db";
-import {
-  sessions,
-  feedback as feedbackTable,
-} from "@/shared/db/schema";
-import { auth } from "@/shared/lib/auth";
-import { getOpenAI, parseJsonResponse } from "@/shared/lib/openai";
-import { sessionFeedbackSchema } from "@/entities/feedback/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { sessionFeedbackSchema } from "@/entities/feedback/schema";
+import { db } from "@/shared/db";
+import { feedback as feedbackTable, sessions } from "@/shared/db/schema";
+import { auth } from "@/shared/lib/auth";
+import { getOpenAI, parseJsonResponse } from "@/shared/lib/openai";
 
 const requestSchema = z.object({
   metrics: z.record(z.string(), z.unknown()),
