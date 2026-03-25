@@ -121,11 +121,16 @@ export function useInterviewEngine(config?: InterviewConfig) {
 
           mediaRecorder.start(1000);
 
+          let peakRms = 0;
+
           vadRef.current = createVad({
             threshold: calibratedThreshold ?? Math.max(vadThreshold, 0.05),
             silenceDelay,
             minSpeechDuration: Math.max(minSpeechDuration, 2000),
-            onLevel: (rms) => setAudioLevel(rms),
+            onLevel: (rms) => {
+              if (rms > peakRms) peakRms = rms;
+              setAudioLevel(rms);
+            },
             onSpeechStart: () => {},
             onSpeechEnd: async () => {
               mediaRecorder.stop();
@@ -137,7 +142,9 @@ export function useInterviewEngine(config?: InterviewConfig) {
                 type: "audio/webm",
               });
 
-              if (audioBlob.size < 1000) {
+              const noRealSpeech = audioBlob.size < 1000 || peakRms < 0.06;
+
+              if (noRealSpeech) {
                 const store = useSessionStore.getState();
                 store.addHistory({
                   role: "interviewee",
