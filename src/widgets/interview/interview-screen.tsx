@@ -70,6 +70,7 @@ export function InterviewScreen({
   const [camOff, setCamOff] = useState(false);
   const [showLandmarks, setShowLandmarks] = useState(false);
   const [preparing, setPreparing] = useState(true);
+  const [showTextInput, setShowTextInput] = useState(false);
   const [textInput, setTextInput] = useState("");
   const textInputRef = useRef<HTMLInputElement>(null);
   const [prepSteps, setPrepSteps] = useState<
@@ -680,9 +681,9 @@ export function InterviewScreen({
 
       {mode === "practice" && <CoachOverlay />}
 
-      {/* ── text input (dev only) ── */}
-      {process.env.NODE_ENV === "development" && phase === "listening" && (
-        <div className="shrink-0 px-6 pb-2">
+      {/* ── text input overlay ── */}
+      {showTextInput && phase === "listening" && (
+        <div className="absolute bottom-16 inset-x-0 z-10 px-6 pb-3">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -690,8 +691,9 @@ export function InterviewScreen({
               if (!trimmed) return;
               submitTextAnswer(trimmed);
               setTextInput("");
+              setShowTextInput(false);
             }}
-            className="flex items-center gap-2 max-w-2xl mx-auto"
+            className="flex items-center gap-2 max-w-2xl mx-auto bg-background/80 backdrop-blur-xl rounded-xl p-2 border border-white/[0.06]"
           >
             <input
               ref={textInputRef}
@@ -702,12 +704,12 @@ export function InterviewScreen({
                 keepListeningAlive();
               }}
               placeholder="타이핑으로 답변하기..."
-              className="flex-1 h-10 px-4 rounded-full bg-card border border-border text-foreground text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-white/20"
+              className="flex-1 h-9 px-4 rounded-lg bg-white/[0.04] border border-white/[0.06] text-foreground text-sm placeholder:text-muted focus:outline-none focus:border-foreground/30"
             />
             <button
               type="submit"
               disabled={!textInput.trim()}
-              className="h-10 px-4 rounded-full bg-white/10 text-foreground text-sm font-medium hover:bg-white/15 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              className="h-9 px-4 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
             >
               전송
             </button>
@@ -785,6 +787,35 @@ export function InterviewScreen({
               <rect x="2" y="4" width="14" height="14" rx="2" />
               <path d="M23 7l-7 5 7 5V7z" />
               {camOff && <line x1="2" y1="2" x2="22" y2="22" />}
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowTextInput((v) => !v);
+              if (!showTextInput) {
+                setTimeout(() => textInputRef.current?.focus(), 100);
+              }
+            }}
+            className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer",
+              showTextInput
+                ? "bg-indigo/15 text-indigo border border-indigo/30"
+                : "bg-card border border-border text-foreground hover:bg-card-hover",
+            )}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            >
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M8 16h8" />
             </svg>
           </button>
 
