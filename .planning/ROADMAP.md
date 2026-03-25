@@ -101,8 +101,7 @@
 
 | Requirement | Phase |
 |-------------|-------|
-| LAYOUT-01   | 11    | complete |
-| LAYOUT-03   | 11    |
+| LAYOUT-01   | 11    | complete | Complete    | 2026-03-25 | 11    |
 | LAYOUT-04   | 11    |
 | DASH-01     | 12    |
 | DASH-02     | 12    |

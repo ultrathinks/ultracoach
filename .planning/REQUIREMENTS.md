@@ -9,10 +9,10 @@ Requirements for Dashboard restructure. Each maps to roadmap phases.
 
 ### Layout
 
-- [ ] **LAYOUT-01**: 사용자가 /dashboard에서 사이드바 네비게이션으로 각 섹션을 이동할 수 있다
-- [ ] **LAYOUT-02**: 헤더 네비게이션에서 "기록" 대신 "대시보드" 링크를 볼 수 있다
-- [ ] **LAYOUT-03**: 로그인 완료 시 자동으로 /dashboard로 이동한다
-- [ ] **LAYOUT-04**: 사이드바 하단에서 "면접 시작하기" CTA를 클릭해 면접을 시작할 수 있다
+- [x] **LAYOUT-01**: 사용자가 /dashboard에서 사이드바 네비게이션으로 각 섹션을 이동할 수 있다
+- [x] **LAYOUT-02**: 헤더 네비게이션에서 "기록" 대신 "대시보드" 링크를 볼 수 있다
+- [x] **LAYOUT-03**: 로그인 완료 시 자동으로 /dashboard로 이동한다
+- [x] **LAYOUT-04**: 사이드바 하단에서 "면접 시작하기" CTA를 클릭해 면접을 시작할 수 있다
 
 ### Dashboard
 
@@ -62,12 +62,26 @@ Requirements for Dashboard restructure. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (Populated during roadmap creation) | | |
+| LAYOUT-01   | 11    | Not started |
+| LAYOUT-02   | 11    | Not started |
+| LAYOUT-03   | 11    | Not started |
+| LAYOUT-04   | 11    | Not started |
+| DASH-01     | 12    | Not started |
+| DASH-02     | 12    | Not started |
+| DASH-03     | 12    | Not started |
+| DASH-04     | 12    | Not started |
+| LEARN-01    | 13    | Not started |
+| LEARN-02    | 13    | Not started |
+| LEARN-03    | 13    | Not started |
+| PROF-01     | 14    | Not started |
+| PROF-02     | 14    | Not started |
+| BILL-01     | 14    | Not started |
+| BILL-02     | 14    | Not started |
 
 **Coverage:**
 - v1.3 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16
+- Mapped to phases: 16
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-25*
