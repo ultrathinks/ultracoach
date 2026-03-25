@@ -217,7 +217,7 @@ ${growthInstruction}
 
     const feedbackCall = getOpenAI()
       .chat.completions.create({
-        model: "gpt-5.4",
+        model: "gpt-5.4-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
