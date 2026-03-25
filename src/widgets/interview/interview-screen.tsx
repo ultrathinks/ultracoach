@@ -579,7 +579,8 @@ export function InterviewScreen({
             ref={avatarVideoRef}
             autoPlay
             playsInline
-            className="absolute inset-0 w-full h-full object-cover object-top"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: "center 30%" }}
           />
           <audio ref={avatarAudioRef} autoPlay />
 
