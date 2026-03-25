@@ -62,7 +62,6 @@ export function InterviewScreen({
   const avatarAudioRef = useRef<HTMLAudioElement>(null);
   const loopAbortRef = useRef(false);
   const landmarkCanvasRef = useRef<HTMLCanvasElement>(null);
-  const bgCanvasRef = useRef<HTMLCanvasElement>(null);
   /** true while a live stream is attached after successful getUserMedia */
   const mediaInitializedRef = useRef(false);
   const [elapsed, setElapsed] = useState(0);
@@ -497,28 +496,6 @@ export function InterviewScreen({
     };
   }, []);
 
-  // draw blurred avatar background
-  useEffect(() => {
-    const video = avatarVideoRef.current;
-    const canvas = bgCanvasRef.current;
-    if (!video || !canvas) return;
-
-    let raf: number;
-    const draw = () => {
-      if (video.readyState >= 2 && video.videoWidth > 0) {
-        const w = 64;
-        const h = Math.round(w * (video.videoHeight / video.videoWidth));
-        if (canvas.width !== w) canvas.width = w;
-        if (canvas.height !== h) canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        if (ctx) ctx.drawImage(video, 0, 0, w, h);
-      }
-      raf = requestAnimationFrame(draw);
-    };
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
   // draw landmarks on webcam PIP canvas
   useEffect(() => {
     if (!showLandmarks || !landmarks || !landmarkCanvasRef.current) return;
@@ -598,15 +575,11 @@ export function InterviewScreen({
       {/* ── video area ── */}
       <div className="flex-1 relative min-h-0">
         <div className="relative w-full h-full overflow-hidden bg-background">
-          <canvas
-            ref={bgCanvasRef}
-            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 pointer-events-none scale-110"
-          />
           <video
             ref={avatarVideoRef}
             autoPlay
             playsInline
-            className="absolute inset-0 w-full h-full object-contain"
+            className="absolute inset-0 w-full h-full object-cover object-top"
           />
           <audio ref={avatarAudioRef} autoPlay />
 
