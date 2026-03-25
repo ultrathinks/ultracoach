@@ -580,7 +580,7 @@ export function InterviewScreen({
             autoPlay
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: "center 30%" }}
+            style={{ objectPosition: "center 20%" }}
           />
           <audio ref={avatarAudioRef} autoPlay />
 
