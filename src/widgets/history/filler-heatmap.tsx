@@ -1,38 +1,13 @@
 "use client";
 
 import type { FillerHeatmapData } from "@/entities/analytics";
-import { useState } from "react";
+import { cn } from "@/shared/lib/cn";
 
 interface FillerHeatmapProps {
   data: FillerHeatmapData;
 }
 
-const CELL_SIZE = 28;
-const CELL_GAP = 3;
-const CELL_RADIUS = 4;
-const LABEL_WIDTH = 48;
-const HEADER_HEIGHT = 8;
-
-function cellColor(freqPerMin: number, maxFreq: number): string {
-  if (maxFreq === 0) return "rgba(129,140,248,0.05)";
-  const t = Math.min(freqPerMin / maxFreq, 1);
-  const r = Math.round(129 + t * (244 - 129));
-  const g = Math.round(140 + t * (114 - 140));
-  const b = Math.round(248 + t * (182 - 248));
-  return `rgba(${r},${g},${b},${0.15 + t * 0.75})`;
-}
-
-interface TooltipState {
-  x: number;
-  y: number;
-  word: string;
-  freq: number;
-  sessionLabel: string;
-}
-
 function FillerHeatmapInner({ data }: FillerHeatmapProps) {
-  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
-
   if (data.sessions.length === 0 || data.words.length === 0) {
     return (
       <div className="rounded-xl bg-card border border-white/[0.1] p-6">
@@ -46,92 +21,111 @@ function FillerHeatmapInner({ data }: FillerHeatmapProps) {
     );
   }
 
-  const gridWidth = data.words.length * (CELL_SIZE + CELL_GAP) - CELL_GAP;
-  const gridHeight = data.sessions.length * (CELL_SIZE + CELL_GAP) - CELL_GAP;
-  const svgWidth = LABEL_WIDTH + gridWidth;
-  const svgHeight = HEADER_HEIGHT + gridHeight;
+  // aggregate: average freq per word across all sessions
+  const wordStats = data.words.map((word, wi) => {
+    const freqs = data.sessions.map((_, si) => {
+      const key = `${si}-${wi}`;
+      return data.cells.find(
+        (c) => c.sessionIdx === si && c.wordIdx === wi,
+      )?.freqPerMin ?? 0;
+    });
+    const total = freqs.reduce((a, b) => a + b, 0);
+    const avg = total / data.sessions.length;
+    const recent = freqs.slice(0, 3);
+    const recentAvg = recent.length > 0
+      ? recent.reduce((a, b) => a + b, 0) / recent.length
+      : 0;
+    const older = freqs.slice(3, 6);
+    const olderAvg = older.length > 0
+      ? older.reduce((a, b) => a + b, 0) / older.length
+      : 0;
+    const trend =
+      older.length === 0 ? "none" : recentAvg < olderAvg ? "down" : recentAvg > olderAvg ? "up" : "flat";
+    return { word, avg, total, trend, recentFreqs: freqs.slice(0, 5).reverse() };
+  });
 
-  // Build a lookup for cells: key = "sessionIdx-wordIdx"
-  const cellMap = new Map<string, number>();
-  for (const cell of data.cells) {
-    cellMap.set(`${cell.sessionIdx}-${cell.wordIdx}`, cell.freqPerMin);
-  }
+  wordStats.sort((a, b) => b.avg - a.avg);
+  const maxAvg = wordStats[0]?.avg ?? 1;
 
   return (
-    <div data-heatmap className="rounded-xl bg-card border border-white/[0.1] p-6 relative">
-      <h3 className="text-base font-semibold mb-4">추임새 빈도</h3>
-      <div className="overflow-x-auto">
-        <svg
-          width={svgWidth}
-          height={svgHeight}
-          className="block"
-          onMouseLeave={() => setTooltip(null)}
-        >
-          {/* Rows (sessions) — word labels shown via tooltip on hover */}
-          {data.sessions.map((session, si) => (
-            <g key={`row-${session.sessionId}`}>
-              {/* Row label (date) */}
-              <text
-                x={LABEL_WIDTH - 8}
-                y={HEADER_HEIGHT + si * (CELL_SIZE + CELL_GAP) + CELL_SIZE / 2 + 4}
-                textAnchor="end"
-                fill="var(--color-secondary)"
-                fontSize={12}
-              >
-                {session.label}
-              </text>
-
-              {/* Cells */}
-              {data.words.map((word, wi) => {
-                const freq = cellMap.get(`${si}-${wi}`) ?? 0;
-                const cx = LABEL_WIDTH + wi * (CELL_SIZE + CELL_GAP);
-                const cy = HEADER_HEIGHT + si * (CELL_SIZE + CELL_GAP);
-                return (
-                  <rect
-                    key={`cell-${session.sessionId}-${word}`}
-                    x={cx}
-                    y={cy}
-                    width={CELL_SIZE}
-                    height={CELL_SIZE}
-                    rx={CELL_RADIUS}
-                    ry={CELL_RADIUS}
-                    fill={freq === 0 ? "rgba(129,140,248,0.05)" : cellColor(freq, data.maxFreq)}
-                    className="cursor-pointer"
-                    onMouseEnter={(e) => {
-                      const card = e.currentTarget.closest("[data-heatmap]");
-                      if (!card) return;
-                      const cardRect = card.getBoundingClientRect();
-                      const cellRect = e.currentTarget.getBoundingClientRect();
-                      setTooltip({
-                        x: cellRect.left - cardRect.left + cellRect.width / 2,
-                        y: cellRect.top - cardRect.top - 4,
-                        word,
-                        freq,
-                        sessionLabel: session.label,
-                      });
-                    }}
-                    onMouseLeave={() => setTooltip(null)}
-                  />
-                );
-              })}
-            </g>
-          ))}
-        </svg>
+    <div className="rounded-xl bg-card border border-white/[0.1] p-6">
+      <h3 className="text-base font-semibold mb-5">추임새 빈도</h3>
+      <div className="space-y-3">
+        {wordStats.map(({ word, avg, trend, recentFreqs }) => (
+          <div key={word} className="flex items-center gap-4">
+            <span className="text-sm font-medium w-12 shrink-0 text-right">
+              {word}
+            </span>
+            <div className="flex-1 flex items-center gap-3">
+              <div className="flex-1 h-7 bg-white/[0.03] rounded-lg overflow-hidden relative">
+                <div
+                  className={cn(
+                    "h-full rounded-lg transition-all",
+                    avg >= maxAvg * 0.66
+                      ? "bg-pink/50"
+                      : avg >= maxAvg * 0.33
+                        ? "bg-purple/40"
+                        : "bg-indigo/30",
+                  )}
+                  style={{
+                    width: `${Math.max((avg / maxAvg) * 100, 4)}%`,
+                  }}
+                />
+                <span className="absolute inset-0 flex items-center px-3 text-xs text-foreground/70">
+                  {avg.toFixed(1)}/분
+                </span>
+              </div>
+              {/* mini sparkline */}
+              {recentFreqs.length > 1 && (
+                <svg
+                  width={40}
+                  height={20}
+                  viewBox="0 0 40 20"
+                  className="shrink-0"
+                >
+                  {(() => {
+                    const max = Math.max(...recentFreqs, 0.1);
+                    const points = recentFreqs
+                      .map(
+                        (f, i) =>
+                          `${(i / (recentFreqs.length - 1)) * 40},${20 - (f / max) * 16 - 2}`,
+                      )
+                      .join(" ");
+                    return (
+                      <polyline
+                        points={points}
+                        fill="none"
+                        stroke={
+                          trend === "down"
+                            ? "var(--color-green)"
+                            : trend === "up"
+                              ? "var(--color-red)"
+                              : "var(--color-muted)"
+                        }
+                        strokeWidth={1.5}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    );
+                  })()}
+                </svg>
+              )}
+              {trend !== "none" && (
+                <span
+                  className={cn(
+                    "text-xs shrink-0",
+                    trend === "down" && "text-green",
+                    trend === "up" && "text-red",
+                    trend === "flat" && "text-muted",
+                  )}
+                >
+                  {trend === "down" ? "↓" : trend === "up" ? "↑" : "—"}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
-
-      {/* Tooltip outside scroll container — never clipped */}
-      {tooltip && (
-        <div
-          className="absolute pointer-events-none rounded-md border border-white/10 bg-card px-2.5 py-1 text-xs text-foreground whitespace-nowrap z-10"
-          style={{
-            left: tooltip.x,
-            top: tooltip.y,
-            transform: "translate(-50%, -100%)",
-          }}
-        >
-          {tooltip.word} — {tooltip.freq}/분 ({tooltip.sessionLabel})
-        </div>
-      )}
     </div>
   );
 }
