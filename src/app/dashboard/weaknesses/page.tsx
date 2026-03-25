@@ -3,7 +3,7 @@ import {
   getUserFeedback,
   getUserSessions,
   getUserSnapshots,
-} from "@/entities/session";
+} from "@/entities/session/queries";
 import {
   computeAnalytics,
   computeBodyLanguage,

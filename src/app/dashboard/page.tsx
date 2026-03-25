@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getUserFeedback, getUserSessions } from "@/entities/session";
+import { getUserFeedback, getUserSessions } from "@/entities/session/queries";
 import { computeAnalytics } from "@/features/analytics/compute-analytics";
 import { auth } from "@/shared/lib/auth";
 import { DashboardOverview } from "@/widgets/dashboard/dashboard-overview";
