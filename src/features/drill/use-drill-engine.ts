@@ -43,7 +43,7 @@ const drillResponseSchema = z.object({
 
 const MAX_ATTEMPTS = 5;
 const GOAL_SCORE = 80;
-const MIN_WORD_COUNT = 15;
+const MIN_WORD_COUNT = 1;
 
 export function useDrillEngine({ sessionId, questionId, question }: DrillEngineConfig) {
   const [drillPhase, setDrillPhase] = useState<DrillPhase>("prep");
