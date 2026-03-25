@@ -612,7 +612,7 @@ export function InterviewScreen({
                     {liveCaption}
                   </motion.p>
                 ) : currentQuestion &&
-                  ((phase === "speaking" && avatarIsSpeaking) || phase === "listening") ? (
+                  ((phase === "speaking" && avatarIsSpeaking) || (phase === "listening" && !pinQuestion)) ? (
                   <motion.p
                     key={currentQuestion}
                     initial={{ opacity: 0 }}
