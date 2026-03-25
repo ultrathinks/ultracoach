@@ -17,9 +17,9 @@ export function KlaimPricingTable() {
   return (
     <klaim-pricing-table
       pricing-table-id="briefly/Fcz3O8te8el391dBsOKn"
-      success-url="https://example.com/payment-success"
-      cancel-url="https://example.com/payment-cancel"
-      user-email="example@example.com"
+      success-url="https://coach.jmo.kr/dashboard"
+      cancel-url="https://coach.jmo.kr/dashboard"
+      user-email="leegeh1213@gmail.com"
       user-name="John Doe"
     />
   );
