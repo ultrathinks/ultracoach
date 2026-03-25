@@ -2,6 +2,7 @@
 
 import {
   BookOpen,
+  CreditCard,
   History,
   LayoutDashboard,
   ListChecks,
@@ -18,6 +19,7 @@ const links = [
   { href: "/dashboard/weaknesses", label: "약점 분석", icon: Target },
   { href: "/dashboard/actions", label: "액션 플랜", icon: ListChecks },
   { href: "/dashboard/learn", label: "학습하기", icon: BookOpen },
+  { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
 ];
 
 export function DashboardNav() {
