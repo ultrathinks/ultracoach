@@ -20,11 +20,15 @@ function formatDate(iso: string): string {
 }
 
 function ScoreTrendChartInner({ data }: ScoreTrendChartProps) {
-  if (data.length === 0) return null;
+  const scored = data.filter(
+    (d) => d.deliveryScore !== null || d.contentScore !== null,
+  );
 
-  const isSingle = data.length === 1;
+  if (scored.length === 0) return null;
 
-  const chartData = data.map((d) => ({
+  const isSingle = scored.length === 1;
+
+  const chartData = scored.map((d) => ({
     date: formatDate(d.createdAt),
     전달력: d.deliveryScore,
     답변력: d.contentScore,
