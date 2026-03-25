@@ -42,6 +42,10 @@ export async function POST(request: Request) {
       language: "ko",
     });
 
+    console.log(
+      `[whisper] size=${audio.size} type=${audio.type} text="${transcription.text}"`,
+    );
+
     return NextResponse.json({ text: transcription.text });
   } catch (error) {
     console.error("whisper transcription failed:", error);

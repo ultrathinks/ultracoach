@@ -71,6 +71,7 @@ export function InterviewScreen({
   const [showLandmarks, setShowLandmarks] = useState(false);
   const [preparing, setPreparing] = useState(true);
   const [textInput, setTextInput] = useState("");
+  const [textMode, setTextMode] = useState(false);
   const textInputRef = useRef<HTMLInputElement>(null);
   const [prepSteps, setPrepSteps] = useState<
     { label: string; status: "pending" | "loading" | "done" }[]
@@ -680,8 +681,8 @@ export function InterviewScreen({
 
       {mode === "practice" && <CoachOverlay />}
 
-      {/* ── text input (dev only) ── */}
-      {process.env.NODE_ENV === "development" && phase === "listening" && (
+      {/* ── text input ── */}
+      {textMode && phase === "listening" && (
         <div className="shrink-0 px-6 pb-2">
           <form
             onSubmit={(e) => {
@@ -722,6 +723,31 @@ export function InterviewScreen({
           <span className="text-sm text-muted font-mono tabular-nums">
             {formatTime(elapsed)}
           </span>
+          <button
+            type="button"
+            onClick={() => setTextMode((v) => !v)}
+            className={cn(
+              "w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer",
+              textMode
+                ? "bg-white/15 text-foreground"
+                : "bg-card border border-border text-muted hover:text-foreground hover:bg-card-hover",
+            )}
+            title={textMode ? "키보드 입력 끄기" : "키보드 입력 켜기"}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M8 16h8" />
+            </svg>
+          </button>
         </div>
 
         <div className="flex items-center gap-2.5">
