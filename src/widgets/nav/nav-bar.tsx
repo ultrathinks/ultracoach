@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const links = [
   { href: "/interview", label: "면접" },
-  { href: "/history", label: "기록" },
+  { href: "/dashboard", label: "대시보드" },
 ];
 
 function ProfileDropdown() {
@@ -33,11 +33,7 @@ function ProfileDropdown() {
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={toggle}
-        className="cursor-pointer"
-      >
+      <button type="button" onClick={toggle} className="cursor-pointer">
         {session.user.image ? (
           <img
             src={session.user.image}
@@ -52,19 +48,15 @@ function ProfileDropdown() {
       {open && (
         <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-card border border-border py-2 shadow-lg z-50">
           <div className="px-4 py-2.5 border-b border-border">
-            <p className="text-sm font-medium truncate">
-              {session.user.name}
-            </p>
-            <p className="text-xs text-muted truncate">
-              {session.user.email}
-            </p>
+            <p className="text-sm font-medium truncate">{session.user.name}</p>
+            <p className="text-xs text-muted truncate">{session.user.email}</p>
           </div>
           <Link
-            href="/history"
+            href="/dashboard"
             onClick={() => setOpen(false)}
             className="flex items-center px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-white/[0.04] transition-colors"
           >
-            면접 기록
+            대시보드
           </Link>
           <button
             type="button"
@@ -98,7 +90,9 @@ export function NavBar() {
                 href={link.href}
                 className={cn(
                   "text-sm transition-colors",
-                  pathname === link.href
+                  pathname === link.href ||
+                    (link.href === "/dashboard" &&
+                      pathname.startsWith("/dashboard"))
                     ? "text-foreground"
                     : "text-muted hover:text-secondary",
                 )}
@@ -112,7 +106,7 @@ export function NavBar() {
           ) : (
             <button
               type="button"
-              onClick={() => signIn("google")}
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
               className="px-4 py-1.5 text-sm font-medium rounded-full border border-border text-secondary hover:text-foreground transition-colors cursor-pointer"
             >
               로그인
