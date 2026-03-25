@@ -108,10 +108,10 @@
 | DASH-03     | 12    |
 | DASH-04     | 12    |
 | LEARN-01    | 13    |
-| LEARN-02    | 13    |
+| Complete    | 2026-03-25 |
 | LEARN-03    | 13    |
 | PROF-01     | 14    |
-| PROF-02     | 14    |
+| Complete    | 2026-03-25 |
 | BILL-01     | 14    |
 | BILL-02     | 14    |
 

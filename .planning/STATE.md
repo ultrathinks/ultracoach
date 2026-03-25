@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-25T02:22:25.760Z"
+last_updated: "2026-03-25T02:38:39.844Z"
 progress:
   total_phases: 4
   completed_phases: 2
@@ -13,15 +13,15 @@ progress:
 
 ## Current Position
 
-Phase: 12 (dashboard-content-pages) — EXECUTING
-Plan: 12-01 complete (overview page)
+Phase: 14 (profile-billing) — EXECUTING
+Plan: 1 of 1
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** 사용자가 반복 연습을 통해 면접 실력이 향상되고 있다는 것을 데이터로 확인할 수 있다
-**Current focus:** Phase 12 — dashboard-content-pages
+**Current focus:** Phase 14 — profile-billing
 
 ## Phase Summary
 

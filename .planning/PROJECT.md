@@ -54,9 +54,9 @@ AI 면접 코칭 플랫폼. 실시간 음성 면접을 진행하면서 AI가 발
 - [x] 면접 기록 서브페이지 — 세션 목록 + 유형별 비교 차트 (v1.3) — Validated in Phase 12
 - [x] 약점 분석 서브페이지 — STAR 레이더 + 바디랭귀지 + 추임새 히트맵 (v1.3) — Validated in Phase 12
 - [x] 액션 플랜 서브페이지 — 액션 트래커 + AI 추천 (v1.3) — Validated in Phase 12
-- [ ] 학습하기 — MDX 면접 팁 콘텐츠 ~10개 (v1.3)
-- [ ] 프로필 페이지 — 내 정보 관리 (v1.3)
-- [ ] Billing 페이지 — 껍데기 UI (v1.3)
+- [x] 학습하기 — MDX 면접 팁 콘텐츠 8개 (v1.3) — Validated in Phase 13
+- [x] 프로필 페이지 — 내 정보 관리 (v1.3) — Validated in Phase 14
+- [x] Billing 페이지 — 껍데기 UI (v1.3) — Validated in Phase 14
 - [x] 로그인 후 /dashboard 리다이렉트 (v1.3) — Validated in Phase 11
 - [x] 헤더 네비 "기록" → "대시보드" (v1.3) — Validated in Phase 11
 
@@ -105,4 +105,4 @@ AI 면접 코칭 플랫폼. 실시간 음성 면접을 진행하면서 AI가 발
 | v1.2 실시간 내용 코칭 제외 | v1.2는 사후 코칭에 집중 | Good |
 
 ---
-*Last updated: 2026-03-25 after Phase 12 complete — 4 dashboard content pages (overview, history, weaknesses, actions)*
+*Last updated: 2026-03-25 after Phase 14 complete — v1.3 milestone complete. All dashboard pages, learn MDX, profile, billing done.*

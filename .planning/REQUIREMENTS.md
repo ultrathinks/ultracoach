@@ -23,19 +23,19 @@ Requirements for Dashboard restructure. Each maps to roadmap phases.
 
 ### Learn
 
-- [ ] **LEARN-01**: 학습하기 페이지에서 면접 팁 글 목록을 볼 수 있다
-- [ ] **LEARN-02**: 글을 클릭하면 MDX로 렌더링된 상세 페이지를 읽을 수 있다
-- [ ] **LEARN-03**: 면접 팁 MDX 콘텐츠 ~10개가 제공된다
+- [x] **LEARN-01**: 학습하기 페이지에서 면접 팁 글 목록을 볼 수 있다
+- [x] **LEARN-02**: 글을 클릭하면 MDX로 렌더링된 상세 페이지를 읽을 수 있다
+- [x] **LEARN-03**: 면접 팁 MDX 콘텐츠 ~10개가 제공된다
 
 ### Profile
 
-- [ ] **PROF-01**: 프로필 페이지에서 내 정보(이름, 이메일, 프로필 사진)를 확인할 수 있다
-- [ ] **PROF-02**: 프로필 정보를 수정할 수 있다
+- [x] **PROF-01**: 프로필 페이지에서 내 정보(이름, 이메일, 프로필 사진)를 확인할 수 있다
+- [x] **PROF-02**: 프로필 정보를 수정할 수 있다
 
 ### Billing
 
-- [ ] **BILL-01**: Billing 페이지에서 플랜 카드(Free/Pro)를 볼 수 있다
-- [ ] **BILL-02**: 현재 플랜(Free)이 표시된다
+- [x] **BILL-01**: Billing 페이지에서 플랜 카드(Free/Pro)를 볼 수 있다
+- [x] **BILL-02**: 현재 플랜(Free)이 표시된다
 
 ## Future Requirements
 
