@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.2 Drill Mode (Shipped: 2026-03-25)
+
+**Phases:** 8-10
+**Timeline:** 2026-03-25
+
+**Key accomplishments:**
+
+- 모범 답안 생성 (GPT-5.4) + 아쉬운 답변 자동 식별 (contentScore < 70)
+- WeakAnswerItem 컴포넌트 — STAR 뱃지, 모범 답안 fold/unfold, 재연습 CTA
+- POST /api/sessions/[id]/drill — ephemeral LLM 분석 (DB write 없음)
+- /drill/[sessionId] 페이지 — 약점 질문 재연습 진입점
+
+**Outcome:**
+
+리포트에서 약점 → 재연습까지 이어지는 코칭 루프 완성. "분석만 하는 도구"에서 "연습까지 유도하는 코치"로 진화.
+
+---
+
 ## v1.1 Dashboard (Shipped: 2026-03-25)
 
 **Phases:** 6-7 (12 plans, 21 commits)
