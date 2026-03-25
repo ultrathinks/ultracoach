@@ -11,7 +11,7 @@ export default async function DashboardLayout({
   if (!session?.user?.id) redirect("/");
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)]">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       <DashboardSidebar />
       <main className="flex-1 overflow-auto no-scrollbar p-6 md:p-8">{children}</main>
     </div>

@@ -46,7 +46,7 @@ export function DrillScreen({
     stopDrill,
     cleanup,
     streamRef,
-  } = useDrillEngine({ sessionId, questionId });
+  } = useDrillEngine({ sessionId, questionId, question });
 
   const webcamRef = useRef<HTMLVideoElement>(null);
   const [answerExpanded, setAnswerExpanded] = useState(false);
@@ -56,6 +56,13 @@ export function DrillScreen({
       cleanup();
     };
   }, [cleanup]);
+
+  // Prep → listening 전환 시 video element에 stream 연결
+  useEffect(() => {
+    if ((drillPhase === "speaking" || drillPhase === "listening") && webcamRef.current && streamRef.current) {
+      webcamRef.current.srcObject = streamRef.current;
+    }
+  }, [drillPhase, streamRef]);
 
   const handlePrepStart = useCallback(
     (stream: MediaStream) => {
@@ -255,19 +262,25 @@ export function DrillScreen({
         />
       </div>
 
-      {/* Audio level bar */}
-      <div className="flex items-center justify-center gap-1 mt-4 h-6">
-        {[0.15, 0.35, 0.55, 0.75, 0.9].map((t, i) => (
-          <div
-            key={t}
-            className={cn(
-              "w-1 rounded-full transition-colors duration-75",
-              normalizedLevel > t ? "bg-green" : "bg-white/[0.06]",
-            )}
-            style={{ height: `${8 + i * 3}px` }}
-          />
-        ))}
-      </div>
+      {/* Audio level bar / speaking indicator */}
+      {drillPhase === "speaking" ? (
+        <p className="text-sm text-center text-secondary mt-4 h-6 animate-pulse">
+          질문을 읽는 중...
+        </p>
+      ) : (
+        <div className="flex items-center justify-center gap-1 mt-4 h-6">
+          {[0.15, 0.35, 0.55, 0.75, 0.9].map((t, i) => (
+            <div
+              key={t}
+              className={cn(
+                "w-1 rounded-full transition-colors duration-75",
+                normalizedLevel > t ? "bg-green" : "bg-white/[0.06]",
+              )}
+              style={{ height: `${8 + i * 3}px` }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Question */}
       <p className="text-center text-foreground mt-4 max-w-2xl mx-auto leading-relaxed">

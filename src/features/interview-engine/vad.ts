@@ -10,6 +10,7 @@ interface VadOptions {
 interface VadController {
   start: (stream: MediaStream) => void;
   stop: () => void;
+  keepAlive: () => void;
 }
 
 export function createVad(options: VadOptions = {}): VadController {
@@ -85,6 +86,10 @@ export function createVad(options: VadOptions = {}): VadController {
       source.connect(highpass);
       highpass.connect(analyser);
       processFrame();
+    },
+
+    keepAlive() {
+      silenceStart = 0;
     },
 
     stop() {

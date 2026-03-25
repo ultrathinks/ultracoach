@@ -6,6 +6,7 @@ import { createVad } from "@/features/interview-engine/vad";
 
 export type DrillPhase =
   | "prep"
+  | "speaking"
   | "listening"
   | "processing"
   | "feedback"
@@ -25,6 +26,7 @@ export interface DrillResult {
 interface DrillEngineConfig {
   sessionId: string;
   questionId: number;
+  question: string;
 }
 
 const transcribeResponseSchema = z.object({ text: z.string() });
@@ -43,7 +45,7 @@ const MAX_ATTEMPTS = 5;
 const GOAL_SCORE = 80;
 const MIN_WORD_COUNT = 15;
 
-export function useDrillEngine({ sessionId, questionId }: DrillEngineConfig) {
+export function useDrillEngine({ sessionId, questionId, question }: DrillEngineConfig) {
   const [drillPhase, setDrillPhase] = useState<DrillPhase>("prep");
   const [transcript, setTranscript] = useState<string>("");
   const [result, setResult] = useState<DrillResult | null>(null);
@@ -58,6 +60,8 @@ export function useDrillEngine({ sessionId, questionId }: DrillEngineConfig) {
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const loopAbortRef = useRef(false);
+  const ttsAbortRef = useRef<AbortController | null>(null);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Refs to fix stale closures in onSpeechEnd callback
   const attemptCountRef = useRef(0);
@@ -77,16 +81,72 @@ export function useDrillEngine({ sessionId, questionId }: DrillEngineConfig) {
     return data.text;
   }, []);
 
+  const playTTS = useCallback(async (text: string): Promise<void> => {
+    const controller = new AbortController();
+    ttsAbortRef.current = controller;
+
+    const res = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) throw new Error("tts failed");
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    await new Promise<void>((resolve, reject) => {
+      const audio = new Audio(url);
+      ttsAudioRef.current = audio;
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        ttsAudioRef.current = null;
+        resolve();
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(url);
+        ttsAudioRef.current = null;
+        reject(new Error("audio playback failed"));
+      };
+      audio.play().catch(reject);
+    });
+
+    ttsAbortRef.current = null;
+  }, []);
+
   const startDrill = useCallback(async () => {
     loopAbortRef.current = false;
     setValidationError(null);
     setTranscript("");
     setResult(null);
-    setDrillPhase("listening");
     setAudioLevel(0);
 
     const stream = streamRef.current;
     if (!stream) return;
+
+    // Mute mic during TTS to prevent echo
+    for (const track of stream.getAudioTracks()) {
+      track.enabled = false;
+    }
+
+    setDrillPhase("speaking");
+
+    try {
+      await playTTS(question);
+    } catch (err) {
+      console.warn("tts failed:", err);
+    }
+
+    if (loopAbortRef.current) return;
+
+    // Unmute mic after TTS
+    for (const track of stream.getAudioTracks()) {
+      track.enabled = true;
+    }
+
+    setDrillPhase("listening");
 
     audioChunksRef.current = [];
 
@@ -184,15 +244,20 @@ export function useDrillEngine({ sessionId, questionId }: DrillEngineConfig) {
       },
     });
     vadRef.current.start(stream);
-  }, [sessionId, questionId, transcribeAudio]);
+  }, [sessionId, questionId, question, transcribeAudio, playTTS]);
 
   const stopDrill = useCallback(() => {
     loopAbortRef.current = true;
+    ttsAbortRef.current?.abort();
+    ttsAbortRef.current = null;
+    ttsAudioRef.current?.pause();
+    ttsAudioRef.current = null;
     vadRef.current?.stop();
     vadRef.current = null;
     mediaRecorderRef.current?.stop();
     mediaRecorderRef.current = null;
     setAudioLevel(0);
+    setDrillPhase("prep");
   }, []);
 
   const cleanup = useCallback(() => {

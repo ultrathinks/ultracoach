@@ -11,7 +11,7 @@ const CELL_SIZE = 28;
 const CELL_GAP = 3;
 const CELL_RADIUS = 4;
 const LABEL_WIDTH = 48;
-const HEADER_HEIGHT = 40;
+const HEADER_HEIGHT = 8;
 
 function cellColor(freqPerMin: number, maxFreq: number): string {
   if (maxFreq === 0) return "rgba(129,140,248,0.05)";
@@ -60,28 +60,14 @@ function FillerHeatmapInner({ data }: FillerHeatmapProps) {
   return (
     <div className="rounded-xl bg-card border border-white/[0.1] p-6">
       <h3 className="text-base font-semibold mb-4">추임새 빈도</h3>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto relative">
         <svg
           width={svgWidth}
           height={svgHeight}
           className="block"
           onMouseLeave={() => setTooltip(null)}
         >
-          {/* Column headers (word labels) */}
-          {data.words.map((word, wi) => (
-            <text
-              key={`header-${word}`}
-              x={LABEL_WIDTH + wi * (CELL_SIZE + CELL_GAP) + CELL_SIZE / 2}
-              y={HEADER_HEIGHT - 8}
-              textAnchor="middle"
-              fill="var(--color-secondary)"
-              fontSize={12}
-            >
-              {word}
-            </text>
-          ))}
-
-          {/* Rows (sessions) */}
+          {/* Rows (sessions) — word labels shown via tooltip on hover */}
           {data.sessions.map((session, si) => (
             <g key={`row-${session.sessionId}`}>
               {/* Row label (date) */}
@@ -114,7 +100,7 @@ function FillerHeatmapInner({ data }: FillerHeatmapProps) {
                     onMouseEnter={() =>
                       setTooltip({
                         x: cx + CELL_SIZE / 2,
-                        y: cy - 8,
+                        y: cy + CELL_SIZE + 6,
                         word,
                         freq,
                         sessionLabel: session.label,
@@ -126,32 +112,21 @@ function FillerHeatmapInner({ data }: FillerHeatmapProps) {
               })}
             </g>
           ))}
-
-          {/* Tooltip */}
-          {tooltip && (
-            <g>
-              <rect
-                x={tooltip.x - 60}
-                y={tooltip.y - 28}
-                width={120}
-                height={24}
-                rx={6}
-                fill="var(--color-card)"
-                stroke="rgba(255,255,255,0.1)"
-                strokeWidth={1}
-              />
-              <text
-                x={tooltip.x}
-                y={tooltip.y - 12}
-                textAnchor="middle"
-                fill="var(--color-foreground)"
-                fontSize={12}
-              >
-                {tooltip.word} - {tooltip.freq}/분 ({tooltip.sessionLabel})
-              </text>
-            </g>
-          )}
         </svg>
+
+        {/* HTML tooltip — not clipped by SVG viewport */}
+        {tooltip && (
+          <div
+            className="absolute pointer-events-none rounded-md border border-white/10 bg-card px-2.5 py-1 text-xs text-foreground whitespace-nowrap"
+            style={{
+              left: tooltip.x,
+              top: tooltip.y,
+              transform: "translateX(-50%)",
+            }}
+          >
+            {tooltip.word} — {tooltip.freq}/분 ({tooltip.sessionLabel})
+          </div>
+        )}
       </div>
     </div>
   );

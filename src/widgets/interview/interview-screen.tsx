@@ -21,8 +21,14 @@ export function InterviewScreen({
   researchStatus = "done",
 }: InterviewScreenProps) {
   const router = useRouter();
-  const { fetchNextQuestion, startListening, stopListening, audioLevel } =
-    useInterviewEngine();
+  const {
+    fetchNextQuestion,
+    startListening,
+    stopListening,
+    submitTextAnswer,
+    keepListeningAlive,
+    audioLevel,
+  } = useInterviewEngine();
   const { liveCaption, start: startSpeech, stop: stopSpeech } = useWebSpeech();
   const {
     connect: connectAvatar,
@@ -63,6 +69,8 @@ export function InterviewScreen({
   const [camOff, setCamOff] = useState(false);
   const [showLandmarks, setShowLandmarks] = useState(false);
   const [preparing, setPreparing] = useState(true);
+  const [textInput, setTextInput] = useState("");
+  const textInputRef = useRef<HTMLInputElement>(null);
   const [prepSteps, setPrepSteps] = useState<
     { label: string; status: "pending" | "loading" | "done" }[]
   >([
@@ -648,6 +656,41 @@ export function InterviewScreen({
       </div>
 
       {mode === "practice" && <CoachOverlay />}
+
+      {/* ── text input (dev only) ── */}
+      {process.env.NODE_ENV === "development" && phase === "listening" && (
+        <div className="shrink-0 px-6 pb-2">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const trimmed = textInput.trim();
+              if (!trimmed) return;
+              submitTextAnswer(trimmed);
+              setTextInput("");
+            }}
+            className="flex items-center gap-2 max-w-2xl mx-auto"
+          >
+            <input
+              ref={textInputRef}
+              type="text"
+              value={textInput}
+              onChange={(e) => {
+                setTextInput(e.target.value);
+                keepListeningAlive();
+              }}
+              placeholder="타이핑으로 답변하기..."
+              className="flex-1 h-10 px-4 rounded-full bg-card border border-border text-foreground text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-white/20"
+            />
+            <button
+              type="submit"
+              disabled={!textInput.trim()}
+              className="h-10 px-4 rounded-full bg-white/10 text-foreground text-sm font-medium hover:bg-white/15 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            >
+              전송
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* ── controls ── */}
       <div className="shrink-0 h-16 flex items-center justify-between px-6">
