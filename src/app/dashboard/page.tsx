@@ -1,8 +1,24 @@
-export default function DashboardPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-      <h1 className="text-2xl font-bold gradient-text mb-3">Dashboard</h1>
-      <p className="text-muted text-sm">Overview 콘텐츠가 곧 추가됩니다.</p>
-    </div>
-  );
+import { redirect } from "next/navigation";
+import { getUserFeedback, getUserSessions } from "@/entities/session";
+import { computeAnalytics } from "@/features/analytics/compute-analytics";
+import { auth } from "@/shared/lib/auth";
+import { DashboardOverview } from "@/widgets/dashboard/dashboard-overview";
+
+export default async function DashboardPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/");
+
+  const [sessions, feedbackRows] = await Promise.all([
+    getUserSessions(session.user.id),
+    getUserFeedback(session.user.id),
+  ]);
+
+  const serialized = sessions.map((s) => ({
+    ...s,
+    createdAt: s.createdAt.toISOString(),
+  }));
+
+  const analytics = computeAnalytics(serialized, feedbackRows);
+
+  return <DashboardOverview sessions={serialized} analytics={analytics} />;
 }
