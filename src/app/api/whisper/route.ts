@@ -6,6 +6,21 @@ import { NextResponse } from "next/server";
 const MAX_AUDIO_SIZE = 25 * 1024 * 1024; // 25MB (Whisper API limit)
 const checkRate = rateLimit({ windowMs: 60_000, max: 60 });
 
+const HALLUCINATION_PATTERNS = [
+  /구독.*좋아요/,
+  /영상.*여기까지/,
+  /다음.*영상.*만나/,
+  /시청.*감사/,
+  /먹방/,
+  /^(.{2,10})\1{2,}$/, // same phrase repeated 3+ times
+];
+
+function isHallucination(text: string): boolean {
+  const trimmed = text.trim();
+  if (trimmed.length === 0) return true;
+  return HALLUCINATION_PATTERNS.some((p) => p.test(trimmed));
+}
+
 export async function POST(request: Request) {
   try {
     const session = await auth();
@@ -40,9 +55,17 @@ export async function POST(request: Request) {
       model: "whisper-1",
       file: audio,
       language: "ko",
+      temperature: 0,
+      prompt: "면접관과 지원자의 대화입니다. 지원자가 면접 질문에 답변하고 있습니다.",
     });
 
-    return NextResponse.json({ text: transcription.text });
+    const text = transcription.text.trim();
+
+    if (isHallucination(text)) {
+      return NextResponse.json({ text: "(응답 없음)" });
+    }
+
+    return NextResponse.json({ text });
   } catch (error) {
     console.error("whisper transcription failed:", error);
     return NextResponse.json(
