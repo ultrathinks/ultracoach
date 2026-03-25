@@ -13,7 +13,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">
       <DashboardSidebar />
-      <main className="flex-1 overflow-auto p-6 md:p-8">{children}</main>
+      <main className="flex-1 overflow-auto no-scrollbar p-6 md:p-8">{children}</main>
     </div>
   );
 }
