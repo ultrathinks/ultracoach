@@ -185,6 +185,7 @@ ${growthInstruction}
 - 질문별 분석에서 실제 답변을 인용하며 무엇이 좋았고 무엇이 부족했는지 지적
 - actionItems는 당장 다음 면접에서 적용할 수 있는 구체적 행동 제시
 - STAR 충족도는 해당 질문이 경험 기반 질문일 때만 의미 있음. 기술 질문이나 상황 가정 질문에는 관대하게 평가
+- 기술 용어 절대 금지: 메트릭 데이터의 변수명(posture.isUpright, yaw, pitch, shoulderTilt, headOffset, gesture.isModerate, isFrontFacing 등)을 절대 사용하지 마라. 대신 "자세가 흐트러졌습니다", "시선이 옆으로 향했습니다", "어깨가 기울었습니다", "손동작이 커졌습니다" 등 일반인이 이해할 수 있는 자연스러운 한국어로 표현하라
 
 ## 출력 (JSON)
 
