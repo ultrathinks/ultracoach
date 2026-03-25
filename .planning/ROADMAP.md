@@ -104,7 +104,7 @@
 | LAYOUT-01   | 11    | complete | Complete    | 2026-03-25 | 11    |
 | LAYOUT-04   | 11    |
 | DASH-01     | 12    |
-| DASH-02     | 12    |
+| Complete    | 2026-03-25 |
 | DASH-03     | 12    |
 | DASH-04     | 12    |
 | LEARN-01    | 13    |
