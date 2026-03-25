@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "@/shared/lib/cn";
 import {
   BookOpen,
   CreditCard,
@@ -17,18 +16,39 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { cn } from "@/shared/lib/cn";
 
 const coachingLinks = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/dashboard/history", label: "면접 기록", icon: History, exact: false },
-  { href: "/dashboard/weaknesses", label: "약점 분석", icon: Target, exact: false },
-  { href: "/dashboard/actions", label: "액션 플랜", icon: ListChecks, exact: false },
+  {
+    href: "/dashboard/history",
+    label: "면접 기록",
+    icon: History,
+    exact: false,
+  },
+  {
+    href: "/dashboard/weaknesses",
+    label: "약점 분석",
+    icon: Target,
+    exact: false,
+  },
+  {
+    href: "/dashboard/actions",
+    label: "액션 플랜",
+    icon: ListChecks,
+    exact: false,
+  },
   { href: "/dashboard/learn", label: "학습하기", icon: BookOpen, exact: false },
 ];
 
 const accountLinks = [
   { href: "/dashboard/profile", label: "프로필", icon: User, exact: false },
-  { href: "/dashboard/billing", label: "Billing", icon: CreditCard, exact: false },
+  {
+    href: "/dashboard/billing",
+    label: "Billing",
+    icon: CreditCard,
+    exact: false,
+  },
 ];
 
 function isActive(href: string, exact: boolean, pathname: string): boolean {
