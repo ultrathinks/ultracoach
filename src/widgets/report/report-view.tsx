@@ -92,7 +92,7 @@ function QuestionItem({
         )}
         <Link
           href={`/drill/${sessionId}?q=${qa.questionId}`}
-          className="text-sm text-indigo hover:text-indigo/80 transition-colors"
+          className="px-3 py-1 text-sm font-medium rounded-lg bg-indigo/15 text-indigo border border-indigo/30 hover:bg-indigo/25 transition-colors"
         >
           재연습하기
         </Link>
