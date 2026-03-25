@@ -58,9 +58,9 @@ function FillerHeatmapInner({ data }: FillerHeatmapProps) {
   }
 
   return (
-    <div className="rounded-xl bg-card border border-white/[0.1] p-6">
+    <div data-heatmap className="rounded-xl bg-card border border-white/[0.1] p-6 relative">
       <h3 className="text-base font-semibold mb-4">추임새 빈도</h3>
-      <div className="overflow-x-auto relative">
+      <div className="overflow-x-auto">
         <svg
           width={svgWidth}
           height={svgHeight}
@@ -97,15 +97,19 @@ function FillerHeatmapInner({ data }: FillerHeatmapProps) {
                     ry={CELL_RADIUS}
                     fill={freq === 0 ? "rgba(129,140,248,0.05)" : cellColor(freq, data.maxFreq)}
                     className="cursor-pointer"
-                    onMouseEnter={() =>
+                    onMouseEnter={(e) => {
+                      const card = e.currentTarget.closest("[data-heatmap]");
+                      if (!card) return;
+                      const cardRect = card.getBoundingClientRect();
+                      const cellRect = e.currentTarget.getBoundingClientRect();
                       setTooltip({
-                        x: cx + CELL_SIZE / 2,
-                        y: cy + CELL_SIZE + 6,
+                        x: cellRect.left - cardRect.left + cellRect.width / 2,
+                        y: cellRect.top - cardRect.top - 4,
                         word,
                         freq,
                         sessionLabel: session.label,
-                      })
-                    }
+                      });
+                    }}
                     onMouseLeave={() => setTooltip(null)}
                   />
                 );
@@ -113,21 +117,21 @@ function FillerHeatmapInner({ data }: FillerHeatmapProps) {
             </g>
           ))}
         </svg>
-
-        {/* HTML tooltip — not clipped by SVG viewport */}
-        {tooltip && (
-          <div
-            className="absolute pointer-events-none rounded-md border border-white/10 bg-card px-2.5 py-1 text-xs text-foreground whitespace-nowrap"
-            style={{
-              left: tooltip.x,
-              top: tooltip.y,
-              transform: "translateX(-50%)",
-            }}
-          >
-            {tooltip.word} — {tooltip.freq}/분 ({tooltip.sessionLabel})
-          </div>
-        )}
       </div>
+
+      {/* Tooltip outside scroll container — never clipped */}
+      {tooltip && (
+        <div
+          className="absolute pointer-events-none rounded-md border border-white/10 bg-card px-2.5 py-1 text-xs text-foreground whitespace-nowrap z-10"
+          style={{
+            left: tooltip.x,
+            top: tooltip.y,
+            transform: "translate(-50%, -100%)",
+          }}
+        >
+          {tooltip.word} — {tooltip.freq}/분 ({tooltip.sessionLabel})
+        </div>
+      )}
     </div>
   );
 }
