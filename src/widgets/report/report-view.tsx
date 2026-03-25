@@ -62,13 +62,19 @@ function QuestionItem({
         {qa.feedback}
       </p>
       <div className="flex items-center gap-3 ml-11">
+        <Link
+          href={`/drill/${sessionId}?q=${qa.questionId}`}
+          className="px-3 py-1.5 text-sm font-medium rounded-lg bg-gradient-to-r from-indigo via-purple to-pink text-white hover:opacity-90 transition-opacity"
+        >
+          재연습하기
+        </Link>
         {qa.suggestedAnswer && (
           <button
             type="button"
-            className="flex items-center gap-2 text-sm text-indigo hover:text-indigo/80 transition-colors"
+            className="flex items-center gap-2 text-sm text-muted hover:text-secondary transition-colors"
             onClick={() => setExpanded((prev) => !prev)}
           >
-            <span>모범 답안 보기</span>
+            <span>모범 답안</span>
             <svg
               width={14}
               height={14}
@@ -90,12 +96,6 @@ function QuestionItem({
             </svg>
           </button>
         )}
-        <Link
-          href={`/drill/${sessionId}?q=${qa.questionId}`}
-          className="px-3 py-1 text-sm font-medium rounded-lg bg-indigo/15 text-indigo border border-indigo/30 hover:bg-indigo/25 transition-colors"
-        >
-          재연습하기
-        </Link>
       </div>
       {expanded && qa.suggestedAnswer && (
         <div className="ml-11 border-l-[3px] border-l-indigo/50 bg-white/[0.02] rounded-r-lg px-4 py-3">
