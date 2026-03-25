@@ -101,8 +101,7 @@
 
 | Requirement | Phase |
 |-------------|-------|
-| LAYOUT-01   | 11    |
-| LAYOUT-02   | 11    |
+| LAYOUT-01   | 11    | 2/3 | In Progress|  |
 | LAYOUT-03   | 11    |
 | LAYOUT-04   | 11    |
 | DASH-01     | 12    |
