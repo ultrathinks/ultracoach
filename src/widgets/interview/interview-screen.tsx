@@ -574,13 +574,13 @@ export function InterviewScreen({
     <div className="fixed inset-0 z-[100] bg-background flex flex-col">
       {/* ── video area ── */}
       <div className="flex-1 relative min-h-0">
-        <div className="relative w-full h-full overflow-hidden bg-background">
+        <div className="relative w-full h-full overflow-hidden bg-background flex items-center justify-center">
           <video
             ref={avatarVideoRef}
             autoPlay
             playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: "center 20%" }}
+            className="h-full aspect-[3/4] max-w-full object-cover"
+            style={{ objectPosition: "center 25%" }}
           />
           <audio ref={avatarAudioRef} autoPlay />
 
