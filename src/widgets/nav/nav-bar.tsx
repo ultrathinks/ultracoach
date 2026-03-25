@@ -58,6 +58,20 @@ function ProfileDropdown() {
           >
             대시보드
           </Link>
+          <Link
+            href="/dashboard/profile"
+            onClick={() => setOpen(false)}
+            className="flex items-center px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-white/[0.04] transition-colors"
+          >
+            프로필
+          </Link>
+          <Link
+            href="/dashboard/billing"
+            onClick={() => setOpen(false)}
+            className="flex items-center px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-white/[0.04] transition-colors"
+          >
+            Billing
+          </Link>
           <button
             type="button"
             onClick={() => signOut()}
