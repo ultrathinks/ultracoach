@@ -10,3 +10,4 @@ export type {
   JobResearch,
   QuestionEntry,
 } from "./types";
+export { getUserSessions, getUserFeedback, getUserSnapshots } from "./queries";
