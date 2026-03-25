@@ -59,7 +59,9 @@ export default async function DrillPage({
   const currentQa = analyses[currentIndex];
 
   const nextQuestionId =
-    currentIndex < analyses.length - 1 ? analyses[currentIndex + 1].questionId : null;
+    currentIndex < analyses.length - 1
+      ? analyses[currentIndex + 1].questionId
+      : null;
 
   return (
     <DrillScreen

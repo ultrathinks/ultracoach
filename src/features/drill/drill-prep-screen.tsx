@@ -9,7 +9,11 @@ interface DrillPrepScreenProps {
   onStart: (stream: MediaStream) => void;
 }
 
-export function DrillPrepScreen({ question, suggestedAnswer, onStart }: DrillPrepScreenProps) {
+export function DrillPrepScreen({
+  question,
+  suggestedAnswer,
+  onStart,
+}: DrillPrepScreenProps) {
   const webcamRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const startedRef = useRef(false);
@@ -36,7 +40,9 @@ export function DrillPrepScreen({ question, suggestedAnswer, onStart }: DrillPre
     } catch (err) {
       const e = err as DOMException;
       if (e.name === "NotAllowedError") {
-        setPermissionError("카메라와 마이크 접근이 거부되었습니다. 브라우저 설정에서 권한을 허용해 주세요");
+        setPermissionError(
+          "카메라와 마이크 접근이 거부되었습니다. 브라우저 설정에서 권한을 허용해 주세요",
+        );
       } else if (e.name === "NotFoundError") {
         setPermissionError("카메라 또는 마이크를 찾을 수 없습니다");
       } else {
@@ -49,7 +55,9 @@ export function DrillPrepScreen({ question, suggestedAnswer, onStart }: DrillPre
     initMedia();
     return () => {
       if (!startedRef.current && streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
+        for (const t of streamRef.current.getTracks()) {
+          t.stop();
+        }
         if (webcamRef.current) {
           webcamRef.current.srcObject = null;
         }
@@ -104,27 +112,25 @@ export function DrillPrepScreen({ question, suggestedAnswer, onStart }: DrillPre
 
         {/* Suggested answer collapsible panel */}
         {suggestedAnswer && (
-          <div
-            className="rounded-xl bg-card border border-white/[0.06] p-5 cursor-pointer select-none"
+          <button
+            type="button"
+            className="w-full rounded-xl bg-card border border-white/[0.06] p-5 cursor-pointer select-none text-left"
             onClick={() => setExpanded((prev) => !prev)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setExpanded((prev) => !prev);
-              }
-            }}
-            role="button"
-            tabIndex={0}
           >
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-secondary">모범 답안 참고</span>
+              <span className="text-sm font-medium text-secondary">
+                모범 답안 참고
+              </span>
               <svg
                 width={16}
                 height={16}
                 viewBox="0 0 16 16"
                 fill="none"
+                aria-hidden="true"
                 className="text-muted transition-transform duration-200"
-                style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
+                style={{
+                  transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+                }}
               >
                 <path
                   d="M4 6L8 10L12 6"
@@ -136,9 +142,11 @@ export function DrillPrepScreen({ question, suggestedAnswer, onStart }: DrillPre
               </svg>
             </div>
             {expanded && (
-              <p className="mt-3 text-sm text-secondary leading-relaxed">{suggestedAnswer}</p>
+              <p className="mt-3 text-sm text-secondary leading-relaxed">
+                {suggestedAnswer}
+              </p>
             )}
-          </div>
+          </button>
         )}
 
         {/* Start button */}

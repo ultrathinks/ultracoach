@@ -4,7 +4,12 @@ import { useCallback, useRef, useState } from "react";
 import { z } from "zod";
 import { createVad } from "@/features/interview-engine/vad";
 
-export type DrillPhase = "prep" | "listening" | "processing" | "feedback" | "done";
+export type DrillPhase =
+  | "prep"
+  | "listening"
+  | "processing"
+  | "feedback"
+  | "done";
 
 export interface DrillResult {
   contentScore: number;
@@ -115,7 +120,9 @@ export function useDrillEngine({ sessionId, questionId }: DrillEngineConfig) {
 
         setDrillPhase("processing");
 
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
 
         if (audioBlob.size < 1000) {
           setTranscript("");
@@ -131,7 +138,9 @@ export function useDrillEngine({ sessionId, questionId }: DrillEngineConfig) {
           // 15-word gate
           const wordCount = text.trim().split(/\s+/).length;
           if (wordCount < MIN_WORD_COUNT) {
-            setValidationError("답변이 너무 짧습니다. 더 구체적으로 답변해 주세요");
+            setValidationError(
+              "답변이 너무 짧습니다. 더 구체적으로 답변해 주세요",
+            );
             setDrillPhase("feedback");
             return;
           }

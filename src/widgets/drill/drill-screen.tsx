@@ -3,8 +3,8 @@
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { DrillPrepScreen } from "@/features/drill/drill-prep-screen";
 import { useDrillEngine } from "@/features/drill";
+import { DrillPrepScreen } from "@/features/drill/drill-prep-screen";
 import { cn } from "@/shared/lib/cn";
 import { ScoreRing } from "@/widgets/report/score-ring";
 
@@ -184,7 +184,9 @@ export function DrillScreen({
           ) : result ? (
             <>
               <ScoreRing score={result.contentScore} label="내용 점수" />
-              <p className="text-sm text-secondary leading-relaxed text-left">{result.feedback}</p>
+              <p className="text-sm text-secondary leading-relaxed text-left">
+                {result.feedback}
+              </p>
 
               {/* STAR indicators */}
               <div className="flex justify-center gap-4">
@@ -244,7 +246,13 @@ export function DrillScreen({
 
       {/* Camera */}
       <div className="relative w-full max-w-2xl mx-auto aspect-video rounded-xl overflow-hidden bg-card border border-white/[0.06]">
-        <video ref={webcamRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+        <video
+          ref={webcamRef}
+          autoPlay
+          muted
+          playsInline
+          className="w-full h-full object-cover"
+        />
       </div>
 
       {/* Audio level bar */}
@@ -268,27 +276,25 @@ export function DrillScreen({
 
       {/* Collapsible suggested answer */}
       {suggestedAnswer && (
-        <div
-          className="mt-4 max-w-2xl mx-auto w-full rounded-xl bg-card border border-white/[0.06] p-4 cursor-pointer select-none"
+        <button
+          type="button"
+          className="mt-4 max-w-2xl mx-auto w-full rounded-xl bg-card border border-white/[0.06] p-4 cursor-pointer select-none text-left"
           onClick={() => setAnswerExpanded((prev) => !prev)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              setAnswerExpanded((prev) => !prev);
-            }
-          }}
-          role="button"
-          tabIndex={0}
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-secondary">모범 답안 참고</span>
+            <span className="text-sm font-medium text-secondary">
+              모범 답안 참고
+            </span>
             <svg
               width={16}
               height={16}
               viewBox="0 0 16 16"
               fill="none"
+              aria-hidden="true"
               className="text-muted transition-transform duration-200"
-              style={{ transform: answerExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
+              style={{
+                transform: answerExpanded ? "rotate(180deg)" : "rotate(0deg)",
+              }}
             >
               <path
                 d="M4 6L8 10L12 6"
@@ -300,9 +306,11 @@ export function DrillScreen({
             </svg>
           </div>
           {answerExpanded && (
-            <p className="mt-3 text-sm text-secondary leading-relaxed">{suggestedAnswer}</p>
+            <p className="mt-3 text-sm text-secondary leading-relaxed">
+              {suggestedAnswer}
+            </p>
           )}
-        </div>
+        </button>
       )}
 
       {/* Stop button */}
