@@ -1,30 +1,27 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Dashboard
-status: shipped
-last_updated: "2026-03-25"
+milestone: v1.0
+milestone_name: milestone
+status: unknown
+last_updated: "2026-03-25T00:24:55.775Z"
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 12
-  completed_plans: 12
+  total_phases: 5
+  completed_phases: 3
+  total_plans: 19
+  completed_plans: 16
 ---
 
 ## Current Position
 
-Milestone v1.1 Dashboard — SHIPPED (2026-03-25)
-Next: v1.2 Coaching Loop (see ROADMAP-v1.2.md, STATE-v1.2.md)
-
-Phase: 09 (results-expansion-drill-api) — COMPLETED (3/3 plans done)
-Plan: 3 of 3 — COMPLETED (06a7c5e)
+Phase: 10 (drill-mode-ui-engine) — EXECUTING
+Plan: 1 of 4
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** 사용자가 반복 연습을 통해 면접 실력이 향상되고 있다는 것을 데이터로 확인할 수 있다
-**Current focus:** Phase 09 — results-expansion-drill-api
+**Current focus:** Phase 10 — drill-mode-ui-engine
 
 ## Phase Summary
 
