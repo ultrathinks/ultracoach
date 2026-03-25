@@ -1,9 +1,11 @@
 import { eq } from "drizzle-orm";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { z } from "zod";
+import { questionAnalysisSchema } from "@/entities/feedback/schema";
 import { db } from "@/shared/db";
-import { sessions } from "@/shared/db/schema";
+import { feedback as feedbackTable, sessions } from "@/shared/db/schema";
 import { auth } from "@/shared/lib/auth";
+import { DrillScreen } from "@/widgets/drill/drill-screen";
 
 export const dynamic = "force-dynamic";
 
@@ -33,25 +35,40 @@ export default async function DrillPage({
   if (!dbSession) notFound();
   if (dbSession.userId !== authSession.user.id) notFound();
 
+  const [fb] = await db
+    .select({ summaryJson: feedbackTable.summaryJson })
+    .from(feedbackTable)
+    .where(eq(feedbackTable.sessionId, sessionId))
+    .limit(1);
+
+  if (!fb?.summaryJson) notFound();
+
+  const parsed = z
+    .object({ questionAnalyses: z.array(questionAnalysisSchema) })
+    .safeParse(fb.summaryJson);
+
+  if (!parsed.success || parsed.data.questionAnalyses.length === 0) notFound();
+
+  const analyses = parsed.data.questionAnalyses;
+
+  const targetId = q ? Number(q) : analyses[0].questionId;
+  const currentIndex = analyses.findIndex((qa) => qa.questionId === targetId);
+
+  if (currentIndex === -1) notFound();
+
+  const currentQa = analyses[currentIndex];
+
+  const nextQuestionId =
+    currentIndex < analyses.length - 1 ? analyses[currentIndex + 1].questionId : null;
+
   return (
-    <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center px-6 text-center">
-      <div className="max-w-md space-y-6">
-        <div className="text-6xl">&#x1F3AF;</div>
-        <h1 className="text-2xl font-bold">드릴 모드 준비 중</h1>
-        <p className="text-secondary leading-relaxed">
-          {dbSession.jobTitle} 면접의 재연습 기능을 준비하고 있습니다.
-          {q ? ` (질문 #${q})` : ""}
-        </p>
-        <p className="text-muted text-sm">
-          곧 카메라와 마이크를 사용하여 답변을 연습할 수 있습니다
-        </p>
-        <Link
-          href={`/results/${sessionId}`}
-          className="inline-block px-6 py-3 rounded-lg text-sm font-medium border border-white/[0.06] hover:bg-card-hover transition-colors"
-        >
-          결과 화면으로 돌아가기
-        </Link>
-      </div>
-    </div>
+    <DrillScreen
+      sessionId={sessionId}
+      questionId={currentQa.questionId}
+      question={currentQa.questionText}
+      suggestedAnswer={currentQa.suggestedAnswer ?? null}
+      jobTitle={dbSession.jobTitle}
+      nextQuestionId={nextQuestionId}
+    />
   );
 }
