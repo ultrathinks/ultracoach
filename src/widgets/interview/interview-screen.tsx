@@ -62,6 +62,7 @@ export function InterviewScreen({
   const avatarAudioRef = useRef<HTMLAudioElement>(null);
   const loopAbortRef = useRef(false);
   const landmarkCanvasRef = useRef<HTMLCanvasElement>(null);
+  const bgCanvasRef = useRef<HTMLCanvasElement>(null);
   /** true while a live stream is attached after successful getUserMedia */
   const mediaInitializedRef = useRef(false);
   const [elapsed, setElapsed] = useState(0);
@@ -495,6 +496,28 @@ export function InterviewScreen({
     };
   }, []);
 
+  // draw blurred avatar background
+  useEffect(() => {
+    const video = avatarVideoRef.current;
+    const canvas = bgCanvasRef.current;
+    if (!video || !canvas) return;
+
+    let raf: number;
+    const draw = () => {
+      if (video.readyState >= 2 && video.videoWidth > 0) {
+        const w = 64;
+        const h = Math.round(w * (video.videoHeight / video.videoWidth));
+        if (canvas.width !== w) canvas.width = w;
+        if (canvas.height !== h) canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (ctx) ctx.drawImage(video, 0, 0, w, h);
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   // draw landmarks on webcam PIP canvas
   useEffect(() => {
     if (!showLandmarks || !landmarks || !landmarkCanvasRef.current) return;
@@ -572,31 +595,31 @@ export function InterviewScreen({
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col">
       {/* ── video area ── */}
-      <div className="flex-1 relative min-h-0 p-3 lg:p-5">
-        <div className="relative w-full h-full rounded-2xl overflow-hidden bg-card border border-border">
+      <div className="flex-1 relative min-h-0">
+        <div className="relative w-full h-full overflow-hidden bg-background">
+          <canvas
+            ref={bgCanvasRef}
+            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 pointer-events-none scale-110"
+          />
           <video
             ref={avatarVideoRef}
             autoPlay
             playsInline
-            className="absolute inset-0 w-full h-full object-contain bg-[#e3d9aa]"
+            className="absolute inset-0 w-full h-full object-contain"
           />
           <audio ref={avatarAudioRef} autoPlay />
 
           {!avatarConnected && (
-            <div className="absolute inset-0 bg-card flex items-center justify-center">
+            <div className="absolute inset-0 bg-background flex items-center justify-center">
               <div className="w-20 h-20 rounded-full bg-white/[0.04] border border-border flex items-center justify-center text-2xl font-bold text-muted">
                 AI
               </div>
             </div>
           )}
 
-          {(phase === "speaking" || avatarIsSpeaking) && (
-            <div className="absolute inset-0 rounded-2xl ring-1 ring-white/10 pointer-events-none" />
-          )}
-
           {/* question/caption overlay — bottom of video */}
           <div className="absolute bottom-0 inset-x-0 pointer-events-none">
-            <div className="bg-gradient-to-t from-background/90 via-background/60 to-transparent pt-16 pb-5 px-6">
+            <div className="bg-gradient-to-t from-background via-background/60 to-transparent pt-20 pb-6 px-6">
               <AnimatePresence mode="wait">
                 {liveCaption && phase === "listening" ? (
                   <motion.p
@@ -604,18 +627,18 @@ export function InterviewScreen({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="text-secondary text-center max-w-2xl mx-auto"
+                    className="text-secondary text-center text-[15px] max-w-2xl mx-auto"
                   >
                     {liveCaption}
                   </motion.p>
                 ) : currentQuestion &&
-                  (phase === "speaking" || phase === "listening") ? (
+                  ((phase === "speaking" && avatarIsSpeaking) || phase === "listening") ? (
                   <motion.p
                     key={currentQuestion}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="text-foreground text-center max-w-2xl mx-auto leading-relaxed"
+                    className="text-foreground text-center text-[15px] max-w-2xl mx-auto leading-relaxed"
                   >
                     {currentQuestion}
                   </motion.p>
@@ -628,7 +651,7 @@ export function InterviewScreen({
         {/* webcam PIP */}
         <div
           onClick={() => setShowLandmarks((v) => !v)}
-          className="absolute bottom-6 right-6 lg:bottom-8 lg:right-8 w-56 lg:w-80 aspect-video rounded-xl overflow-hidden border border-white/10 shadow-2xl z-10 cursor-pointer"
+          className="absolute bottom-20 right-4 lg:right-6 w-56 lg:w-72 aspect-video rounded-xl overflow-hidden border border-white/[0.06] shadow-2xl z-10 cursor-pointer"
         >
           <video
             ref={webcamRef}
