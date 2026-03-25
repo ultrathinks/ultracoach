@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/shared/lib/auth";
-import { DashboardSidebar } from "@/widgets/dashboard/dashboard-sidebar";
+import { DashboardNav } from "@/widgets/dashboard/dashboard-nav";
 
 export default async function DashboardLayout({
   children,
@@ -11,9 +11,9 @@ export default async function DashboardLayout({
   if (!session?.user?.id) redirect("/");
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-      <DashboardSidebar />
-      <main className="flex-1 overflow-auto no-scrollbar p-6 md:p-8">{children}</main>
+    <div className="min-h-[calc(100vh-4rem)]">
+      <DashboardNav />
+      <main className="px-6 py-8">{children}</main>
     </div>
   );
 }
