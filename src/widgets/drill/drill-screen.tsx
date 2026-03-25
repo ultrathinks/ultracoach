@@ -1,10 +1,11 @@
 "use client";
 
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDrillEngine } from "@/features/drill";
 import { DrillPrepScreen } from "@/features/drill/drill-prep-screen";
+import { useWebSpeech } from "@/features/interview-engine/use-web-speech";
 import { cn } from "@/shared/lib/cn";
 import { ScoreRing } from "@/widgets/report/score-ring";
 
@@ -50,6 +51,7 @@ export function DrillScreen({
 
   const webcamRef = useRef<HTMLVideoElement>(null);
   const [answerExpanded, setAnswerExpanded] = useState(false);
+  const { liveCaption, start: startSpeech, stop: stopSpeech } = useWebSpeech();
 
   useEffect(() => {
     return () => {
@@ -57,12 +59,21 @@ export function DrillScreen({
     };
   }, [cleanup]);
 
-  // Prep → listening 전환 시 video element에 stream 연결
+  // Prep → speaking/listening 전환 시 video element에 stream 연결
   useEffect(() => {
     if ((drillPhase === "speaking" || drillPhase === "listening") && webcamRef.current && streamRef.current) {
       webcamRef.current.srcObject = streamRef.current;
     }
   }, [drillPhase, streamRef]);
+
+  // listening 시작/종료 시 실시간 자막 on/off
+  useEffect(() => {
+    if (drillPhase === "listening") {
+      startSpeech();
+    } else {
+      stopSpeech();
+    }
+  }, [drillPhase, startSpeech, stopSpeech]);
 
   const handlePrepStart = useCallback(
     (stream: MediaStream) => {
@@ -282,10 +293,30 @@ export function DrillScreen({
         </div>
       )}
 
-      {/* Question */}
-      <p className="text-center text-foreground mt-4 max-w-2xl mx-auto leading-relaxed">
-        {question}
-      </p>
+      {/* Live caption / Question */}
+      <AnimatePresence mode="wait">
+        {liveCaption && drillPhase === "listening" ? (
+          <motion.p
+            key="caption"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="text-center text-secondary mt-4 max-w-2xl mx-auto leading-relaxed"
+          >
+            {liveCaption}
+          </motion.p>
+        ) : (
+          <motion.p
+            key="question"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="text-center text-foreground mt-4 max-w-2xl mx-auto leading-relaxed"
+          >
+            {question}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       {/* Collapsible suggested answer */}
       {suggestedAnswer && (

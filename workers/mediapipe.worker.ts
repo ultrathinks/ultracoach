@@ -59,7 +59,7 @@ async function init() {
 
 function computeGaze(faceResult: ReturnType<FaceLandmarker["detectForVideo"]>) {
   if (!faceResult.faceLandmarks?.[0]) {
-    return { pitch: 0, yaw: 0, isFrontFacing: true };
+    return { pitch: 0, yaw: 0, isFrontFacing: false };
   }
   const lm = faceResult.faceLandmarks[0];
   const nose = lm[1];
@@ -70,7 +70,7 @@ function computeGaze(faceResult: ReturnType<FaceLandmarker["detectForVideo"]>) {
   return {
     pitch,
     yaw,
-    isFrontFacing: Math.abs(pitch) < 0.3 && Math.abs(yaw) < 0.3,
+    isFrontFacing: Math.abs(pitch) < 0.15 && Math.abs(yaw) < 0.15,
   };
 }
 
@@ -78,7 +78,7 @@ function computePosture(
   poseResult: ReturnType<PoseLandmarker["detectForVideo"]>,
 ) {
   if (!poseResult.landmarks?.[0]) {
-    return { shoulderTilt: 0, headOffset: 0, isUpright: true };
+    return { shoulderTilt: 0, headOffset: 0, isUpright: false };
   }
   const lm = poseResult.landmarks[0];
   const leftShoulder = lm[11];
@@ -90,7 +90,7 @@ function computePosture(
   return {
     shoulderTilt,
     headOffset,
-    isUpright: shoulderTilt < 0.05 && headOffset < 0.08,
+    isUpright: shoulderTilt < 0.03 && headOffset < 0.05,
   };
 }
 
@@ -98,7 +98,7 @@ function computeExpression(
   faceResult: ReturnType<FaceLandmarker["detectForVideo"]>,
 ) {
   if (!faceResult.faceBlendshapes?.[0]) {
-    return { frownScore: 0, isPositiveOrNeutral: true };
+    return { frownScore: 0, isPositiveOrNeutral: false };
   }
   const categories = faceResult.faceBlendshapes[0].categories;
   const browDown =
@@ -106,7 +106,7 @@ function computeExpression(
   const mouthFrown =
     categories.find((b) => b.categoryName === "mouthFrownLeft")?.score ?? 0;
   const frownScore = (browDown + mouthFrown) / 2;
-  return { frownScore, isPositiveOrNeutral: frownScore < 0.3 };
+  return { frownScore, isPositiveOrNeutral: frownScore < 0.15 };
 }
 
 let prevWrists: { x: number; y: number }[] = [];
@@ -116,7 +116,7 @@ function computeGesture(
 ) {
   if (!handResult.landmarks?.length) {
     prevWrists = [];
-    return { wristMovement: 0, isModerate: true };
+    return { wristMovement: 0, isModerate: false };
   }
   const currentWrists = handResult.landmarks.map((h) => ({
     x: h[0].x,
