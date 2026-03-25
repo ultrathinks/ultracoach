@@ -69,6 +69,7 @@ export function InterviewScreen({
   const [camOff, setCamOff] = useState(false);
   const [showLandmarks, setShowLandmarks] = useState(false);
   const [preparing, setPreparing] = useState(true);
+  const [pinQuestion, setPinQuestion] = useState(false);
   const [showTextInput, setShowTextInput] = useState(false);
   const [textInput, setTextInput] = useState("");
   const textInputRef = useRef<HTMLInputElement>(null);
@@ -594,6 +595,11 @@ export function InterviewScreen({
           {/* question/caption overlay — bottom of video */}
           <div className="absolute bottom-0 inset-x-0 pointer-events-none">
             <div className="bg-gradient-to-t from-background via-background/60 to-transparent pt-20 pb-6 px-6">
+              {pinQuestion && currentQuestion && phase === "listening" && (
+                <p className="text-foreground/50 text-center text-sm max-w-2xl mx-auto mb-2">
+                  {currentQuestion}
+                </p>
+              )}
               <AnimatePresence mode="wait">
                 {liveCaption && phase === "listening" ? (
                   <motion.p
@@ -760,6 +766,31 @@ export function InterviewScreen({
               <rect x="2" y="4" width="14" height="14" rx="2" />
               <path d="M23 7l-7 5 7 5V7z" />
               {camOff && <line x1="2" y1="2" x2="22" y2="22" />}
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPinQuestion((v) => !v)}
+            className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer",
+              pinQuestion
+                ? "bg-indigo/15 text-indigo border border-indigo/30"
+                : "bg-card border border-border text-foreground hover:bg-card-hover",
+            )}
+            aria-label="질문 고정"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
             </svg>
           </button>
 
