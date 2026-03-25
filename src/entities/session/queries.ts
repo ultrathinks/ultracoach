@@ -1,6 +1,6 @@
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/shared/db";
 import { feedback, metricSnapshots, sessions } from "@/shared/db/schema";
-import { desc, eq } from "drizzle-orm";
 
 export async function getUserSessions(userId: string) {
   return db
