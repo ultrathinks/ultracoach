@@ -1,3 +1,8 @@
+const PRO_URL =
+  "https://briefly.klaim.me/Fcz3O8te8el391dBsOKn?item_id=AuI8C6f3a2UVaLwIYvMF&name=John+Doe&email=leegeh1213%40gmail.com&success_url=https%3A%2F%2Fcoach.jmo.kr%2Fdashboard&cancel_url=https%3A%2F%2Fcoach.jmo.kr%2Fdashboard";
+const PREMIUM_URL =
+  "https://briefly.klaim.me/Fcz3O8te8el391dBsOKn?item_id=1QQmIWnQDTs85uL0ifab&name=John+Doe&email=leegeh1213%40gmail.com&success_url=https%3A%2F%2Fcoach.jmo.kr%2Fdashboard&cancel_url=https%3A%2F%2Fcoach.jmo.kr%2Fdashboard";
+
 export default function BillingPage() {
   return (
     <div className="max-w-4xl mx-auto">
@@ -41,12 +46,14 @@ export default function BillingPage() {
             <li>바디랭귀지 리포트</li>
             <li>드릴 모드</li>
           </ul>
-          <button
-            type="button"
-            className="w-full py-2.5 rounded-lg text-sm font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer"
+          <a
+            href={PRO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-2.5 rounded-lg text-sm font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer text-center block"
           >
             업그레이드
-          </button>
+          </a>
         </div>
 
         {/* Premium */}
@@ -60,12 +67,14 @@ export default function BillingPage() {
             <li>이력서 기반 맞춤 질문</li>
             <li>우선 지원</li>
           </ul>
-          <button
-            type="button"
-            className="w-full py-2.5 rounded-lg text-sm font-medium bg-card border border-border text-foreground hover:bg-card-hover transition-colors cursor-pointer"
+          <a
+            href={PREMIUM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-2.5 rounded-lg text-sm font-medium bg-card border border-border text-foreground hover:bg-card-hover transition-colors cursor-pointer text-center block"
           >
             업그레이드
-          </button>
+          </a>
         </div>
       </div>
     </div>
