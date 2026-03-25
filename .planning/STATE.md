@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Dashboard
-status: defining_requirements
+status: roadmap_ready
 last_updated: "2026-03-25"
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -13,10 +13,10 @@ progress:
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Not started (roadmap defined)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-25 — Milestone v1.3 started
+Status: Ready to execute Phase 11
+Last activity: 2026-03-25 — Roadmap created (Phase 11–14)
 
 ## Project Reference
 
@@ -27,7 +27,12 @@ See: .planning/PROJECT.md (updated 2026-03-25)
 
 ## Phase Summary
 
-(No phases yet — defining requirements)
+| Phase | Name | Requirements | Status |
+|-------|------|-------------|--------|
+| 11 | Dashboard Layout Foundation | LAYOUT-01~04 | Not started |
+| 12 | Dashboard Content Pages | DASH-01~04 | Not started |
+| 13 | Learn (MDX Content) | LEARN-01~03 | Not started |
+| 14 | Profile + Billing | PROF-01~02, BILL-01~02 | Not started |
 
 ## Accumulated Context
 
