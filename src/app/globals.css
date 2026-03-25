@@ -1,6 +1,7 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import url("https://cdn.jsdelivr.net/gh/toss/tossface/dist/tossface.css");
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @theme inline {
   --color-background: #09090b;
@@ -40,7 +41,12 @@ body {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, var(--color-indigo), var(--color-purple), var(--color-pink));
+  background: linear-gradient(
+    135deg,
+    var(--color-indigo),
+    var(--color-purple),
+    var(--color-pink)
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -63,8 +69,15 @@ body {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, var(--color-indigo), var(--color-purple), var(--color-pink));
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  background: linear-gradient(
+    135deg,
+    var(--color-indigo),
+    var(--color-purple),
+    var(--color-pink)
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   mask-composite: exclude;
   -webkit-mask-composite: xor;
   pointer-events: none;
@@ -84,8 +97,8 @@ body {
 /* grid pattern */
 .grid-pattern {
   background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 64px 64px;
 }
 
@@ -102,9 +115,9 @@ body {
   background: linear-gradient(
     105deg,
     transparent 40%,
-    rgba(255,255,255,0.03) 45%,
-    rgba(255,255,255,0.05) 50%,
-    rgba(255,255,255,0.03) 55%,
+    rgba(255, 255, 255, 0.03) 45%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0.03) 55%,
     transparent 60%
   );
   transform: translateX(-100%);
@@ -113,4 +126,13 @@ body {
 
 .shimmer:hover::after {
   transform: translateX(100%);
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

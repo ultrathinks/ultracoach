@@ -52,7 +52,7 @@ export function ErrorOverlay({ onRetry, onEnd }: ErrorOverlayProps) {
             <p className="text-sm text-secondary">
               {error?.type === "permission"
                 ? "카메라/마이크 접근이 필요합니다. 브라우저 설정에서 권한을 허용해주세요."
-                : error?.message ?? "면접을 계속할 수 없습니다"}
+                : (error?.message ?? "면접을 계속할 수 없습니다")}
             </p>
             <Button onClick={onEnd}>면접 종료</Button>
           </>

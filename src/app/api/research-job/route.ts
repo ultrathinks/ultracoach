@@ -107,7 +107,10 @@ export async function POST(request: Request) {
 
     const result = researchSchema.safeParse(parsed);
     if (!result.success) {
-      console.warn("[research-job] schema validation failed:", result.error.issues);
+      console.warn(
+        "[research-job] schema validation failed:",
+        result.error.issues,
+      );
       return NextResponse.json({ research: null });
     }
 

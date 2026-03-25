@@ -31,7 +31,9 @@ export function ResultsClient({ session, feedback }: ResultsClientProps) {
   if (!result.success) {
     return (
       <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center px-6 text-center">
-        <h1 className="text-2xl font-bold mb-2">피드백 데이터가 손상되었습니다</h1>
+        <h1 className="text-2xl font-bold mb-2">
+          피드백 데이터가 손상되었습니다
+        </h1>
         <p className="text-muted">결과를 표시할 수 없습니다</p>
       </div>
     );
@@ -42,6 +44,7 @@ export function ResultsClient({ session, feedback }: ResultsClientProps) {
       feedback={result.data}
       jobTitle={session.jobTitle}
       duration={session.durationSec ?? 0}
+      sessionId={session.id}
     />
   );
 }

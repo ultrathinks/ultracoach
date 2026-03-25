@@ -1,17 +1,119 @@
 "use client";
 
-import type { SessionFeedback } from "@/entities/feedback";
-import { cn } from "@/shared/lib/cn";
 import { motion } from "motion/react";
+import Link from "next/link";
+import { useState } from "react";
+import type { QuestionAnalysis, SessionFeedback } from "@/entities/feedback";
+import { cn } from "@/shared/lib/cn";
 import { ScoreRing } from "./score-ring";
 
 interface ReportViewProps {
   feedback: SessionFeedback;
   jobTitle: string;
   duration: number;
+  sessionId: string;
 }
 
-export function ReportView({ feedback, jobTitle, duration }: ReportViewProps) {
+function QuestionItem({
+  qa,
+  sessionId,
+}: {
+  qa: QuestionAnalysis;
+  sessionId: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  const answerPreview = qa.answer
+    ? qa.answer.length > 100
+      ? `${qa.answer.slice(0, 100).trimEnd()}...`
+      : qa.answer
+    : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start gap-3">
+        <span className="text-sm text-muted shrink-0 w-8">
+          Q{qa.questionId}
+        </span>
+        <span className="font-medium text-base flex-1">{qa.questionText}</span>
+      </div>
+      <div className="flex items-center gap-1.5 ml-11">
+        {(["situation", "task", "action", "result"] as const).map((key) => (
+          <span
+            key={key}
+            className={cn(
+              "px-2.5 py-1 rounded-lg text-xs font-medium",
+              qa.starFulfillment[key]
+                ? "bg-green/15 text-green"
+                : "bg-white/[0.04] text-muted",
+            )}
+          >
+            {key[0].toUpperCase()}
+          </span>
+        ))}
+        <span className="ml-auto text-sm text-muted">{qa.contentScore}점</span>
+      </div>
+      {answerPreview && (
+        <p className="text-sm text-foreground/50 ml-11 leading-relaxed">
+          "{answerPreview}"
+        </p>
+      )}
+      <p className="text-[15px] text-foreground/70 leading-relaxed ml-11">
+        {qa.feedback}
+      </p>
+      <div className="flex items-center gap-3 ml-11">
+        {qa.suggestedAnswer && (
+          <button
+            type="button"
+            className="flex items-center gap-2 text-sm text-indigo hover:text-indigo/80 transition-colors"
+            onClick={() => setExpanded((prev) => !prev)}
+          >
+            <span>모범 답안 보기</span>
+            <svg
+              width={14}
+              height={14}
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true"
+              className="transition-transform duration-200"
+              style={{
+                transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+              }}
+            >
+              <path
+                d="M4 6L8 10L12 6"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        )}
+        <Link
+          href={`/drill/${sessionId}?q=${qa.questionId}`}
+          className="text-sm text-muted hover:text-secondary transition-colors"
+        >
+          재연습하기
+        </Link>
+      </div>
+      {expanded && qa.suggestedAnswer && (
+        <div className="ml-11 border-l-[3px] border-l-indigo/50 bg-white/[0.02] rounded-r-lg px-4 py-3">
+          <p className="text-sm text-foreground/70 leading-relaxed">
+            {qa.suggestedAnswer}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ReportView({
+  feedback,
+  jobTitle,
+  duration,
+  sessionId,
+}: ReportViewProps) {
   const formatDuration = (sec: number) => {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
@@ -51,7 +153,9 @@ export function ReportView({ feedback, jobTitle, duration }: ReportViewProps) {
       >
         <div className="rounded-xl bg-card border border-white/[0.06] p-6">
           <h2 className="text-lg font-semibold mb-3">종합 평가</h2>
-          <p className="text-foreground/80 text-base leading-relaxed">{feedback.summary}</p>
+          <p className="text-foreground/80 text-base leading-relaxed">
+            {feedback.summary}
+          </p>
         </div>
       </motion.div>
 
@@ -113,43 +217,13 @@ export function ReportView({ feedback, jobTitle, duration }: ReportViewProps) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.45 }}
         >
           <div className="rounded-xl bg-card border border-white/[0.06] p-6">
             <h2 className="text-lg font-semibold mb-6">질문별 분석</h2>
             <div className="space-y-8">
               {feedback.questionAnalyses.map((qa, i) => (
-                <div key={i} className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <span className="text-sm text-muted shrink-0 w-8">
-                      Q{qa.questionId}
-                    </span>
-                    <span className="font-medium text-base">{qa.questionText}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 ml-11">
-                    {(
-                      ["situation", "task", "action", "result"] as const
-                    ).map((key) => (
-                      <span
-                        key={key}
-                        className={cn(
-                          "px-2.5 py-1 rounded-lg text-xs font-medium",
-                          qa.starFulfillment[key]
-                            ? "bg-green/15 text-green"
-                            : "bg-white/[0.04] text-muted",
-                        )}
-                      >
-                        {key[0].toUpperCase()}
-                      </span>
-                    ))}
-                    <span className="ml-auto text-sm text-muted">
-                      {qa.contentScore}점
-                    </span>
-                  </div>
-                  <p className="text-[15px] text-foreground/70 leading-relaxed ml-11">
-                    {qa.feedback}
-                  </p>
-                </div>
+                <QuestionItem key={`${i}-${qa.questionId}`} qa={qa} sessionId={sessionId} />
               ))}
             </div>
           </div>
@@ -160,7 +234,7 @@ export function ReportView({ feedback, jobTitle, duration }: ReportViewProps) {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
+        transition={{ delay: 0.65 }}
       >
         <div className="gradient-border rounded-xl">
           <div className="rounded-xl bg-background p-8">
@@ -170,6 +244,36 @@ export function ReportView({ feedback, jobTitle, duration }: ReportViewProps) {
             </p>
           </div>
         </div>
+      </motion.div>
+
+      {/* dashboard link */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.75 }}
+        className="flex justify-center"
+      >
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-base font-medium bg-white/[0.06] border border-white/[0.06] hover:bg-white/[0.1] transition-colors"
+        >
+          <svg
+            width={18}
+            height={18}
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M15 18L9 12L15 6"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          대시보드로 가기
+        </Link>
       </motion.div>
     </div>
   );

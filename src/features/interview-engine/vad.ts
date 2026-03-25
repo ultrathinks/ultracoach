@@ -10,6 +10,7 @@ interface VadOptions {
 interface VadController {
   start: (stream: MediaStream) => void;
   stop: () => void;
+  keepAlive: () => void;
 }
 
 export function createVad(options: VadOptions = {}): VadController {
@@ -87,6 +88,10 @@ export function createVad(options: VadOptions = {}): VadController {
       processFrame();
     },
 
+    keepAlive() {
+      silenceStart = 0;
+    },
+
     stop() {
       stopped = true;
       if (rafId !== null) {
@@ -103,7 +108,10 @@ export function createVad(options: VadOptions = {}): VadController {
   };
 }
 
-export async function calibrate(stream: MediaStream, durationMs = 2000): Promise<number> {
+export async function calibrate(
+  stream: MediaStream,
+  durationMs = 2000,
+): Promise<number> {
   const audioContext = new AudioContext();
   const source = audioContext.createMediaStreamSource(stream);
   const analyser = audioContext.createAnalyser();

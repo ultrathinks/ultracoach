@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body className="antialiased min-h-screen">
+      <body className="antialiased min-h-screen no-scrollbar">
         <Providers>
           <NavBar />
           <main className="pt-16">{children}</main>

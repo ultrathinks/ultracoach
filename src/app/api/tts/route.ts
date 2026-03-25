@@ -5,7 +5,7 @@ import { z } from "zod";
 
 const checkRate = rateLimit({ windowMs: 60_000, max: 60 });
 
-const VOICE_ID = "pNInz6obpgDQGcFmaJgB";
+const VOICE_ID = "4JJwo477JUAx3HV0T7n7";
 const MODEL_ID = "eleven_multilingual_v2";
 
 const requestSchema = z.object({
@@ -50,8 +50,10 @@ export async function POST(request: Request) {
           text: body.data.text,
           model_id: MODEL_ID,
           voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
+            stability: 0.65,
+            similarity_boost: 0.85,
+            style: 0.15,
+            use_speaker_boost: true,
           },
         }),
       },

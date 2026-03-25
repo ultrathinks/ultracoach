@@ -5,7 +5,7 @@ import { generateIceServers, generateSimliSessionToken } from "simli-client";
 
 const checkRate = rateLimit({ windowMs: 60_000, max: 10 });
 
-const FACE_ID = "14de6eb1-0ea6-4fde-9522-8552ce691cb6";
+const FACE_ID = "7e74d6e7-d559-4394-bd56-4923a3ab75ad";
 
 export async function POST() {
   try {

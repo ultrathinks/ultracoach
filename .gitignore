@@ -30,3 +30,6 @@ next-env.d.ts
 
 # drizzle
 drizzle/meta
+
+# bkit
+.bkit/

@@ -20,7 +20,8 @@ export const useMetricsStore = create<MetricsState>((set) => ({
     set((s) => {
       const next = [...s.snapshots, snapshot];
       return {
-        snapshots: next.length > MAX_SNAPSHOTS ? next.slice(-MAX_SNAPSHOTS) : next,
+        snapshots:
+          next.length > MAX_SNAPSHOTS ? next.slice(-MAX_SNAPSHOTS) : next,
         latest: snapshot,
       };
     }),

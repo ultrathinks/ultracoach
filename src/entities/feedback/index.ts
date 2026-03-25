@@ -1,3 +1,5 @@
+export { identifyWeakAnswers } from "./lib";
+export { sessionFeedbackSchema } from "./schema";
 export type {
   ActionItem,
   KeyMoment,
@@ -5,4 +7,3 @@ export type {
   SessionFeedback,
   StarFulfillment,
 } from "./types";
-export { sessionFeedbackSchema } from "./schema";

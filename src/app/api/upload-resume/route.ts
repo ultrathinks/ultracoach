@@ -39,7 +39,10 @@ export async function POST(request: Request) {
     }
 
     const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
-    if (!ALLOWED_TYPES.includes(file.type) || !ALLOWED_EXTENSIONS.includes(ext)) {
+    if (
+      !ALLOWED_TYPES.includes(file.type) ||
+      !ALLOWED_EXTENSIONS.includes(ext)
+    ) {
       return NextResponse.json(
         { error: "only pdf and docx files are allowed" },
         { status: 400 },

@@ -168,7 +168,13 @@ export function useInterviewEngine(config?: InterviewConfig) {
         }, gracePeriod);
       });
     },
-    [transcribeAudio, vadThreshold, silenceDelay, minSpeechDuration, gracePeriod],
+    [
+      transcribeAudio,
+      vadThreshold,
+      silenceDelay,
+      minSpeechDuration,
+      gracePeriod,
+    ],
   );
 
   const stopListening = useCallback(() => {
@@ -185,10 +191,36 @@ export function useInterviewEngine(config?: InterviewConfig) {
     listenResolveRef.current = null;
   }, []);
 
+  const keepListeningAlive = useCallback(() => {
+    vadRef.current?.keepAlive();
+  }, []);
+
+  const submitTextAnswer = useCallback((text: string) => {
+    if (gracePeriodTimerRef.current) {
+      clearTimeout(gracePeriodTimerRef.current);
+      gracePeriodTimerRef.current = null;
+    }
+    vadRef.current?.stop();
+    vadRef.current = null;
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+    setAudioLevel(0);
+
+    const store = useSessionStore.getState();
+    store.setPhase("processing");
+    store.addHistory({ role: "interviewee", content: text });
+    store.updateLastAnswer(text);
+
+    listenResolveRef.current?.();
+    listenResolveRef.current = null;
+  }, []);
+
   return {
     fetchNextQuestion,
     startListening,
     stopListening,
+    submitTextAnswer,
+    keepListeningAlive,
     audioLevel,
   };
 }

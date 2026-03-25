@@ -59,8 +59,7 @@ export function createInterventionEngine(config?: Partial<EngineConfig>) {
       if (now - state.issueStartTimes.gaze >= triggerDuration) {
         issues.push({
           type: "gaze",
-          severity:
-            Math.abs(snapshot.gaze.yaw) + Math.abs(snapshot.gaze.pitch),
+          severity: Math.abs(snapshot.gaze.yaw) + Math.abs(snapshot.gaze.pitch),
         });
       }
     } else {
@@ -72,8 +71,7 @@ export function createInterventionEngine(config?: Partial<EngineConfig>) {
       if (now - state.issueStartTimes.posture >= triggerDuration) {
         issues.push({
           type: "posture",
-          severity:
-            snapshot.posture.shoulderTilt + snapshot.posture.headOffset,
+          severity: snapshot.posture.shoulderTilt + snapshot.posture.headOffset,
         });
       }
     } else {

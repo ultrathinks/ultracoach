@@ -33,7 +33,14 @@ export async function createSimliAvatar(options: SimliAvatarOptions) {
   if (onDisconnected) {
     const emitter = client as { on: (event: string, cb: () => void) => void };
     const markDisconnected = (reason: string) => () => onDisconnected(reason);
-    for (const event of ["disconnected", "disconnect", "closed", "close", "failed", "error"]) {
+    for (const event of [
+      "disconnected",
+      "disconnect",
+      "closed",
+      "close",
+      "failed",
+      "error",
+    ]) {
       emitter.on(event, markDisconnected(event));
     }
   }

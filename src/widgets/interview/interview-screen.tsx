@@ -17,10 +17,18 @@ interface InterviewScreenProps {
   researchStatus?: "idle" | "loading" | "done";
 }
 
-export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProps) {
+export function InterviewScreen({
+  researchStatus = "done",
+}: InterviewScreenProps) {
   const router = useRouter();
-  const { fetchNextQuestion, startListening, stopListening, audioLevel } =
-    useInterviewEngine();
+  const {
+    fetchNextQuestion,
+    startListening,
+    stopListening,
+    submitTextAnswer,
+    keepListeningAlive,
+    audioLevel,
+  } = useInterviewEngine();
   const { liveCaption, start: startSpeech, stop: stopSpeech } = useWebSpeech();
   const {
     connect: connectAvatar,
@@ -29,7 +37,11 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
     isConnected: avatarConnected,
     isSpeaking: avatarIsSpeaking,
   } = useAvatar();
-  const { start: startMediaPipe, stop: stopMediaPipe, landmarks } = useMediaPipe();
+  const {
+    start: startMediaPipe,
+    stop: stopMediaPipe,
+    landmarks,
+  } = useMediaPipe();
   const {
     start: startRecording,
     stop: stopRecording,
@@ -50,6 +62,7 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
   const avatarAudioRef = useRef<HTMLAudioElement>(null);
   const loopAbortRef = useRef(false);
   const landmarkCanvasRef = useRef<HTMLCanvasElement>(null);
+  const bgCanvasRef = useRef<HTMLCanvasElement>(null);
   /** true while a live stream is attached after successful getUserMedia */
   const mediaInitializedRef = useRef(false);
   const [elapsed, setElapsed] = useState(0);
@@ -57,10 +70,15 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
   const [camOff, setCamOff] = useState(false);
   const [showLandmarks, setShowLandmarks] = useState(false);
   const [preparing, setPreparing] = useState(true);
+  const [textInput, setTextInput] = useState("");
+  const textInputRef = useRef<HTMLInputElement>(null);
   const [prepSteps, setPrepSteps] = useState<
     { label: string; status: "pending" | "loading" | "done" }[]
   >([
-    { label: "직무 분석", status: researchStatus === "done" ? "done" : "loading" },
+    {
+      label: "직무 분석",
+      status: researchStatus === "done" ? "done" : "loading",
+    },
     { label: "면접 질문 최적화", status: "pending" },
     { label: "카메라·마이크 연결", status: "loading" },
     { label: "AI 면접관 준비", status: "pending" },
@@ -71,8 +89,11 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
     if (researchStatus !== "done") return;
     setPrepSteps((prev) =>
       prev.map((s, i) =>
-        i === 0 ? { ...s, status: "done" as const } :
-        i === 1 ? { ...s, status: "loading" as const } : s,
+        i === 0
+          ? { ...s, status: "done" as const }
+          : i === 1
+            ? { ...s, status: "loading" as const }
+            : s,
       ),
     );
     const timer = setTimeout(() => {
@@ -159,8 +180,11 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
 
         setPrepSteps((prev) =>
           prev.map((s, i) =>
-            i === 2 ? { ...s, status: "done" as const } :
-            i === 3 ? { ...s, status: "loading" as const } : s,
+            i === 2
+              ? { ...s, status: "done" as const }
+              : i === 3
+                ? { ...s, status: "loading" as const }
+                : s,
           ),
         );
 
@@ -472,6 +496,28 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
     };
   }, []);
 
+  // draw blurred avatar background
+  useEffect(() => {
+    const video = avatarVideoRef.current;
+    const canvas = bgCanvasRef.current;
+    if (!video || !canvas) return;
+
+    let raf: number;
+    const draw = () => {
+      if (video.readyState >= 2 && video.videoWidth > 0) {
+        const w = 64;
+        const h = Math.round(w * (video.videoHeight / video.videoWidth));
+        if (canvas.width !== w) canvas.width = w;
+        if (canvas.height !== h) canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (ctx) ctx.drawImage(video, 0, 0, w, h);
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   // draw landmarks on webcam PIP canvas
   useEffect(() => {
     if (!showLandmarks || !landmarks || !landmarkCanvasRef.current) return;
@@ -549,31 +595,31 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col">
       {/* ── video area ── */}
-      <div className="flex-1 relative min-h-0 p-3 lg:p-5">
-        <div className="relative w-full h-full rounded-2xl overflow-hidden bg-card border border-border">
+      <div className="flex-1 relative min-h-0">
+        <div className="relative w-full h-full overflow-hidden bg-background">
+          <canvas
+            ref={bgCanvasRef}
+            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 pointer-events-none scale-110"
+          />
           <video
             ref={avatarVideoRef}
             autoPlay
             playsInline
-            className="absolute inset-0 w-full h-full object-contain bg-[#e3d9aa]"
+            className="absolute inset-0 w-full h-full object-contain"
           />
           <audio ref={avatarAudioRef} autoPlay />
 
           {!avatarConnected && (
-            <div className="absolute inset-0 bg-card flex items-center justify-center">
+            <div className="absolute inset-0 bg-background flex items-center justify-center">
               <div className="w-20 h-20 rounded-full bg-white/[0.04] border border-border flex items-center justify-center text-2xl font-bold text-muted">
                 AI
               </div>
             </div>
           )}
 
-          {(phase === "speaking" || avatarIsSpeaking) && (
-            <div className="absolute inset-0 rounded-2xl ring-1 ring-white/10 pointer-events-none" />
-          )}
-
           {/* question/caption overlay — bottom of video */}
           <div className="absolute bottom-0 inset-x-0 pointer-events-none">
-            <div className="bg-gradient-to-t from-background/90 via-background/60 to-transparent pt-16 pb-5 px-6">
+            <div className="bg-gradient-to-t from-background via-background/60 to-transparent pt-20 pb-6 px-6">
               <AnimatePresence mode="wait">
                 {liveCaption && phase === "listening" ? (
                   <motion.p
@@ -581,17 +627,18 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="text-secondary text-center max-w-2xl mx-auto"
+                    className="text-secondary text-center text-[15px] max-w-2xl mx-auto"
                   >
                     {liveCaption}
                   </motion.p>
-                ) : currentQuestion && (phase === "speaking" || phase === "listening") ? (
+                ) : currentQuestion &&
+                  ((phase === "speaking" && avatarIsSpeaking) || phase === "listening") ? (
                   <motion.p
                     key={currentQuestion}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="text-foreground text-center max-w-2xl mx-auto leading-relaxed"
+                    className="text-foreground text-center text-[15px] max-w-2xl mx-auto leading-relaxed"
                   >
                     {currentQuestion}
                   </motion.p>
@@ -604,7 +651,7 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
         {/* webcam PIP */}
         <div
           onClick={() => setShowLandmarks((v) => !v)}
-          className="absolute bottom-6 right-6 lg:bottom-8 lg:right-8 w-56 lg:w-80 aspect-video rounded-xl overflow-hidden border border-white/10 shadow-2xl z-10 cursor-pointer"
+          className="absolute bottom-20 right-4 lg:right-6 w-56 lg:w-72 aspect-video rounded-xl overflow-hidden border border-white/[0.06] shadow-2xl z-10 cursor-pointer"
         >
           <video
             ref={webcamRef}
@@ -623,13 +670,50 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
           )}
           {camOff && (
             <div className="absolute inset-0 bg-card flex items-center justify-center">
-              <span className="text-muted text-sm font-medium">카메라 꺼짐</span>
+              <span className="text-muted text-sm font-medium">
+                카메라 꺼짐
+              </span>
             </div>
           )}
         </div>
       </div>
 
       {mode === "practice" && <CoachOverlay />}
+
+      {/* ── text input (dev only) ── */}
+      {process.env.NODE_ENV === "development" && phase === "listening" && (
+        <div className="shrink-0 px-6 pb-2">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const trimmed = textInput.trim();
+              if (!trimmed) return;
+              submitTextAnswer(trimmed);
+              setTextInput("");
+            }}
+            className="flex items-center gap-2 max-w-2xl mx-auto"
+          >
+            <input
+              ref={textInputRef}
+              type="text"
+              value={textInput}
+              onChange={(e) => {
+                setTextInput(e.target.value);
+                keepListeningAlive();
+              }}
+              placeholder="타이핑으로 답변하기..."
+              className="flex-1 h-10 px-4 rounded-full bg-card border border-border text-foreground text-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-white/20"
+            />
+            <button
+              type="submit"
+              disabled={!textInput.trim()}
+              className="h-10 px-4 rounded-full bg-white/10 text-foreground text-sm font-medium hover:bg-white/15 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            >
+              전송
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* ── controls ── */}
       <div className="shrink-0 h-16 flex items-center justify-between px-6">
@@ -664,7 +748,15 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
                 : "bg-card border border-border text-foreground hover:bg-card-hover",
             )}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            >
               <rect x="9" y="1" width="6" height="12" rx="3" />
               <path d="M19 10v1a7 7 0 01-14 0v-1M12 19v4M8 23h8" />
               {micMuted && <line x1="2" y1="2" x2="22" y2="22" />}
@@ -681,7 +773,15 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
                 : "bg-card border border-border text-foreground hover:bg-card-hover",
             )}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            >
               <rect x="2" y="4" width="14" height="14" rx="2" />
               <path d="M23 7l-7 5 7 5V7z" />
               {camOff && <line x1="2" y1="2" x2="22" y2="22" />}
@@ -698,9 +798,7 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
         </div>
 
         <div className="w-40 text-right">
-          <span className="text-sm text-muted">
-            {phaseLabel[phase] ?? ""}
-          </span>
+          <span className="text-sm text-muted">{phaseLabel[phase] ?? ""}</span>
         </div>
       </div>
 
@@ -737,7 +835,16 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
                       <div className="w-5 h-5 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin" />
                     ) : step.status === "done" ? (
                       <div className="w-5 h-5 rounded-full bg-green/15 flex items-center justify-center">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-green)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="var(--color-green)"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <path d="M20 6L9 17l-5-5" />
                         </svg>
                       </div>
