@@ -20,11 +20,26 @@ export interface InterviewConfig {
 
 const typeConfig: Record<
   InterviewType,
-  Pick<InterviewConfig, "silenceDelay" | "targetQuestionCount" | "maxQuestionCount">
+  Pick<
+    InterviewConfig,
+    "silenceDelay" | "targetQuestionCount" | "maxQuestionCount"
+  >
 > = {
-  personality: { silenceDelay: 2000, targetQuestionCount: 12, maxQuestionCount: 18 },
-  technical: { silenceDelay: 3500, targetQuestionCount: 8, maxQuestionCount: 12 },
-  "culture-fit": { silenceDelay: 2500, targetQuestionCount: 10, maxQuestionCount: 15 },
+  personality: {
+    silenceDelay: 2000,
+    targetQuestionCount: 12,
+    maxQuestionCount: 18,
+  },
+  technical: {
+    silenceDelay: 3500,
+    targetQuestionCount: 8,
+    maxQuestionCount: 12,
+  },
+  "culture-fit": {
+    silenceDelay: 2500,
+    targetQuestionCount: 10,
+    maxQuestionCount: 15,
+  },
 };
 
 export function deriveConfig(

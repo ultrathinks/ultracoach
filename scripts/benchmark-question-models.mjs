@@ -12,7 +12,7 @@ function parseEnv(text) {
     const key = line.slice(0, idx).trim();
     let value = line.slice(idx + 1).trim();
     if (
-      (value.startsWith("\"") && value.endsWith("\"")) ||
+      (value.startsWith('"') && value.endsWith('"')) ||
       (value.startsWith("'") && value.endsWith("'"))
     ) {
       value = value.slice(1, -1);
@@ -198,7 +198,7 @@ async function main() {
       {
         role: "system",
         content:
-          "너는 한국어 모의면접 면접관이다. 반드시 JSON으로만 답변한다: {\"question\": string, \"type\": string, \"shouldEnd\": boolean}",
+          '너는 한국어 모의면접 면접관이다. 반드시 JSON으로만 답변한다: {"question": string, "type": string, "shouldEnd": boolean}',
       },
       {
         role: "user",

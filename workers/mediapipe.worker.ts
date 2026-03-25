@@ -150,9 +150,18 @@ function processFrame(bitmap: ImageBitmap, timestamp: number) {
 
   const ts = performance.now();
 
-  const faceResult = faceLandmarker.detectForVideo(canvas as unknown as HTMLCanvasElement, ts);
-  const poseResult = poseLandmarker.detectForVideo(canvas as unknown as HTMLCanvasElement, ts);
-  const handResult = handLandmarker.detectForVideo(canvas as unknown as HTMLCanvasElement, ts);
+  const faceResult = faceLandmarker.detectForVideo(
+    canvas as unknown as HTMLCanvasElement,
+    ts,
+  );
+  const poseResult = poseLandmarker.detectForVideo(
+    canvas as unknown as HTMLCanvasElement,
+    ts,
+  );
+  const handResult = handLandmarker.detectForVideo(
+    canvas as unknown as HTMLCanvasElement,
+    ts,
+  );
 
   const snapshot = {
     timestamp,
@@ -165,17 +174,22 @@ function processFrame(bitmap: ImageBitmap, timestamp: number) {
   self.postMessage({ type: "snapshot", data: snapshot });
 
   // send raw landmarks for visualization (lightweight — just x,y arrays)
-  const landmarks: { face: number[][]; pose: number[][]; hands: number[][][] } = {
-    face: [],
-    pose: [],
-    hands: [],
-  };
+  const landmarks: { face: number[][]; pose: number[][]; hands: number[][][] } =
+    {
+      face: [],
+      pose: [],
+      hands: [],
+    };
 
   if (faceResult.faceLandmarks?.[0]) {
-    landmarks.face = faceResult.faceLandmarks[0].map((p: { x: number; y: number }) => [p.x, p.y]);
+    landmarks.face = faceResult.faceLandmarks[0].map(
+      (p: { x: number; y: number }) => [p.x, p.y],
+    );
   }
   if (poseResult.landmarks?.[0]) {
-    landmarks.pose = poseResult.landmarks[0].map((p: { x: number; y: number }) => [p.x, p.y]);
+    landmarks.pose = poseResult.landmarks[0].map(
+      (p: { x: number; y: number }) => [p.x, p.y],
+    );
   }
   for (const hand of handResult.landmarks ?? []) {
     landmarks.hands.push(hand.map((p: { x: number; y: number }) => [p.x, p.y]));

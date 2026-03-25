@@ -103,7 +103,10 @@ export function createVad(options: VadOptions = {}): VadController {
   };
 }
 
-export async function calibrate(stream: MediaStream, durationMs = 2000): Promise<number> {
+export async function calibrate(
+  stream: MediaStream,
+  durationMs = 2000,
+): Promise<number> {
   const audioContext = new AudioContext();
   const source = audioContext.createMediaStreamSource(stream);
   const analyser = audioContext.createAnalyser();

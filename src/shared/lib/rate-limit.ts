@@ -20,10 +20,7 @@ function cleanup(windowMs: number) {
   }
 }
 
-export function rateLimit(opts: {
-  windowMs: number;
-  max: number;
-}) {
+export function rateLimit(opts: { windowMs: number; max: number }) {
   return (userId: string, routeKey: string): NextResponse | null => {
     cleanup(opts.windowMs);
 
@@ -40,10 +37,7 @@ export function rateLimit(opts: {
     entry.timestamps = entry.timestamps.filter((t) => t > cutoff);
 
     if (entry.timestamps.length >= opts.max) {
-      return NextResponse.json(
-        { error: "too many requests" },
-        { status: 429 },
-      );
+      return NextResponse.json({ error: "too many requests" }, { status: 429 });
     }
 
     entry.timestamps.push(now);

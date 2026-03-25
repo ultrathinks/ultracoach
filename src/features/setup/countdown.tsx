@@ -52,14 +52,11 @@ export function Countdown({ researchStatus, onComplete }: CountdownProps) {
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
-  const updateStep = useCallback(
-    (index: number, status: StepStatus) => {
-      setSteps((prev) =>
-        prev.map((s, i) => (i === index ? { ...s, status } : s)),
-      );
-    },
-    [],
-  );
+  const updateStep = useCallback((index: number, status: StepStatus) => {
+    setSteps((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, status } : s)),
+    );
+  }, []);
 
   useEffect(() => {
     if (researchStatus !== "done") return;

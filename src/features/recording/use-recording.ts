@@ -9,7 +9,9 @@ export function useRecording() {
   const [isRecording, setIsRecording] = useState(false);
 
   const start = useCallback((stream: MediaStream) => {
-    const liveTracks = stream.getTracks().filter((t) => t.readyState === "live");
+    const liveTracks = stream
+      .getTracks()
+      .filter((t) => t.readyState === "live");
     if (liveTracks.length === 0) {
       console.warn("no live tracks, skipping recording");
       return;

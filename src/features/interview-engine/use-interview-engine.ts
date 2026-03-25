@@ -168,7 +168,13 @@ export function useInterviewEngine(config?: InterviewConfig) {
         }, gracePeriod);
       });
     },
-    [transcribeAudio, vadThreshold, silenceDelay, minSpeechDuration, gracePeriod],
+    [
+      transcribeAudio,
+      vadThreshold,
+      silenceDelay,
+      minSpeechDuration,
+      gracePeriod,
+    ],
   );
 
   const stopListening = useCallback(() => {

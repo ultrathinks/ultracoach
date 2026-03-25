@@ -17,7 +17,9 @@ interface InterviewScreenProps {
   researchStatus?: "idle" | "loading" | "done";
 }
 
-export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProps) {
+export function InterviewScreen({
+  researchStatus = "done",
+}: InterviewScreenProps) {
   const router = useRouter();
   const { fetchNextQuestion, startListening, stopListening, audioLevel } =
     useInterviewEngine();
@@ -29,7 +31,11 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
     isConnected: avatarConnected,
     isSpeaking: avatarIsSpeaking,
   } = useAvatar();
-  const { start: startMediaPipe, stop: stopMediaPipe, landmarks } = useMediaPipe();
+  const {
+    start: startMediaPipe,
+    stop: stopMediaPipe,
+    landmarks,
+  } = useMediaPipe();
   const {
     start: startRecording,
     stop: stopRecording,
@@ -60,7 +66,10 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
   const [prepSteps, setPrepSteps] = useState<
     { label: string; status: "pending" | "loading" | "done" }[]
   >([
-    { label: "직무 분석", status: researchStatus === "done" ? "done" : "loading" },
+    {
+      label: "직무 분석",
+      status: researchStatus === "done" ? "done" : "loading",
+    },
     { label: "면접 질문 최적화", status: "pending" },
     { label: "카메라·마이크 연결", status: "loading" },
     { label: "AI 면접관 준비", status: "pending" },
@@ -71,8 +80,11 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
     if (researchStatus !== "done") return;
     setPrepSteps((prev) =>
       prev.map((s, i) =>
-        i === 0 ? { ...s, status: "done" as const } :
-        i === 1 ? { ...s, status: "loading" as const } : s,
+        i === 0
+          ? { ...s, status: "done" as const }
+          : i === 1
+            ? { ...s, status: "loading" as const }
+            : s,
       ),
     );
     const timer = setTimeout(() => {
@@ -159,8 +171,11 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
 
         setPrepSteps((prev) =>
           prev.map((s, i) =>
-            i === 2 ? { ...s, status: "done" as const } :
-            i === 3 ? { ...s, status: "loading" as const } : s,
+            i === 2
+              ? { ...s, status: "done" as const }
+              : i === 3
+                ? { ...s, status: "loading" as const }
+                : s,
           ),
         );
 
@@ -585,7 +600,8 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
                   >
                     {liveCaption}
                   </motion.p>
-                ) : currentQuestion && (phase === "speaking" || phase === "listening") ? (
+                ) : currentQuestion &&
+                  (phase === "speaking" || phase === "listening") ? (
                   <motion.p
                     key={currentQuestion}
                     initial={{ opacity: 0 }}
@@ -623,7 +639,9 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
           )}
           {camOff && (
             <div className="absolute inset-0 bg-card flex items-center justify-center">
-              <span className="text-muted text-sm font-medium">카메라 꺼짐</span>
+              <span className="text-muted text-sm font-medium">
+                카메라 꺼짐
+              </span>
             </div>
           )}
         </div>
@@ -664,7 +682,15 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
                 : "bg-card border border-border text-foreground hover:bg-card-hover",
             )}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            >
               <rect x="9" y="1" width="6" height="12" rx="3" />
               <path d="M19 10v1a7 7 0 01-14 0v-1M12 19v4M8 23h8" />
               {micMuted && <line x1="2" y1="2" x2="22" y2="22" />}
@@ -681,7 +707,15 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
                 : "bg-card border border-border text-foreground hover:bg-card-hover",
             )}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            >
               <rect x="2" y="4" width="14" height="14" rx="2" />
               <path d="M23 7l-7 5 7 5V7z" />
               {camOff && <line x1="2" y1="2" x2="22" y2="22" />}
@@ -698,9 +732,7 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
         </div>
 
         <div className="w-40 text-right">
-          <span className="text-sm text-muted">
-            {phaseLabel[phase] ?? ""}
-          </span>
+          <span className="text-sm text-muted">{phaseLabel[phase] ?? ""}</span>
         </div>
       </div>
 
@@ -737,7 +769,16 @@ export function InterviewScreen({ researchStatus = "done" }: InterviewScreenProp
                       <div className="w-5 h-5 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin" />
                     ) : step.status === "done" ? (
                       <div className="w-5 h-5 rounded-full bg-green/15 flex items-center justify-center">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-green)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="var(--color-green)"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <path d="M20 6L9 17l-5-5" />
                         </svg>
                       </div>

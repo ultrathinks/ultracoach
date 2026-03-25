@@ -34,18 +34,14 @@ export function useMediaPipe() {
       workerRef.current = worker;
 
       intervalRef.current = setInterval(async () => {
-        if (
-          videoElement.readyState < 2 ||
-          videoElement.videoWidth === 0
-        )
+        if (videoElement.readyState < 2 || videoElement.videoWidth === 0)
           return;
 
         try {
           const bitmap = await createImageBitmap(videoElement);
-          worker.postMessage(
-            { type: "frame", bitmap, timestamp: Date.now() },
-            [bitmap],
-          );
+          worker.postMessage({ type: "frame", bitmap, timestamp: Date.now() }, [
+            bitmap,
+          ]);
         } catch {
           // frame capture failed
         }

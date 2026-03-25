@@ -65,10 +65,7 @@ const typeInstructions: Record<string, string> = {
 - 압박 질문 예시: "팀원이 계속 약속을 안 지키면 어떻게 하실 건가요?"`,
 };
 
-function buildSystemPrompt(
-  interviewType: string,
-  target: number,
-) {
+function buildSystemPrompt(interviewType: string, target: number) {
   const early = Math.round(target * 0.2);
   const mid = Math.round(target * 0.6);
   const late = Math.round(target * 0.85);
