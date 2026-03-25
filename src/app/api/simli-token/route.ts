@@ -33,7 +33,7 @@ export async function POST() {
           // Aspect ratio / width / height are not available config fields.
           handleSilence: true,
           maxSessionLength: 3600,
-          maxIdleTime: 120,
+          maxIdleTime: 300,
         },
         apiKey,
       },
