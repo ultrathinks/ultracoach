@@ -4,7 +4,6 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import { useState } from "react";
 import type { QuestionAnalysis, SessionFeedback } from "@/entities/feedback";
-import { identifyWeakAnswers } from "@/entities/feedback";
 import { cn } from "@/shared/lib/cn";
 import { ScoreRing } from "./score-ring";
 
@@ -15,7 +14,7 @@ interface ReportViewProps {
   sessionId: string;
 }
 
-function WeakAnswerItem({
+function QuestionItem({
   qa,
   sessionId,
 }: {
@@ -32,23 +31,12 @@ function WeakAnswerItem({
 
   return (
     <div className="space-y-3">
-      {/* question header + score */}
       <div className="flex items-start gap-3">
         <span className="text-sm text-muted shrink-0 w-8">
           Q{qa.questionId}
         </span>
         <span className="font-medium text-base flex-1">{qa.questionText}</span>
-        <span
-          className={cn(
-            "shrink-0 text-sm font-medium",
-            qa.contentScore >= 60 ? "text-yellow" : "text-red",
-          )}
-        >
-          {qa.contentScore}점
-        </span>
       </div>
-
-      {/* STAR badges */}
       <div className="flex items-center gap-1.5 ml-11">
         {(["situation", "task", "action", "result"] as const).map((key) => (
           <span
@@ -63,23 +51,18 @@ function WeakAnswerItem({
             {key[0].toUpperCase()}
           </span>
         ))}
+        <span className="ml-auto text-sm text-muted">{qa.contentScore}점</span>
       </div>
-
-      {/* answer preview */}
       {answerPreview && (
         <p className="text-sm text-foreground/50 ml-11 leading-relaxed">
           "{answerPreview}"
         </p>
       )}
-
-      {/* AI feedback */}
       <p className="text-[15px] text-foreground/70 leading-relaxed ml-11">
         {qa.feedback}
       </p>
-
-      {/* suggested answer fold/unfold */}
-      {qa.suggestedAnswer && (
-        <div className="ml-11">
+      <div className="flex items-center gap-3 ml-11">
+        {qa.suggestedAnswer && (
           <button
             type="button"
             className="flex items-center gap-2 text-sm text-indigo hover:text-indigo/80 transition-colors"
@@ -106,25 +89,21 @@ function WeakAnswerItem({
               />
             </svg>
           </button>
-          {expanded && (
-            <div className="mt-3 border-l-[3px] border-l-indigo/50 bg-white/[0.02] rounded-r-lg px-4 py-3">
-              <p className="text-sm text-foreground/70 leading-relaxed">
-                {qa.suggestedAnswer}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* drill CTA */}
-      <div className="ml-11">
+        )}
         <Link
           href={`/drill/${sessionId}?q=${qa.questionId}`}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-indigo via-purple to-pink text-white hover:opacity-90 transition-opacity"
+          className="text-sm text-muted hover:text-secondary transition-colors"
         >
           재연습하기
         </Link>
       </div>
+      {expanded && qa.suggestedAnswer && (
+        <div className="ml-11 border-l-[3px] border-l-indigo/50 bg-white/[0.02] rounded-r-lg px-4 py-3">
+          <p className="text-sm text-foreground/70 leading-relaxed">
+            {qa.suggestedAnswer}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -140,11 +119,6 @@ export function ReportView({
     const s = sec % 60;
     return `${m}분 ${s}초`;
   };
-
-  const weakAnswers = identifyWeakAnswers(feedback.questionAnalyses);
-  const hasAnySuggestedAnswer = feedback.questionAnalyses.some(
-    (qa) => qa.suggestedAnswer !== undefined && qa.suggestedAnswer !== "",
-  );
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-20 lg:py-28 space-y-10">
@@ -238,75 +212,18 @@ export function ReportView({
         </div>
       </motion.div>
 
-      {/* weak answers */}
-      {hasAnySuggestedAnswer && weakAnswers.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45 }}
-        >
-          <div className="rounded-xl bg-card border border-yellow/20 p-6">
-            <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-              <span className="text-yellow">&#9888;</span>
-              아쉬운 답변
-            </h2>
-            <div className="space-y-6">
-              {weakAnswers.map((qa) => (
-                <WeakAnswerItem
-                  key={qa.questionId}
-                  qa={qa}
-                  sessionId={sessionId}
-                />
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      )}
-
       {/* question analyses */}
       {feedback.questionAnalyses.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.55 }}
+          transition={{ delay: 0.45 }}
         >
           <div className="rounded-xl bg-card border border-white/[0.06] p-6">
             <h2 className="text-lg font-semibold mb-6">질문별 분석</h2>
             <div className="space-y-8">
-              {feedback.questionAnalyses.map((qa) => (
-                <div key={qa.questionId} className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <span className="text-sm text-muted shrink-0 w-8">
-                      Q{qa.questionId}
-                    </span>
-                    <span className="font-medium text-base">
-                      {qa.questionText}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 ml-11">
-                    {(["situation", "task", "action", "result"] as const).map(
-                      (key) => (
-                        <span
-                          key={key}
-                          className={cn(
-                            "px-2.5 py-1 rounded-lg text-xs font-medium",
-                            qa.starFulfillment[key]
-                              ? "bg-green/15 text-green"
-                              : "bg-white/[0.04] text-muted",
-                          )}
-                        >
-                          {key[0].toUpperCase()}
-                        </span>
-                      ),
-                    )}
-                    <span className="ml-auto text-sm text-muted">
-                      {qa.contentScore}점
-                    </span>
-                  </div>
-                  <p className="text-[15px] text-foreground/70 leading-relaxed ml-11">
-                    {qa.feedback}
-                  </p>
-                </div>
+              {feedback.questionAnalyses.map((qa, i) => (
+                <QuestionItem key={`${i}-${qa.questionId}`} qa={qa} sessionId={sessionId} />
               ))}
             </div>
           </div>
