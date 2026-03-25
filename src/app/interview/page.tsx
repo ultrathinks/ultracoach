@@ -1,16 +1,23 @@
 "use client";
 
 import { useSessionStore } from "@/entities/session";
+import { useMetricsStore } from "@/entities/metrics";
 import { SetupForm, useJobResearch } from "@/features/setup";
 import { InterviewScreen } from "@/widgets/interview/interview-screen";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type Stage = "setup" | "interview";
 
 export default function InterviewPage() {
   const [stage, setStage] = useState<Stage>("setup");
   const reset = useSessionStore((s) => s.reset);
+  const resetMetrics = useMetricsStore((s) => s.reset);
   const research = useJobResearch();
+
+  useEffect(() => {
+    reset();
+    resetMetrics();
+  }, [reset, resetMetrics]);
 
   const handleStart = useCallback(() => {
     research.start();
