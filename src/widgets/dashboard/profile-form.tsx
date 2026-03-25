@@ -1,7 +1,6 @@
 "use client";
 
 import { Camera, Loader2 } from "lucide-react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { Button, Input } from "@/shared/ui";
@@ -57,12 +56,12 @@ export function ProfileForm({
         <div className="flex items-center gap-5 mb-8">
           <div className="relative h-16 w-16 shrink-0">
             {image ? (
-              <Image
+              <img
                 src={image}
                 alt="프로필"
                 width={64}
                 height={64}
-                className="rounded-full object-cover"
+                className="h-16 w-16 rounded-full object-cover"
               />
             ) : (
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo/20 text-indigo text-xl font-bold">
