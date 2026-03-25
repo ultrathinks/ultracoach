@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
   pageExtensions: ["ts", "tsx", "mdx"],
   reactCompiler: true,
   serverExternalPackages: ["postgres"],
+  devIndicators: false,
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
