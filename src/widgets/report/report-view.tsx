@@ -169,9 +169,9 @@ export function ReportView({
           <div className="rounded-xl bg-card border border-white/[0.06] p-6">
             <h2 className="text-lg font-semibold mb-4">핵심 순간</h2>
             <div className="space-y-3">
-              {feedback.keyMoments.map((moment) => (
+              {feedback.keyMoments.map((moment, i) => (
                 <div
-                  key={`${moment.timestamp}-${moment.type}`}
+                  key={`${i}-${moment.timestamp}-${moment.type}`}
                   className={cn(
                     "border-l-[3px] pl-4 py-1",
                     moment.type === "positive"
