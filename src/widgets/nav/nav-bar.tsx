@@ -1,10 +1,10 @@
 "use client";
 
-import { cn } from "@/shared/lib/cn";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "@/shared/lib/cn";
 
 const links = [
   { href: "/interview", label: "면접" },

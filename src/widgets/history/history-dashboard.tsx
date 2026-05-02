@@ -1,15 +1,18 @@
 "use client";
 
-import type { BodyLanguageData, DashboardAnalytics } from "@/entities/analytics";
-import { Button } from "@/shared/ui";
-import { cn } from "@/shared/lib/cn";
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { BodyLanguagePanelInner } from "@/widgets/history/body-language-panel";
-import { FillerHeatmapInner } from "@/widgets/history/filler-heatmap";
+import type {
+  BodyLanguageData,
+  DashboardAnalytics,
+} from "@/entities/analytics";
+import { cn } from "@/shared/lib/cn";
+import { Button } from "@/shared/ui";
 import { ActionTrackerInner } from "@/widgets/history/action-tracker";
 import { AiRecommendationCardInner } from "@/widgets/history/ai-recommendation-card";
+import { BodyLanguagePanelInner } from "@/widgets/history/body-language-panel";
+import { FillerHeatmapInner } from "@/widgets/history/filler-heatmap";
 
 const ScoreTrendChart = dynamic(
   () =>

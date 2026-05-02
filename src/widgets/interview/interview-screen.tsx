@@ -596,11 +596,13 @@ export function InterviewScreen({
           {/* question/caption overlay — bottom of video */}
           <div className="absolute bottom-0 inset-x-0 pointer-events-none">
             <div className="bg-gradient-to-t from-background via-background/60 to-transparent pt-20 pb-6 px-6">
-              {pinQuestion && currentQuestion && (phase === "speaking" || phase === "listening") && (
-                <p className="text-foreground/50 text-center text-sm max-w-2xl mx-auto mb-2">
-                  {currentQuestion}
-                </p>
-              )}
+              {pinQuestion &&
+                currentQuestion &&
+                (phase === "speaking" || phase === "listening") && (
+                  <p className="text-foreground/50 text-center text-sm max-w-2xl mx-auto mb-2">
+                    {currentQuestion}
+                  </p>
+                )}
               <AnimatePresence mode="wait">
                 {liveCaption && phase === "listening" ? (
                   <motion.p
@@ -613,7 +615,8 @@ export function InterviewScreen({
                     {liveCaption}
                   </motion.p>
                 ) : currentQuestion &&
-                  ((phase === "speaking" && avatarIsSpeaking) || (phase === "listening" && !pinQuestion)) ? (
+                  ((phase === "speaking" && avatarIsSpeaking) ||
+                    (phase === "listening" && !pinQuestion)) ? (
                   <motion.p
                     key={currentQuestion}
                     initial={{ opacity: 0 }}

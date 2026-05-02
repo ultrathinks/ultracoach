@@ -37,9 +37,7 @@ export function useRecording() {
       try {
         recorder = new MediaRecorder(recordStream, { mimeType: mt });
         break;
-      } catch {
-        continue;
-      }
+      } catch {}
     }
 
     if (!recorder) {

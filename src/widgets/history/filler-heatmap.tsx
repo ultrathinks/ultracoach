@@ -25,23 +25,34 @@ function FillerHeatmapInner({ data }: FillerHeatmapProps) {
   const wordStats = data.words.map((word, wi) => {
     const freqs = data.sessions.map((_, si) => {
       const key = `${si}-${wi}`;
-      return data.cells.find(
-        (c) => c.sessionIdx === si && c.wordIdx === wi,
-      )?.freqPerMin ?? 0;
+      return (
+        data.cells.find((c) => c.sessionIdx === si && c.wordIdx === wi)
+          ?.freqPerMin ?? 0
+      );
     });
     const total = freqs.reduce((a, b) => a + b, 0);
     const avg = total / data.sessions.length;
     const recent = freqs.slice(0, 3);
-    const recentAvg = recent.length > 0
-      ? recent.reduce((a, b) => a + b, 0) / recent.length
-      : 0;
+    const recentAvg =
+      recent.length > 0 ? recent.reduce((a, b) => a + b, 0) / recent.length : 0;
     const older = freqs.slice(3, 6);
-    const olderAvg = older.length > 0
-      ? older.reduce((a, b) => a + b, 0) / older.length
-      : 0;
+    const olderAvg =
+      older.length > 0 ? older.reduce((a, b) => a + b, 0) / older.length : 0;
     const trend =
-      older.length === 0 ? "none" : recentAvg < olderAvg ? "down" : recentAvg > olderAvg ? "up" : "flat";
-    return { word, avg, total, trend, recentFreqs: freqs.slice(0, 5).reverse() };
+      older.length === 0
+        ? "none"
+        : recentAvg < olderAvg
+          ? "down"
+          : recentAvg > olderAvg
+            ? "up"
+            : "flat";
+    return {
+      word,
+      avg,
+      total,
+      trend,
+      recentFreqs: freqs.slice(0, 5).reverse(),
+    };
   });
 
   wordStats.sort((a, b) => b.avg - a.avg);

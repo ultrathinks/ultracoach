@@ -1,6 +1,5 @@
 "use client";
 
-import type { StarRadarData } from "@/entities/analytics";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -10,6 +9,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import type { StarRadarData } from "@/entities/analytics";
 
 interface StarRadarChartProps {
   data: StarRadarData;
@@ -33,7 +33,10 @@ function StarRadarChartInner({ data }: StarRadarChartProps) {
     <div className="rounded-xl bg-card border border-white/[0.1] p-6">
       <h3 className="text-base font-semibold mb-4">STAR 충족률</h3>
       <ResponsiveContainer width="100%" height={260}>
-        <RadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
+        <RadarChart
+          data={data}
+          margin={{ top: 10, right: 30, bottom: 10, left: 30 }}
+        >
           <PolarGrid stroke="rgba(255,255,255,0.1)" />
           <PolarAngleAxis
             dataKey="subject"

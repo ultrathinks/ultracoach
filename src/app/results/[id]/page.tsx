@@ -1,8 +1,8 @@
-import { db } from "@/shared/db";
-import { sessions, feedback } from "@/shared/db/schema";
-import { auth } from "@/shared/lib/auth";
 import { eq } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
+import { db } from "@/shared/db";
+import { feedback, sessions } from "@/shared/db/schema";
+import { auth } from "@/shared/lib/auth";
 import { ResultsClient } from "./results-client";
 
 export const dynamic = "force-dynamic";

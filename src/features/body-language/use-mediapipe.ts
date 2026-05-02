@@ -1,7 +1,7 @@
 "use client";
 
-import { useMetricsStore, type MetricSnapshot } from "@/entities/metrics";
 import { useCallback, useRef, useState } from "react";
+import { type MetricSnapshot, useMetricsStore } from "@/entities/metrics";
 
 export interface Landmarks {
   face: number[][];

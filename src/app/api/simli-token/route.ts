@@ -1,7 +1,7 @@
-import { auth } from "@/shared/lib/auth";
-import { rateLimit } from "@/shared/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { generateIceServers, generateSimliSessionToken } from "simli-client";
+import { auth } from "@/shared/lib/auth";
+import { rateLimit } from "@/shared/lib/rate-limit";
 
 const checkRate = rateLimit({ windowMs: 60_000, max: 10 });
 

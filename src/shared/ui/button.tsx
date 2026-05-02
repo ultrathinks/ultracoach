@@ -1,5 +1,5 @@
-import { cn } from "@/shared/lib/cn";
 import type { ButtonHTMLAttributes } from "react";
+import { cn } from "@/shared/lib/cn";
 
 type Variant = "primary" | "secondary" | "ghost";
 type Size = "sm" | "md" | "lg";

@@ -1,14 +1,14 @@
 "use client";
 
-import type { ScoreTrendPoint } from "@/entities/analytics";
 import {
-  LineChart,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  ResponsiveContainer,
 } from "recharts";
+import type { ScoreTrendPoint } from "@/entities/analytics";
 
 interface ScoreTrendChartProps {
   data: ScoreTrendPoint[];

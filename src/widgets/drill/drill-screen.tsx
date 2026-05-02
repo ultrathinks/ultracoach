@@ -61,7 +61,11 @@ export function DrillScreen({
 
   // Prep → speaking/listening 전환 시 video element에 stream 연결
   useEffect(() => {
-    if ((drillPhase === "speaking" || drillPhase === "listening") && webcamRef.current && streamRef.current) {
+    if (
+      (drillPhase === "speaking" || drillPhase === "listening") &&
+      webcamRef.current &&
+      streamRef.current
+    ) {
       webcamRef.current.srcObject = streamRef.current;
     }
   }, [drillPhase, streamRef]);

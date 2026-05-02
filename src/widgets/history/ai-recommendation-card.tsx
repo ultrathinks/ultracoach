@@ -1,7 +1,7 @@
 "use client";
 
-import type { AiRecommendationData } from "@/entities/analytics";
 import { useState } from "react";
+import type { AiRecommendationData } from "@/entities/analytics";
 
 interface AiRecommendationCardProps {
   data: AiRecommendationData;
@@ -12,7 +12,10 @@ function truncate(text: string, maxLength: number): string {
   const truncated = text.slice(0, maxLength);
   // Cut at last space to avoid mid-word truncation
   const lastSpace = truncated.lastIndexOf(" ");
-  return (lastSpace > maxLength * 0.6 ? truncated.slice(0, lastSpace) : truncated) + "...";
+  return (
+    (lastSpace > maxLength * 0.6 ? truncated.slice(0, lastSpace) : truncated) +
+    "..."
+  );
 }
 
 function AiRecommendationCardInner({ data }: AiRecommendationCardProps) {
@@ -45,7 +48,8 @@ function AiRecommendationCardInner({ data }: AiRecommendationCardProps) {
   }
 
   const isLong = data.suggestion.length > 80;
-  const displayText = expanded || !isLong ? data.suggestion : truncate(data.suggestion, 80);
+  const displayText =
+    expanded || !isLong ? data.suggestion : truncate(data.suggestion, 80);
 
   return (
     <div

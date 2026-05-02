@@ -1,8 +1,8 @@
 "use client";
 
-import { cn } from "@/shared/lib/cn";
 import { motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "@/shared/lib/cn";
 
 type StepStatus = "pending" | "loading" | "done" | "error";
 
