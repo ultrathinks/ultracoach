@@ -144,8 +144,9 @@ export function InterviewScreen({
       try {
         return await navigator.mediaDevices.getUserMedia(preferred);
       } catch (err) {
-        const mediaError = err as DOMException;
-        if (mediaError?.name !== "NotFoundError") throw err;
+        if (!(err instanceof DOMException) || err.name !== "NotFoundError") {
+          throw err;
+        }
 
         // 일부 환경에서는 카메라가 잠시 사라져도 오디오는 사용 가능하므로 폴백한다.
         return navigator.mediaDevices.getUserMedia({
@@ -206,9 +207,9 @@ export function InterviewScreen({
         }
         startRecording(stream);
       } catch (err) {
-        const mediaError = err as DOMException;
-        const code = mediaError?.name ?? "unknown";
-        const message = mediaError?.message ?? "unknown error";
+        const isDom = err instanceof DOMException;
+        const code = isDom ? err.name : "unknown";
+        const message = isDom ? err.message : "unknown error";
         console.error(`camera/mic init failed: ${code} - ${message}`);
 
         if (
