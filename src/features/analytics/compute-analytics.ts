@@ -64,14 +64,18 @@ export function computeAnalytics(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 
+  const feedbackBySessionId = new Map(
+    feedbackRows.map((r) => [r.sessionId, r] as const),
+  );
+
   return {
     scoreTrends: buildScoreTrends(ascending),
     typeComparison: buildTypeComparison(completed),
     stats: buildStats(sessions, ascending),
     starRadar: buildStarRadar(feedbackRows),
-    fillerHeatmap: buildFillerHeatmap(feedbackRows, allAscending),
-    actionTracker: buildActionTracker(feedbackRows, allAscending),
-    aiRecommendation: buildAiRecommendation(feedbackRows, allAscending),
+    fillerHeatmap: buildFillerHeatmap(feedbackBySessionId, allAscending),
+    actionTracker: buildActionTracker(feedbackBySessionId, allAscending),
+    aiRecommendation: buildAiRecommendation(feedbackBySessionId, allAscending),
   };
 }
 
@@ -294,7 +298,7 @@ function buildStarRadar(feedbackRows: FeedbackRow[]): StarRadarData {
 // --- Filler Heatmap (WEAK-02) ---
 
 function buildFillerHeatmap(
-  feedbackRows: FeedbackRow[],
+  feedbackBySessionId: Map<string, FeedbackRow>,
   sessions: SessionRow[],
 ): FillerHeatmapData {
   const empty: FillerHeatmapData = {
@@ -304,9 +308,6 @@ function buildFillerHeatmap(
     maxFreq: 0,
   };
 
-  // Build a sessionId → session map for ordering and date labels
-  const sessionMap = new Map(sessions.map((s) => [s.id, s]));
-
   // Collect per-session filler data
   const sessionFillerData: Array<{
     sessionId: string;
@@ -315,11 +316,9 @@ function buildFillerHeatmap(
     totalDurationSec: number;
   }> = [];
 
-  // Process feedback rows, maintaining session order (sessions are already sorted ascending)
-  const orderedSessionIds = sessions.map((s) => s.id);
-
-  for (const sessionId of orderedSessionIds) {
-    const row = feedbackRows.find((r) => r.sessionId === sessionId);
+  // Iterate sessions in order; skip ones without feedback
+  for (const session of sessions) {
+    const row = feedbackBySessionId.get(session.id);
     if (!row) continue;
     const parsed = parseFeedback(row.summaryJson);
     if (!parsed.success) continue;
@@ -335,10 +334,9 @@ function buildFillerHeatmap(
     }
 
     if (totalDurationSec > 0) {
-      const s = sessionMap.get(sessionId);
-      const date = s ? new Date(s.createdAt) : new Date();
+      const date = new Date(session.createdAt);
       sessionFillerData.push({
-        sessionId,
+        sessionId: session.id,
         label: `${date.getMonth() + 1}/${date.getDate()}`,
         wordCounts,
         totalDurationSec,
@@ -393,38 +391,31 @@ function buildFillerHeatmap(
 // --- Action Tracker (ACTN-01) ---
 
 function buildActionTracker(
-  feedbackRows: FeedbackRow[],
+  feedbackBySessionId: Map<string, FeedbackRow>,
   sessions: SessionRow[],
 ): ActionTrackerData {
   const empty: ActionTrackerData = { items: [], sessionDate: "" };
 
   // sessions are sorted ascending by createdAt
-  const orderedSessionIds = sessions.map((s) => s.id);
+  const latestSession =
+    sessions.length > 0 ? sessions[sessions.length - 1] : null;
+  const prevSession =
+    sessions.length > 1 ? sessions[sessions.length - 2] : null;
 
-  const latestSessionId =
-    orderedSessionIds.length > 0
-      ? orderedSessionIds[orderedSessionIds.length - 1]
-      : null;
-  const prevSessionId =
-    orderedSessionIds.length > 1
-      ? orderedSessionIds[orderedSessionIds.length - 2]
-      : null;
+  if (!latestSession) return empty;
 
-  if (!latestSessionId) return empty;
-
-  const latestRow = feedbackRows.find((r) => r.sessionId === latestSessionId);
+  const latestRow = feedbackBySessionId.get(latestSession.id);
   if (!latestRow) return empty;
 
   const latestParsed = parseFeedback(latestRow.summaryJson);
   if (!latestParsed.success) return empty;
 
-  const latestSession = sessions.find((s) => s.id === latestSessionId);
-  const sessionDate = latestSession ? latestSession.createdAt : "";
+  const sessionDate = latestSession.createdAt;
 
   // Get previous session action items for delta comparison
   let prevTexts: string[] = [];
-  if (prevSessionId) {
-    const prevRow = feedbackRows.find((r) => r.sessionId === prevSessionId);
+  if (prevSession) {
+    const prevRow = feedbackBySessionId.get(prevSession.id);
     if (prevRow) {
       const prevParsed = parseFeedback(prevRow.summaryJson);
       if (prevParsed.success) {
@@ -470,26 +461,23 @@ function computeWordOverlap(a: string, b: string): number {
 // --- AI Recommendation (ACTN-02) ---
 
 function buildAiRecommendation(
-  feedbackRows: FeedbackRow[],
+  feedbackBySessionId: Map<string, FeedbackRow>,
   sessions: SessionRow[],
 ): AiRecommendationData {
   const empty: AiRecommendationData = { suggestion: "", sessionDate: "" };
 
-  const latestSessionId =
-    sessions.length > 0 ? sessions[sessions.length - 1].id : null;
+  const latestSession =
+    sessions.length > 0 ? sessions[sessions.length - 1] : null;
+  if (!latestSession) return empty;
 
-  if (!latestSessionId) return empty;
-
-  const latestRow = feedbackRows.find((r) => r.sessionId === latestSessionId);
+  const latestRow = feedbackBySessionId.get(latestSession.id);
   if (!latestRow) return empty;
 
   const parsed = parseFeedback(latestRow.summaryJson);
   if (!parsed.success) return empty;
 
-  const latestSession = sessions.find((s) => s.id === latestSessionId);
-
   return {
     suggestion: parsed.data.nextSessionSuggestion,
-    sessionDate: latestSession ? latestSession.createdAt : "",
+    sessionDate: latestSession.createdAt,
   };
 }
