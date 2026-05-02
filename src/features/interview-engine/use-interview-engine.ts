@@ -1,9 +1,9 @@
 "use client";
 
-import type { InterviewConfig } from "@/entities/session";
-import { useSessionStore } from "@/entities/session";
 import { useCallback, useRef, useState } from "react";
 import { z } from "zod";
+import type { InterviewConfig } from "@/entities/session";
+import { useSessionStore } from "@/entities/session";
 import { createVad } from "./vad";
 
 const questionResponseSchema = z.object({

@@ -1,3 +1,8 @@
+export {
+  metricEventSchema,
+  metricSnapshotSchema,
+  metricSnapshotsArraySchema,
+} from "./schema";
 export { useMetricsStore } from "./store";
 export type {
   ExpressionMetric,
@@ -7,9 +12,3 @@ export type {
   MetricSnapshot,
   PostureMetric,
 } from "./types";
-
-export {
-  metricEventSchema,
-  metricSnapshotSchema,
-  metricSnapshotsArraySchema,
-} from "./schema";

@@ -57,10 +57,12 @@ export function createVad(options: VadOptions = {}): VadController {
         silenceStart = performance.now();
       }
       const speechDuration = performance.now() - speechStart;
-      const effectiveDelay = speechDuration < 5000
-        ? silenceDelay * 2
-        : silenceDelay;
-      if (silenceStart > 0 && performance.now() - silenceStart > effectiveDelay) {
+      const effectiveDelay =
+        speechDuration < 5000 ? silenceDelay * 2 : silenceDelay;
+      if (
+        silenceStart > 0 &&
+        performance.now() - silenceStart > effectiveDelay
+      ) {
         const duration = speechDuration;
         isSpeaking = false;
         silenceStart = 0;

@@ -1,5 +1,5 @@
-import { cn } from "@/shared/lib/cn";
 import type { HTMLAttributes } from "react";
+import { cn } from "@/shared/lib/cn";
 
 interface ChipProps extends HTMLAttributes<HTMLSpanElement> {
   active?: boolean;

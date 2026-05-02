@@ -1,9 +1,9 @@
 "use client";
 
-import type { InterviewConfig } from "@/entities/session";
-import { useMetricsStore } from "@/entities/metrics";
-import { useSessionStore } from "@/entities/session";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useMetricsStore } from "@/entities/metrics";
+import type { InterviewConfig } from "@/entities/session";
+import { useSessionStore } from "@/entities/session";
 import {
   createInterventionEngine,
   type Intervention,
