@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { interviewModeSchema, interviewTypeSchema } from "@/entities/session";
 import { db } from "@/shared/db";
 import {
   metricSnapshots,
@@ -38,8 +39,8 @@ const metricEventSchema = z.object({
 
 const requestSchema = z.object({
   jobTitle: z.string().max(200),
-  interviewType: z.string().max(50),
-  mode: z.string().max(20),
+  interviewType: interviewTypeSchema,
+  mode: interviewModeSchema,
   durationSec: z.number().int().min(0).max(86400),
   companyName: z.string().max(100).nullable().optional(),
   jobResearchJson: z.record(z.unknown()).nullable().optional(),
