@@ -1,14 +1,15 @@
-import { auth } from "@/shared/lib/auth";
-import { rateLimit } from "@/shared/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { interviewTypeSchema } from "@/entities/session";
+import { auth } from "@/shared/lib/auth";
 import { getOpenAI, parseJsonResponse } from "@/shared/lib/openai";
+import { rateLimit } from "@/shared/lib/rate-limit";
 
 const checkRate = rateLimit({ windowMs: 60_000, max: 60 });
 
 const requestSchema = z.object({
   jobTitle: z.string().max(200),
-  interviewType: z.string().max(50),
+  interviewType: interviewTypeSchema,
   resumeFileId: z.string().nullable().optional(),
   history: z
     .array(
@@ -232,9 +233,7 @@ export async function POST(request: Request) {
     ];
 
     if (history.length === 0) {
-      parts.push(
-        "\n(첫 만남입니다. 간결하게 인사하고 자기소개를 요청하세요)",
-      );
+      parts.push("\n(첫 만남입니다. 간결하게 인사하고 자기소개를 요청하세요)");
     } else {
       parts.push(`\n대화 이력 (${history.length}회):`);
       for (const entry of history) {

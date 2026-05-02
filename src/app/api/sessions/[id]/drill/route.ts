@@ -6,6 +6,9 @@ import { db } from "@/shared/db";
 import { feedback as feedbackTable, sessions } from "@/shared/db/schema";
 import { auth } from "@/shared/lib/auth";
 import { getOpenAI, parseJsonResponse } from "@/shared/lib/openai";
+import { rateLimit } from "@/shared/lib/rate-limit";
+
+const checkRate = rateLimit({ windowMs: 60_000, max: 30 });
 
 const drillRequestSchema = z.object({
   questionId: z.number(),
@@ -35,6 +38,9 @@ export async function POST(
     if (!session?.user?.id) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
+
+    const limited = checkRate(session.user.id, "session-drill");
+    if (limited) return limited;
 
     const [target] = await db
       .select({

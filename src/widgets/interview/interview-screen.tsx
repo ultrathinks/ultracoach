@@ -144,8 +144,9 @@ export function InterviewScreen({
       try {
         return await navigator.mediaDevices.getUserMedia(preferred);
       } catch (err) {
-        const mediaError = err as DOMException;
-        if (mediaError?.name !== "NotFoundError") throw err;
+        if (!(err instanceof DOMException) || err.name !== "NotFoundError") {
+          throw err;
+        }
 
         // 일부 환경에서는 카메라가 잠시 사라져도 오디오는 사용 가능하므로 폴백한다.
         return navigator.mediaDevices.getUserMedia({
@@ -206,9 +207,9 @@ export function InterviewScreen({
         }
         startRecording(stream);
       } catch (err) {
-        const mediaError = err as DOMException;
-        const code = mediaError?.name ?? "unknown";
-        const message = mediaError?.message ?? "unknown error";
+        const isDom = err instanceof DOMException;
+        const code = isDom ? err.name : "unknown";
+        const message = isDom ? err.message : "unknown error";
         console.error(`camera/mic init failed: ${code} - ${message}`);
 
         if (
@@ -595,11 +596,13 @@ export function InterviewScreen({
           {/* question/caption overlay — bottom of video */}
           <div className="absolute bottom-0 inset-x-0 pointer-events-none">
             <div className="bg-gradient-to-t from-background via-background/60 to-transparent pt-20 pb-6 px-6">
-              {pinQuestion && currentQuestion && (phase === "speaking" || phase === "listening") && (
-                <p className="text-foreground/50 text-center text-sm max-w-2xl mx-auto mb-2">
-                  {currentQuestion}
-                </p>
-              )}
+              {pinQuestion &&
+                currentQuestion &&
+                (phase === "speaking" || phase === "listening") && (
+                  <p className="text-foreground/50 text-center text-sm max-w-2xl mx-auto mb-2">
+                    {currentQuestion}
+                  </p>
+                )}
               <AnimatePresence mode="wait">
                 {liveCaption && phase === "listening" ? (
                   <motion.p
@@ -612,7 +615,8 @@ export function InterviewScreen({
                     {liveCaption}
                   </motion.p>
                 ) : currentQuestion &&
-                  ((phase === "speaking" && avatarIsSpeaking) || (phase === "listening" && !pinQuestion)) ? (
+                  ((phase === "speaking" && avatarIsSpeaking) ||
+                    (phase === "listening" && !pinQuestion)) ? (
                   <motion.p
                     key={currentQuestion}
                     initial={{ opacity: 0 }}

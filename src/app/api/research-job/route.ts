@@ -1,15 +1,16 @@
-import { auth } from "@/shared/lib/auth";
-import { rateLimit } from "@/shared/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { interviewTypeSchema } from "@/entities/session";
+import { auth } from "@/shared/lib/auth";
 import { getOpenAI } from "@/shared/lib/openai";
+import { rateLimit } from "@/shared/lib/rate-limit";
 
 const checkRate = rateLimit({ windowMs: 60_000, max: 10 });
 
 const requestSchema = z.object({
   jobTitle: z.string().max(200),
   companyName: z.string().max(100).optional(),
-  interviewType: z.string().max(50),
+  interviewType: interviewTypeSchema,
 });
 
 const researchSchema = z.object({
