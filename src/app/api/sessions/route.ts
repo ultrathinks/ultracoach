@@ -8,6 +8,9 @@ import {
   sessions,
 } from "@/shared/db/schema";
 import { auth } from "@/shared/lib/auth";
+import { rateLimit } from "@/shared/lib/rate-limit";
+
+const checkRate = rateLimit({ windowMs: 60_000, max: 10 });
 
 const metricSnapshotSchema = z.object({
   timestamp: z.number(),
@@ -69,6 +72,9 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
+
+    const limited = checkRate(session.user.id, "sessions");
+    if (limited) return limited;
 
     const body = requestSchema.safeParse(await request.json());
     if (!body.success) {
