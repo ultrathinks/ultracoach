@@ -38,12 +38,11 @@ export function DrillPrepScreen({
       }
       setMediaReady(true);
     } catch (err) {
-      const e = err as DOMException;
-      if (e.name === "NotAllowedError") {
+      if (err instanceof DOMException && err.name === "NotAllowedError") {
         setPermissionError(
           "카메라와 마이크 접근이 거부되었습니다. 브라우저 설정에서 권한을 허용해 주세요",
         );
-      } else if (e.name === "NotFoundError") {
+      } else if (err instanceof DOMException && err.name === "NotFoundError") {
         setPermissionError("카메라 또는 마이크를 찾을 수 없습니다");
       } else {
         setPermissionError("카메라 연결에 실패했습니다");
