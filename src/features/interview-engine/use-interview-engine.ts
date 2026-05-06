@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useRef, useState } from "react";
 import { z } from "zod";
 import type { InterviewConfig } from "@/entities/session";
@@ -17,19 +18,23 @@ const transcribeResponseSchema = z.object({
 });
 
 export function useInterviewEngine(config?: InterviewConfig) {
+  const t = useTranslations("interview");
   const vadRef = useRef<ReturnType<typeof createVad> | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const peakRmsRef = useRef(0);
   const questionCountRef = useRef(0);
   const listenResolveRef = useRef<(() => void) | null>(null);
   const gracePeriodTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const finalizeAnswerRef = useRef<(() => Promise<void>) | null>(null);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [silenceProgress, setSilenceProgress] = useState(0);
 
   const gracePeriod = config?.gracePeriod ?? 1500;
   const vadThreshold = config?.vadThreshold ?? 0.035;
-  const silenceDelay = config?.silenceDelay ?? 2500;
+  const silenceDelay = config?.silenceDelay ?? 3500;
   const minSpeechDuration = config?.minSpeechDuration ?? 1000;
   const targetQuestionCount = config?.targetQuestionCount ?? 15;
   const maxQuestionCount = config?.maxQuestionCount ?? 20;
@@ -120,55 +125,70 @@ export function useInterviewEngine(config?: InterviewConfig) {
           };
 
           mediaRecorder.start(1000);
+          peakRmsRef.current = 0;
 
-          let peakRms = 0;
+          const finalize = async () => {
+            if (finalizeAnswerRef.current !== finalize) return;
+            finalizeAnswerRef.current = null;
+
+            if (mediaRecorder.state !== "inactive") {
+              mediaRecorder.stop();
+            }
+            vadRef.current?.stop();
+            setAudioLevel(0);
+            setSilenceProgress(0);
+            useSessionStore.getState().setPhase("processing");
+
+            const audioBlob = new Blob(audioChunksRef.current, {
+              type: "audio/webm",
+            });
+
+            const noRealSpeech =
+              audioBlob.size < 1000 || peakRmsRef.current < 0.06;
+
+            if (noRealSpeech) {
+              const store = useSessionStore.getState();
+              const noResponse = t("noResponse");
+              store.addHistory({
+                role: "interviewee",
+                content: noResponse,
+              });
+              store.updateLastAnswer(noResponse);
+            } else {
+              const store = useSessionStore.getState();
+              try {
+                const text = await transcribeAudio(audioBlob);
+                store.addHistory({ role: "interviewee", content: text });
+                store.updateLastAnswer(text);
+              } catch {
+                const failed = t("transcribeFailed");
+                store.addHistory({
+                  role: "interviewee",
+                  content: failed,
+                });
+                store.updateLastAnswer(failed);
+              }
+            }
+
+            listenResolveRef.current?.();
+            listenResolveRef.current = null;
+          };
+
+          finalizeAnswerRef.current = finalize;
 
           vadRef.current = createVad({
             threshold: calibratedThreshold ?? Math.max(vadThreshold, 0.05),
             silenceDelay,
             minSpeechDuration: Math.max(minSpeechDuration, 2000),
             onLevel: (rms) => {
-              if (rms > peakRms) peakRms = rms;
+              if (rms > peakRmsRef.current) peakRmsRef.current = rms;
               setAudioLevel(rms);
             },
-            onSpeechStart: () => {},
-            onSpeechEnd: async () => {
-              mediaRecorder.stop();
-              vadRef.current?.stop();
-              setAudioLevel(0);
-              useSessionStore.getState().setPhase("processing");
-
-              const audioBlob = new Blob(audioChunksRef.current, {
-                type: "audio/webm",
-              });
-
-              const noRealSpeech = audioBlob.size < 1000 || peakRms < 0.06;
-
-              if (noRealSpeech) {
-                const store = useSessionStore.getState();
-                store.addHistory({
-                  role: "interviewee",
-                  content: "(응답 없음)",
-                });
-                store.updateLastAnswer("(응답 없음)");
-              } else {
-                const store = useSessionStore.getState();
-                try {
-                  const text = await transcribeAudio(audioBlob);
-                  store.addHistory({ role: "interviewee", content: text });
-                  store.updateLastAnswer(text);
-                } catch {
-                  store.addHistory({
-                    role: "interviewee",
-                    content: "(음성 인식 실패)",
-                  });
-                  store.updateLastAnswer("(음성 인식 실패)");
-                }
-              }
-
-              listenResolveRef.current?.();
-              listenResolveRef.current = null;
+            onSilenceProgress: (progress) => {
+              setSilenceProgress(progress);
             },
+            onSpeechStart: () => {},
+            onSpeechEnd: () => finalize(),
           });
 
           vadRef.current.start(stream);
@@ -194,12 +214,17 @@ export function useInterviewEngine(config?: InterviewConfig) {
     mediaRecorderRef.current?.stop();
     mediaRecorderRef.current = null;
     setAudioLevel(0);
+    setSilenceProgress(0);
     listenResolveRef.current?.();
     listenResolveRef.current = null;
   }, []);
 
   const keepListeningAlive = useCallback(() => {
     vadRef.current?.keepAlive();
+  }, []);
+
+  const forceSpeechEnd = useCallback(async () => {
+    await finalizeAnswerRef.current?.();
   }, []);
 
   const submitTextAnswer = useCallback((text: string) => {
@@ -212,6 +237,7 @@ export function useInterviewEngine(config?: InterviewConfig) {
     mediaRecorderRef.current?.stop();
     mediaRecorderRef.current = null;
     setAudioLevel(0);
+    setSilenceProgress(0);
 
     const store = useSessionStore.getState();
     store.setPhase("processing");
@@ -228,6 +254,8 @@ export function useInterviewEngine(config?: InterviewConfig) {
     stopListening,
     submitTextAnswer,
     keepListeningAlive,
+    forceSpeechEnd,
     audioLevel,
+    silenceProgress,
   };
 }
