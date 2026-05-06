@@ -1,0 +1,93 @@
+{
+  "common": {
+    "ko": "한국어",
+    "en": "English"
+  },
+  "setup": {
+    "title": "Interview Setup",
+    "subtitle": "Choose your role and interview type",
+    "jobTitle": "Job title",
+    "jobTitlePlaceholder": "e.g. Frontend Engineer",
+    "companyName": "Company (optional)",
+    "companyNamePlaceholder": "e.g. Stripe",
+    "interviewType": "Interview type",
+    "types": {
+      "personality": "Personality",
+      "personalityDesc": "Values · Motivation · Conflict",
+      "technical": "Technical",
+      "technicalDesc": "Stack · Problem solving · Design",
+      "cultureFit": "Culture fit",
+      "cultureFitDesc": "Culture · Teamwork · Leadership"
+    },
+    "resume": "Resume (optional)",
+    "resumePlaceholder": "PDF or DOCX",
+    "resumeTooLarge": "File size exceeds 50MB",
+    "resumeUploadFailed": "resume upload failed",
+    "uploading": "Uploading resume...",
+    "start": "Start interview",
+    "checkIdle": "🎤 Check mic and camera",
+    "checkChecking": "Checking devices...",
+    "checkOk": "✓ Mic and camera detected",
+    "checkDenied": "✕ Permission denied. Please allow it in your browser settings"
+  },
+  "interview": {
+    "prep": {
+      "jobAnalysis": "Job analysis",
+      "questionOpt": "Optimizing questions",
+      "deviceConnect": "Connecting camera and mic",
+      "interviewerReady": "Preparing AI interviewer",
+      "preparing": "Preparing your interview",
+      "starting": "Starting interview"
+    },
+    "phases": {
+      "listening": "Listening",
+      "speaking": "Interviewer speaking",
+      "generating": "Generating question",
+      "processing": "Processing answer",
+      "ended": "Ended",
+      "idle": "Idle"
+    },
+    "controls": {
+      "mic": "Mic",
+      "cam": "Camera",
+      "deviceSettings": "Device settings",
+      "pause": "Pause",
+      "resume": "Resume",
+      "replay": "Replay question",
+      "forceEnd": "Submit answer",
+      "pinQuestion": "Pin question",
+      "textInputPlaceholder": "Type your answer...",
+      "send": "Send",
+      "end": "End",
+      "extendThinking": "Keep thinking"
+    },
+    "device": {
+      "title": "Device settings",
+      "mic": "Microphone",
+      "speaker": "Speaker",
+      "cam": "Camera",
+      "default": "System default",
+      "test": "Test playback",
+      "noSinkSupport": "This browser does not support output device selection",
+      "close": "Close"
+    },
+    "toasts": {
+      "micChanged": "Microphone changed",
+      "micChangeFailed": "failed to change microphone",
+      "speakerChanged": "Speaker changed",
+      "speakerChangeFailed": "failed to change speaker",
+      "camChanged": "Camera changed",
+      "camChangeFailed": "failed to change camera",
+      "deviceListChanged": "Connected devices changed"
+    },
+    "pause": {
+      "title": "Paused",
+      "subtitle": "Press resume when you're ready to continue"
+    },
+    "analyzing": "Analyzing results",
+    "analyzingDesc": "AI is analyzing your interview",
+    "camOff": "Camera off",
+    "noResponse": "(no response)",
+    "transcribeFailed": "(transcription failed)"
+  }
+}

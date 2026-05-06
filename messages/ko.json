@@ -1,0 +1,93 @@
+{
+  "common": {
+    "ko": "한국어",
+    "en": "English"
+  },
+  "setup": {
+    "title": "면접 준비",
+    "subtitle": "직무와 면접 유형을 선택하세요",
+    "jobTitle": "지원 직무",
+    "jobTitlePlaceholder": "예: 프론트엔드 개발자",
+    "companyName": "지원 회사 (선택)",
+    "companyNamePlaceholder": "예: 네이버",
+    "interviewType": "면접 유형",
+    "types": {
+      "personality": "인성",
+      "personalityDesc": "가치관 · 동기 · 갈등 해결",
+      "technical": "기술",
+      "technicalDesc": "기술 스택 · 문제 해결 · 설계",
+      "cultureFit": "컬처핏",
+      "cultureFitDesc": "조직 문화 · 협업 · 리더십"
+    },
+    "resume": "이력서 (선택)",
+    "resumePlaceholder": "PDF 또는 DOCX 파일",
+    "resumeTooLarge": "파일 크기가 50MB를 초과합니다",
+    "resumeUploadFailed": "이력서 업로드에 실패했습니다",
+    "uploading": "이력서 업로드 중...",
+    "start": "면접 시작",
+    "checkIdle": "🎤 마이크·카메라 미리 점검",
+    "checkChecking": "장치 확인 중...",
+    "checkOk": "✓ 마이크·카메라 인식됨",
+    "checkDenied": "✕ 권한이 거부되었습니다. 브라우저 설정에서 허용해주세요"
+  },
+  "interview": {
+    "prep": {
+      "jobAnalysis": "직무 분석",
+      "questionOpt": "면접 질문 최적화",
+      "deviceConnect": "카메라·마이크 연결",
+      "interviewerReady": "AI 면접관 준비",
+      "preparing": "면접을 준비하고 있어요",
+      "starting": "면접을 시작합니다"
+    },
+    "phases": {
+      "listening": "듣는 중",
+      "speaking": "면접관 발언 중",
+      "generating": "질문 생성 중",
+      "processing": "답변 처리 중",
+      "ended": "종료",
+      "idle": "준비 중"
+    },
+    "controls": {
+      "mic": "마이크",
+      "cam": "카메라",
+      "deviceSettings": "장치 설정",
+      "pause": "일시 정지",
+      "resume": "재개",
+      "replay": "질문 다시 듣기",
+      "forceEnd": "답변 종료",
+      "pinQuestion": "질문 고정",
+      "textInputPlaceholder": "타이핑으로 답변하기...",
+      "send": "전송",
+      "end": "종료",
+      "extendThinking": "더 생각하기"
+    },
+    "device": {
+      "title": "장치 설정",
+      "mic": "마이크",
+      "speaker": "스피커",
+      "cam": "카메라",
+      "default": "시스템 기본",
+      "test": "테스트 재생",
+      "noSinkSupport": "이 브라우저는 출력 장치 선택을 지원하지 않습니다",
+      "close": "닫기"
+    },
+    "toasts": {
+      "micChanged": "마이크 변경됨",
+      "micChangeFailed": "마이크 변경 실패",
+      "speakerChanged": "스피커 변경됨",
+      "speakerChangeFailed": "스피커 변경 실패",
+      "camChanged": "카메라 변경됨",
+      "camChangeFailed": "카메라 변경 실패",
+      "deviceListChanged": "연결된 장치 목록이 변경됨"
+    },
+    "pause": {
+      "title": "일시 정지됨",
+      "subtitle": "준비되면 재개를 눌러 면접을 이어가세요"
+    },
+    "analyzing": "결과 분석 중",
+    "analyzingDesc": "AI가 면접 결과를 분석하고 있습니다",
+    "camOff": "카메라 꺼짐",
+    "noResponse": "(응답 없음)",
+    "transcribeFailed": "(음성 인식 실패)"
+  }
+}

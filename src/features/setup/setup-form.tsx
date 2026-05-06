@@ -1,48 +1,73 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useState } from "react";
-import {
-  type InterviewMode,
-  type InterviewType,
-  useSessionStore,
-} from "@/entities/session";
+import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { type InterviewType, useSessionStore } from "@/entities/session";
 import { cn } from "@/shared/lib/cn";
 import { Button, Input } from "@/shared/ui";
+import { requestMediaPermission } from "./use-devices";
 
-const interviewTypes: {
-  value: InterviewType;
-  label: string;
-  desc: string;
-}[] = [
-  { value: "personality", label: "인성", desc: "가치관 · 동기 · 갈등 해결" },
-  { value: "technical", label: "기술", desc: "기술 스택 · 문제 해결 · 설계" },
-  {
-    value: "culture-fit",
-    label: "컬처핏",
-    desc: "조직 문화 · 협업 · 리더십",
-  },
-];
-
-const modes: { value: InterviewMode; label: string; desc: string }[] = [
-  { value: "real", label: "실전 모드", desc: "코칭 없이 실전처럼 진행" },
-  { value: "practice", label: "연습 모드", desc: "실시간 음성 코칭 제공" },
-];
+const LOCALE_COOKIE = "ultracoach:language";
 
 interface SetupFormProps {
   onStart: () => void;
 }
 
 export function SetupForm({ onStart }: SetupFormProps) {
+  const t = useTranslations("setup");
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
+  const router = useRouter();
+  const [, startTransition] = useTransition();
   const setSetup = useSessionStore((s) => s.setSetup);
   const [jobTitle, setJobTitle] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [interviewType, setInterviewType] =
     useState<InterviewType>("personality");
-  const [mode, setMode] = useState<InterviewMode>("real");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeError, setResumeError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [checkStatus, setCheckStatus] = useState<
+    "idle" | "checking" | "ok" | "denied"
+  >("idle");
+
+  const interviewTypes: {
+    value: InterviewType;
+    label: string;
+    desc: string;
+  }[] = [
+    {
+      value: "personality",
+      label: t("types.personality"),
+      desc: t("types.personalityDesc"),
+    },
+    {
+      value: "technical",
+      label: t("types.technical"),
+      desc: t("types.technicalDesc"),
+    },
+    {
+      value: "culture-fit",
+      label: t("types.cultureFit"),
+      desc: t("types.cultureFitDesc"),
+    },
+  ];
+
+  function setLocale(next: "ko" | "en") {
+    if (next === locale) return;
+    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+    startTransition(() => {
+      router.refresh();
+    });
+  }
+
+  async function handleCheck() {
+    setCheckStatus("checking");
+    const ok = await requestMediaPermission();
+    setCheckStatus(ok ? "ok" : "denied");
+  }
 
   async function handleStart() {
     if (!jobTitle.trim()) return;
@@ -63,12 +88,12 @@ export function SetupForm({ onStart }: SetupFormProps) {
         if (res.ok) {
           resumeFileId = data.fileId;
         } else {
-          setResumeError(data.error ?? "이력서 업로드에 실패했습니다");
+          setResumeError(data.error ?? t("resumeUploadFailed"));
           setUploading(false);
           return;
         }
       } catch {
-        setResumeError("이력서 업로드에 실패했습니다");
+        setResumeError(t("resumeUploadFailed"));
         setUploading(false);
         return;
       }
@@ -78,7 +103,6 @@ export function SetupForm({ onStart }: SetupFormProps) {
     setSetup({
       jobTitle: jobTitle.trim(),
       interviewType,
-      mode,
       resumeFileId,
       companyName: companyName.trim() || null,
     });
@@ -92,80 +116,83 @@ export function SetupForm({ onStart }: SetupFormProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
+      <div className="flex justify-end mb-4">
+        <div className="inline-flex rounded-full bg-card border border-white/[0.06] p-0.5 text-xs">
+          <button
+            type="button"
+            onClick={() => setLocale("ko")}
+            className={cn(
+              "px-3 py-1 rounded-full transition-colors cursor-pointer",
+              locale === "ko"
+                ? "bg-white/[0.08] text-foreground"
+                : "text-muted hover:text-foreground",
+            )}
+          >
+            {tCommon("ko")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setLocale("en")}
+            className={cn(
+              "px-3 py-1 rounded-full transition-colors cursor-pointer",
+              locale === "en"
+                ? "bg-white/[0.08] text-foreground"
+                : "text-muted hover:text-foreground",
+            )}
+          >
+            {tCommon("en")}
+          </button>
+        </div>
+      </div>
+
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-3">면접 준비</h1>
-        <p className="text-muted text-lg">직무와 면접 유형을 선택하세요</p>
+        <h1 className="text-4xl font-bold mb-3">{t("title")}</h1>
+        <p className="text-muted text-lg">{t("subtitle")}</p>
       </div>
 
       <div className="space-y-7">
-        {/* 직무 + 회사 */}
         <div className="grid grid-cols-2 gap-3">
           <Input
             id="jobTitle"
-            label="지원 직무"
-            placeholder="예: 프론트엔드 개발자"
+            label={t("jobTitle")}
+            placeholder={t("jobTitlePlaceholder")}
             value={jobTitle}
             onChange={(e) => setJobTitle(e.target.value)}
           />
           <Input
             id="companyName"
-            label="지원 회사 (선택)"
-            placeholder="예: 네이버"
+            label={t("companyName")}
+            placeholder={t("companyNamePlaceholder")}
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
             maxLength={100}
           />
         </div>
 
-        {/* 면접 유형 */}
         <div>
-          <p className="text-sm text-secondary mb-3">면접 유형</p>
+          <p className="text-sm text-secondary mb-3">{t("interviewType")}</p>
           <div className="grid grid-cols-3 gap-3">
-            {interviewTypes.map((t) => (
+            {interviewTypes.map((opt) => (
               <button
-                key={t.value}
+                key={opt.value}
                 type="button"
-                onClick={() => setInterviewType(t.value)}
+                onClick={() => setInterviewType(opt.value)}
                 className={cn(
                   "text-left rounded-xl px-4 py-3.5 border transition-all cursor-pointer",
-                  interviewType === t.value
+                  interviewType === opt.value
                     ? "border-foreground/30 bg-white/[0.04]"
                     : "border-white/[0.1] bg-card hover:border-white/[0.15]",
                 )}
               >
-                <p className="text-sm font-semibold">{t.label}</p>
-                <p className="text-xs text-muted mt-1">{t.desc}</p>
+                <p className="text-sm font-semibold">{opt.label}</p>
+                <p className="text-xs text-muted mt-1">{opt.desc}</p>
               </button>
             ))}
           </div>
         </div>
 
-        {/* 모드 */}
         <div>
-          <p className="text-sm text-secondary mb-3">모드</p>
-          <div className="grid grid-cols-2 gap-3">
-            {modes.map((m) => (
-              <button
-                key={m.value}
-                type="button"
-                onClick={() => setMode(m.value)}
-                className={cn(
-                  "text-left rounded-xl px-4 py-3.5 border transition-all cursor-pointer",
-                  mode === m.value
-                    ? "border-foreground/30 bg-white/[0.04]"
-                    : "border-white/[0.1] bg-card hover:border-white/[0.15]",
-                )}
-              >
-                <p className="text-sm font-semibold">{m.label}</p>
-                <p className="text-xs text-muted mt-1">{m.desc}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 이력서 */}
-        <div>
-          <p className="text-sm text-secondary mb-3">이력서 (선택)</p>
+          <p className="text-sm text-secondary mb-3">{t("resume")}</p>
           <label className="flex items-center gap-3 px-5 py-4 rounded-xl bg-card border border-white/[0.1] cursor-pointer hover:border-white/[0.15] transition-colors">
             <svg
               width="18"
@@ -190,7 +217,7 @@ export function SetupForm({ onStart }: SetupFormProps) {
               />
             </svg>
             <span className="text-sm text-muted truncate">
-              {resumeFile ? resumeFile.name : "PDF 또는 DOCX 파일"}
+              {resumeFile ? resumeFile.name : t("resumePlaceholder")}
             </span>
             <input
               type="file"
@@ -200,7 +227,7 @@ export function SetupForm({ onStart }: SetupFormProps) {
                 const file = e.target.files?.[0] ?? null;
                 setResumeError(null);
                 if (file && file.size > 50 * 1024 * 1024) {
-                  setResumeError("파일 크기가 50MB를 초과합니다");
+                  setResumeError(t("resumeTooLarge"));
                   e.target.value = "";
                   setResumeFile(null);
                   return;
@@ -213,26 +240,30 @@ export function SetupForm({ onStart }: SetupFormProps) {
             <p className="text-sm text-red mt-2">{resumeError}</p>
           )}
         </div>
-
-        {/* 연습 모드 안내 */}
-        {mode === "practice" && (
-          <div className="rounded-xl border border-white/[0.1] bg-white/[0.02] px-5 py-4">
-            <p className="text-sm text-secondary leading-relaxed">
-              연습 모드에서는 이어폰 착용을 권장합니다. 코칭 음성이 마이크에
-              잡힐 수 있습니다.
-            </p>
-          </div>
-        )}
       </div>
 
-      <div className="mt-10">
+      <div className="mt-10 space-y-3">
+        <button
+          type="button"
+          onClick={handleCheck}
+          disabled={checkStatus === "checking"}
+          className="w-full text-xs text-secondary hover:text-foreground transition-colors py-2 cursor-pointer disabled:opacity-50"
+        >
+          {checkStatus === "checking"
+            ? t("checkChecking")
+            : checkStatus === "ok"
+              ? t("checkOk")
+              : checkStatus === "denied"
+                ? t("checkDenied")
+                : t("checkIdle")}
+        </button>
         <Button
           size="lg"
           className="w-full py-3.5"
           disabled={!jobTitle.trim() || uploading}
           onClick={handleStart}
         >
-          {uploading ? "이력서 업로드 중..." : "면접 시작"}
+          {uploading ? t("uploading") : t("start")}
         </Button>
       </div>
     </motion.div>

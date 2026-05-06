@@ -1,25 +1,33 @@
 import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import { Providers } from "@/shared/lib/providers";
 import { NavBar } from "@/widgets/nav/nav-bar";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "UltraCoach — AI 면접 코칭",
-  description: "AI 면접관과 실전처럼 연습하고, 비언어적 피드백까지 받아보세요.",
+  title: "UltraCoach — AI Interview Coach",
+  description:
+    "Practice interviews with an AI interviewer and get feedback on what you say and how you carry yourself.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="ko">
+    <html lang={locale}>
       <body className="antialiased min-h-screen no-scrollbar">
-        <Providers>
-          <NavBar />
-          <main className="pt-16">{children}</main>
-        </Providers>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Providers>
+            <NavBar />
+            <main className="pt-16">{children}</main>
+          </Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
