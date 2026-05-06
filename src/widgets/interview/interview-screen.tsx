@@ -355,6 +355,15 @@ export function InterviewScreen({
 
         if (loopAbortRef.current) break;
 
+        // 면접관 발화 끝난 시점에 사용자가 일시정지를 눌렀다면 listening 진입 전에 멈춘다
+        while (
+          useSessionStore.getState().userPaused &&
+          !loopAbortRef.current
+        ) {
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        if (loopAbortRef.current) break;
+
         // 답변 받기 전에 마이크 다시 켜기
         for (const track of stream.getAudioTracks()) {
           track.enabled = true;
@@ -606,8 +615,12 @@ export function InterviewScreen({
     if (useSessionStore.getState().userPaused) return;
     pauseStartRef.current = Date.now();
     setUserPaused(true);
-    stopListening();
-  }, [setUserPaused, stopListening]);
+    // listening 중이면 현재 답변을 그대로 마무리 (transcribe 거침). speaking 중이면 노op.
+    const phaseNow = useSessionStore.getState().phase;
+    if (phaseNow === "listening") {
+      void forceSpeechEnd();
+    }
+  }, [setUserPaused, forceSpeechEnd]);
 
   const handleResume = useCallback(() => {
     if (!useSessionStore.getState().userPaused) return;
@@ -624,21 +637,44 @@ export function InterviewScreen({
 
   const handleReplay = useCallback(async () => {
     if (replayBusyRef.current) return;
+    if (avatarIsSpeaking) {
+      // 면접관 발화 중에는 무시해 큐 충돌을 막는다
+      return;
+    }
     const question = useSessionStore.getState().currentQuestion;
     if (!question) return;
     replayBusyRef.current = true;
+
+    const phaseBefore = useSessionStore.getState().phase;
+    const wasListening = phaseBefore === "listening";
+
+    let aliveTimer: ReturnType<typeof setInterval> | null = null;
+    if (wasListening) {
+      // listening 중인데 곧 speaking으로 보여줘야 캡션이 어긋나지 않음
+      useSessionStore.getState().setPhase("speaking");
+      // mute 중에는 VAD가 silence를 잡아 카운트다운이 끝나버리니 keepAlive로 막는다
+      aliveTimer = setInterval(() => keepListeningAlive(), 200);
+    }
+
     const stream = streamRef.current;
     const tracks = stream?.getAudioTracks() ?? [];
     for (const t of tracks) t.enabled = false;
+
     try {
       await avatarSpeak(question);
     } catch (err) {
       console.warn("replay failed:", err);
     }
+
     for (const t of tracks) t.enabled = true;
-    keepListeningAlive();
+
+    if (aliveTimer) clearInterval(aliveTimer);
+    if (wasListening) {
+      useSessionStore.getState().setPhase("listening");
+      keepListeningAlive();
+    }
     replayBusyRef.current = false;
-  }, [avatarSpeak, keepListeningAlive]);
+  }, [avatarSpeak, avatarIsSpeaking, keepListeningAlive]);
 
   const toggleMic = useCallback(() => {
     const track = streamRef.current?.getAudioTracks()[0];
@@ -899,6 +935,34 @@ export function InterviewScreen({
         </div>
       )}
 
+      {/* ── silence countdown bar ── */}
+      <button
+        type="button"
+        onClick={() => keepListeningAlive()}
+        disabled={silenceProgress <= 0 || phase !== "listening"}
+        aria-label={t("controls.extendThinking")}
+        title={`${t("controls.extendThinking")} (Space)`}
+        className={cn(
+          "shrink-0 h-2.5 w-full flex items-center transition-opacity cursor-pointer disabled:cursor-default",
+          silenceProgress > 0 && phase === "listening"
+            ? "opacity-100"
+            : "opacity-0 pointer-events-none",
+        )}
+      >
+        <div className="w-full h-[2px] bg-white/[0.04] overflow-hidden">
+          <div
+            className={cn(
+              "h-full",
+              silenceProgress >= 0.7 ? "bg-red" : "bg-yellow",
+            )}
+            style={{
+              width: `${Math.min(silenceProgress, 1) * 100}%`,
+              transition: "width 80ms linear, background-color 200ms",
+            }}
+          />
+        </div>
+      </button>
+
       {/* ── controls ── */}
       <div className="shrink-0 h-16 flex items-center justify-between px-6">
         <div className="flex items-center gap-2.5 w-40">
@@ -921,53 +985,6 @@ export function InterviewScreen({
               />
             ))}
           </div>
-
-          <button
-            type="button"
-            onClick={() => keepListeningAlive()}
-            disabled={silenceProgress <= 0 || phase !== "listening"}
-            aria-label={t("controls.extendThinking")}
-            title="더 생각하기 (스페이스)"
-            className={cn(
-              "relative w-10 h-10 flex items-center justify-center rounded-full transition-opacity cursor-pointer disabled:cursor-default",
-              silenceProgress > 0 && phase === "listening"
-                ? "opacity-100"
-                : "opacity-0 pointer-events-none",
-            )}
-          >
-            <svg
-              width="36"
-              height="36"
-              viewBox="0 0 36 36"
-              className="-rotate-90"
-              aria-hidden="true"
-            >
-              <circle
-                cx="18"
-                cy="18"
-                r="14"
-                fill="none"
-                stroke="rgba(255,255,255,0.08)"
-                strokeWidth="2.5"
-              />
-              <circle
-                cx="18"
-                cy="18"
-                r="14"
-                fill="none"
-                stroke={
-                  silenceProgress >= 0.7
-                    ? "var(--color-red)"
-                    : "var(--color-yellow)"
-                }
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeDasharray={2 * Math.PI * 14}
-                strokeDashoffset={2 * Math.PI * 14 * (1 - silenceProgress)}
-                style={{ transition: "stroke 50ms linear" }}
-              />
-            </svg>
-          </button>
 
           <button
             type="button"
