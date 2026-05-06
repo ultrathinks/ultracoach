@@ -1,4 +1,4 @@
-import type { InterviewMode, InterviewType } from "./types";
+import type { InterviewType } from "./types";
 
 export interface InterviewConfig {
   // VAD
@@ -10,12 +10,6 @@ export interface InterviewConfig {
   // interview flow
   targetQuestionCount: number;
   maxQuestionCount: number;
-
-  // coaching (practice mode only)
-  coachingCooldown: number;
-  coachingMinInterval: number;
-  coachingTriggerDuration: number;
-  positiveInterval: number;
 }
 
 const typeConfig: Record<
@@ -26,26 +20,23 @@ const typeConfig: Record<
   >
 > = {
   personality: {
-    silenceDelay: 2000,
+    silenceDelay: 3000,
     targetQuestionCount: 12,
     maxQuestionCount: 18,
   },
   technical: {
-    silenceDelay: 3500,
+    silenceDelay: 4500,
     targetQuestionCount: 8,
     maxQuestionCount: 12,
   },
   "culture-fit": {
-    silenceDelay: 2500,
+    silenceDelay: 3500,
     targetQuestionCount: 10,
     maxQuestionCount: 15,
   },
 };
 
-export function deriveConfig(
-  type: InterviewType,
-  mode: InterviewMode,
-): InterviewConfig {
+export function deriveConfig(type: InterviewType): InterviewConfig {
   const tc = typeConfig[type];
 
   return {
@@ -56,10 +47,5 @@ export function deriveConfig(
 
     targetQuestionCount: tc.targetQuestionCount,
     maxQuestionCount: tc.maxQuestionCount,
-
-    coachingCooldown: mode === "practice" ? 15 : 0,
-    coachingMinInterval: mode === "practice" ? 15 : 0,
-    coachingTriggerDuration: 5,
-    positiveInterval: mode === "practice" ? 45 : 0,
   };
 }

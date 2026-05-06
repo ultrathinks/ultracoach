@@ -8,7 +8,6 @@ export async function getUserSessions(userId: string) {
       id: sessions.id,
       jobTitle: sessions.jobTitle,
       interviewType: sessions.interviewType,
-      mode: sessions.mode,
       deliveryScore: sessions.deliveryScore,
       contentScore: sessions.contentScore,
       durationSec: sessions.durationSec,

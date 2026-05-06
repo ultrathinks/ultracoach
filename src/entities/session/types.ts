@@ -5,10 +5,8 @@ export const interviewTypeSchema = z.enum([
   "technical",
   "culture-fit",
 ]);
-export const interviewModeSchema = z.enum(["practice", "real"]);
 
 export type InterviewType = z.infer<typeof interviewTypeSchema>;
-export type InterviewMode = z.infer<typeof interviewModeSchema>;
 export type EnginePhase =
   | "idle"
   | "generating"
