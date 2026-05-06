@@ -49,8 +49,14 @@ async function generateSuggestedAnswers(
     companyName: string | null;
     jobResearchJson: unknown;
     resumeFileId: string | null;
+    language: string;
   },
 ): Promise<Map<number, string>> {
+  const languageNote =
+    context.language === "en"
+      ? "\nWrite all suggestedAnswer values in natural spoken English."
+      : "\n모든 모범 답안은 자연스러운 한국어 구어체로 작성하세요.";
+
   const systemPrompt = `당신은 한국 면접 전문 코치입니다. 각 면접 질문에 대해 모범 답안을 작성하세요.
 
 ## 규칙
@@ -58,7 +64,7 @@ async function generateSuggestedAnswers(
 - 각 답안은 3-5문장으로 간결하게
 - STAR 구조가 적합한 질문이면 STAR 구조를 활용
 - 추상적 미사여구 금지 — 구체적이고 실전적인 답변만
-- 지원 직무와 기업 맥락을 반영
+- 지원 직무와 기업 맥락을 반영${languageNote}
 
 ## 맥락
 - 직무: ${context.jobTitle}
@@ -121,6 +127,7 @@ export async function POST(
         companyName: sessions.companyName,
         jobResearchJson: sessions.jobResearchJson,
         resumeFileId: sessions.resumeFileId,
+        language: sessions.language,
       })
       .from(sessions)
       .where(eq(sessions.id, id))
@@ -167,8 +174,13 @@ export async function POST(
 - 연속 향상 횟수: ${historySummary.streakCount ?? 0}회`
       : "";
 
+    const languageInstruction =
+      target.language === "en"
+        ? "Write every feedback string (summary, keyMoments.description, actionItems.text, nextSessionSuggestion, questionAnalyses.feedback) in English."
+        : "모든 피드백은 한국어로 작성하세요.";
+
     const systemPrompt = `당신은 한국 면접 전문 코치입니다. 면접 세션을 분석하고 실전에 도움이 되는 피드백을 제공하세요.
-모든 피드백은 한국어로 작성하세요.
+${languageInstruction}
 ${growthInstruction}
 
 ## 채점 기준
@@ -243,6 +255,7 @@ ${growthInstruction}
       companyName: target.companyName,
       jobResearchJson: target.jobResearchJson,
       resumeFileId: target.resumeFileId,
+      language: target.language,
     });
 
     const [feedbackResult, suggestedResult] = await Promise.allSettled([

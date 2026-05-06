@@ -29,6 +29,20 @@
       "when": 1777699003062,
       "tag": "0003_woozy_captain_britain",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778048321248,
+      "tag": "0004_fat_norrin_radd",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778050428075,
+      "tag": "0005_rich_speed_demon",
+      "breakpoints": true
     }
   ]
 }

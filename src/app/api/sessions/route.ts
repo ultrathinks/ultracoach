@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { interviewModeSchema, interviewTypeSchema } from "@/entities/session";
+import { interviewTypeSchema } from "@/entities/session";
+import { resolveLocale } from "@/i18n/request";
 import { db } from "@/shared/db";
 import {
   metricSnapshots,
@@ -43,7 +44,6 @@ const metricEventSchema = z.object({
 const requestSchema = z.object({
   jobTitle: z.string().max(200),
   interviewType: interviewTypeSchema,
-  mode: interviewModeSchema,
   durationSec: z.number().int().min(0).max(86400),
   companyName: z.string().max(100).nullable().optional(),
   jobResearchJson: z.record(z.unknown()).nullable().optional(),
@@ -86,6 +86,7 @@ export async function POST(request: Request) {
 
     const data = body.data;
     const userId = session.user.id;
+    const language = await resolveLocale();
 
     const newSession = await db.transaction(async (tx) => {
       const [created] = await tx
@@ -94,7 +95,7 @@ export async function POST(request: Request) {
           userId,
           jobTitle: data.jobTitle,
           interviewType: data.interviewType,
-          mode: data.mode,
+          language,
           status: "completed",
           durationSec: data.durationSec,
           companyName: data.companyName ?? null,

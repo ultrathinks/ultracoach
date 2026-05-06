@@ -52,7 +52,7 @@ export const sessions = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     jobTitle: varchar("job_title", { length: 200 }).notNull(),
     interviewType: varchar("interview_type", { length: 50 }).notNull(),
-    mode: varchar("mode", { length: 20 }).notNull(),
+    language: varchar("language", { length: 4 }).notNull().default("ko"),
     status: varchar("status", { length: 20 }).notNull().default("in_progress"),
     durationSec: integer("duration_sec"),
     deliveryScore: integer("delivery_score"),

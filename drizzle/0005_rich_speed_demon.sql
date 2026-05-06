@@ -1,0 +1,1 @@
+ALTER TABLE "sessions" ADD COLUMN "language" varchar(4) DEFAULT 'ko' NOT NULL;
