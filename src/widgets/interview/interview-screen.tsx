@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMetricsStore } from "@/entities/metrics";
@@ -10,8 +11,10 @@ import { useMediaPipe } from "@/features/body-language";
 import { useInterviewEngine } from "@/features/interview-engine";
 import { useWebSpeech } from "@/features/interview-engine/use-web-speech";
 import { useRecording } from "@/features/recording";
-import { CoachOverlay } from "@/features/voice-coach";
+import { useDevices } from "@/features/setup/use-devices";
 import { cn } from "@/shared/lib/cn";
+import { DevicePanel } from "./device-panel";
+import { PauseOverlay } from "./pause-overlay";
 
 interface InterviewScreenProps {
   researchStatus?: "idle" | "loading" | "done";
@@ -20,6 +23,7 @@ interface InterviewScreenProps {
 export function InterviewScreen({
   researchStatus = "done",
 }: InterviewScreenProps) {
+  const t = useTranslations("interview");
   const router = useRouter();
   const {
     fetchNextQuestion,
@@ -27,7 +31,9 @@ export function InterviewScreen({
     stopListening,
     submitTextAnswer,
     keepListeningAlive,
+    forceSpeechEnd,
     audioLevel,
+    silenceProgress,
   } = useInterviewEngine();
   const { liveCaption, start: startSpeech, stop: stopSpeech } = useWebSpeech();
   const {
@@ -52,8 +58,15 @@ export function InterviewScreen({
   const currentQuestion = useSessionStore((s) => s.currentQuestion);
   const questions = useSessionStore((s) => s.questions);
   const startTime = useSessionStore((s) => s.startTime);
-  const mode = useSessionStore((s) => s.mode);
   const jobTitle = useSessionStore((s) => s.jobTitle);
+  const audioInputId = useSessionStore((s) => s.audioInputId);
+  const audioOutputId = useSessionStore((s) => s.audioOutputId);
+  const videoInputId = useSessionStore((s) => s.videoInputId);
+  const setStoreDevices = useSessionStore((s) => s.setDevices);
+  const userPaused = useSessionStore((s) => s.userPaused);
+  const setUserPaused = useSessionStore((s) => s.setUserPaused);
+  const { mics, speakers, cams, refresh: refreshDevices, supportsSinkId } =
+    useDevices();
 
   const streamRef = useRef<MediaStream | null>(null);
   const streamReadyRef = useRef<(() => void) | null>(null);
@@ -64,6 +77,9 @@ export function InterviewScreen({
   const landmarkCanvasRef = useRef<HTMLCanvasElement>(null);
   /** true while a live stream is attached after successful getUserMedia */
   const mediaInitializedRef = useRef(false);
+  const pauseStartRef = useRef<number | null>(null);
+  const pausedDurationRef = useRef(0);
+  const replayBusyRef = useRef(false);
   const [elapsed, setElapsed] = useState(0);
   const [micMuted, setMicMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
@@ -72,17 +88,19 @@ export function InterviewScreen({
   const [pinQuestion, setPinQuestion] = useState(false);
   const [showTextInput, setShowTextInput] = useState(false);
   const [textInput, setTextInput] = useState("");
+  const [devicePanelOpen, setDevicePanelOpen] = useState(false);
+  const [deviceToast, setDeviceToast] = useState<string | null>(null);
   const textInputRef = useRef<HTMLInputElement>(null);
   const [prepSteps, setPrepSteps] = useState<
     { label: string; status: "pending" | "loading" | "done" }[]
   >([
     {
-      label: "직무 분석",
+      label: t("prep.jobAnalysis"),
       status: researchStatus === "done" ? "done" : "loading",
     },
-    { label: "면접 질문 최적화", status: "pending" },
-    { label: "카메라·마이크 연결", status: "loading" },
-    { label: "AI 면접관 준비", status: "pending" },
+    { label: t("prep.questionOpt"), status: "pending" },
+    { label: t("prep.deviceConnect"), status: "loading" },
+    { label: t("prep.interviewerReady"), status: "pending" },
   ]);
 
   // 직무 분석 완료 → 질문 최적화 완료
@@ -108,7 +126,12 @@ export function InterviewScreen({
   useEffect(() => {
     if (!startTime || phase === "ended") return;
     const interval = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startTime) / 1000));
+      const now = Date.now();
+      const liveOffset = pauseStartRef.current
+        ? now - pauseStartRef.current
+        : 0;
+      const total = now - startTime - pausedDurationRef.current - liveOffset;
+      setElapsed(Math.max(0, Math.floor(total / 1000)));
     }, 1000);
     return () => clearInterval(interval);
   }, [startTime, phase]);
@@ -132,17 +155,24 @@ export function InterviewScreen({
     };
 
     const requestMediaStream = async (): Promise<MediaStream> => {
-      const preferred = {
-        video: true,
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
+      const prefs = useSessionStore.getState();
+      const audioConstraint: MediaTrackConstraints = {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
       };
+      if (prefs.audioInputId) {
+        audioConstraint.deviceId = { exact: prefs.audioInputId };
+      }
+      const videoConstraint: MediaTrackConstraints | true = prefs.videoInputId
+        ? { deviceId: { exact: prefs.videoInputId } }
+        : true;
 
       try {
-        return await navigator.mediaDevices.getUserMedia(preferred);
+        return await navigator.mediaDevices.getUserMedia({
+          video: videoConstraint,
+          audio: audioConstraint,
+        });
       } catch (err) {
         if (!(err instanceof DOMException) || err.name !== "NotFoundError") {
           throw err;
@@ -151,11 +181,7 @@ export function InterviewScreen({
         // 일부 환경에서는 카메라가 잠시 사라져도 오디오는 사용 가능하므로 폴백한다.
         return navigator.mediaDevices.getUserMedia({
           video: false,
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          },
+          audio: audioConstraint,
         });
       }
     };
@@ -297,6 +323,14 @@ export function InterviewScreen({
       useSessionStore.getState().setStartTime(Date.now());
 
       while (!loopAbortRef.current) {
+        while (
+          useSessionStore.getState().userPaused &&
+          !loopAbortRef.current
+        ) {
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        if (loopAbortRef.current) break;
+
         let data: { question: string; type: string; shouldEnd: boolean };
         try {
           data = await fetchNextQuestion();
@@ -373,7 +407,6 @@ export function InterviewScreen({
         body: JSON.stringify({
           jobTitle: state.jobTitle,
           interviewType: state.interviewType,
-          mode: state.mode,
           durationSec: duration,
           companyName: state.companyName,
           jobResearchJson: state.jobResearch,
@@ -438,6 +471,174 @@ export function InterviewScreen({
     stopRecording,
     router,
   ]);
+
+  const showDeviceToast = useCallback((message: string) => {
+    setDeviceToast(message);
+    setTimeout(() => setDeviceToast(null), 2400);
+  }, []);
+
+  const changeMic = useCallback(
+    async (deviceId: string) => {
+      const stream = streamRef.current;
+      if (!stream) return;
+      try {
+        const next = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            deviceId: deviceId ? { exact: deviceId } : undefined,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+        const newTrack = next.getAudioTracks()[0];
+        if (!newTrack) return;
+        for (const t of stream.getAudioTracks()) {
+          t.stop();
+          stream.removeTrack(t);
+        }
+        stream.addTrack(newTrack);
+        stopListening();
+        disposeRecording();
+        startRecording(stream);
+        setStoreDevices({ audioInputId: deviceId || null });
+        setMicMuted(!newTrack.enabled);
+        showDeviceToast(t("toasts.micChanged"));
+      } catch (err) {
+        console.warn("change mic failed:", err);
+        showDeviceToast(t("toasts.micChangeFailed"));
+      }
+    },
+    [
+      stopListening,
+      disposeRecording,
+      startRecording,
+      setStoreDevices,
+      showDeviceToast,
+    ],
+  );
+
+  const changeCam = useCallback(
+    async (deviceId: string) => {
+      const stream = streamRef.current;
+      if (!stream) return;
+      try {
+        const next = await navigator.mediaDevices.getUserMedia({
+          video: deviceId ? { deviceId: { exact: deviceId } } : true,
+        });
+        const newTrack = next.getVideoTracks()[0];
+        if (!newTrack) return;
+        for (const t of stream.getVideoTracks()) {
+          t.stop();
+          stream.removeTrack(t);
+        }
+        stream.addTrack(newTrack);
+        if (webcamRef.current) {
+          webcamRef.current.srcObject = stream;
+          startMediaPipe(webcamRef.current);
+        }
+        setStoreDevices({ videoInputId: deviceId || null });
+        setCamOff(!newTrack.enabled);
+        showDeviceToast(t("toasts.camChanged"));
+      } catch (err) {
+        console.warn("change cam failed:", err);
+        showDeviceToast(t("toasts.camChangeFailed"));
+      }
+    },
+    [startMediaPipe, setStoreDevices, showDeviceToast],
+  );
+
+  const changeSpeaker = useCallback(
+    async (deviceId: string) => {
+      const audio = avatarAudioRef.current;
+      if (audio && typeof audio.setSinkId === "function") {
+        try {
+          await audio.setSinkId(deviceId || "");
+        } catch (err) {
+          console.warn("setSinkId failed:", err);
+          showDeviceToast(t("toasts.speakerChangeFailed"));
+          return;
+        }
+      }
+      setStoreDevices({ audioOutputId: deviceId || null });
+      showDeviceToast(t("toasts.speakerChanged"));
+    },
+    [setStoreDevices, showDeviceToast],
+  );
+
+  useEffect(() => {
+    if (typeof navigator === "undefined") return;
+    const handler = () => {
+      void refreshDevices();
+      showDeviceToast(t("toasts.deviceListChanged"));
+    };
+    navigator.mediaDevices?.addEventListener?.("devicechange", handler);
+    return () => {
+      navigator.mediaDevices?.removeEventListener?.("devicechange", handler);
+    };
+  }, [refreshDevices, showDeviceToast]);
+
+  useEffect(() => {
+    function isFormFocused() {
+      const el = document.activeElement;
+      if (!el) return false;
+      const tag = el.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+        return true;
+      }
+      return (el as HTMLElement).isContentEditable;
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.code !== "Space") return;
+      if (silenceProgress <= 0) return;
+      if (phase !== "listening") return;
+      if (useSessionStore.getState().userPaused) return;
+      if (isFormFocused()) return;
+      e.preventDefault();
+      keepListeningAlive();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [silenceProgress, phase, keepListeningAlive]);
+
+  const handlePause = useCallback(() => {
+    if (useSessionStore.getState().userPaused) return;
+    pauseStartRef.current = Date.now();
+    setUserPaused(true);
+    stopListening();
+  }, [setUserPaused, stopListening]);
+
+  const handleResume = useCallback(() => {
+    if (!useSessionStore.getState().userPaused) return;
+    if (pauseStartRef.current) {
+      pausedDurationRef.current += Date.now() - pauseStartRef.current;
+      pauseStartRef.current = null;
+    }
+    setUserPaused(false);
+  }, [setUserPaused]);
+
+  const handleForceEnd = useCallback(() => {
+    void forceSpeechEnd();
+  }, [forceSpeechEnd]);
+
+  const handleReplay = useCallback(async () => {
+    if (replayBusyRef.current) return;
+    const question = useSessionStore.getState().currentQuestion;
+    if (!question) return;
+    replayBusyRef.current = true;
+    const stream = streamRef.current;
+    const tracks = stream?.getAudioTracks() ?? [];
+    for (const t of tracks) t.enabled = false;
+    try {
+      await avatarSpeak(question);
+    } catch (err) {
+      console.warn("replay failed:", err);
+    }
+    for (const t of tracks) t.enabled = true;
+    keepListeningAlive();
+    replayBusyRef.current = false;
+  }, [avatarSpeak, keepListeningAlive]);
 
   const toggleMic = useCallback(() => {
     const track = streamRef.current?.getAudioTracks()[0];
@@ -557,19 +758,19 @@ export function InterviewScreen({
     return (
       <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center">
         <div className="w-6 h-6 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin mb-6" />
-        <h2 className="text-2xl font-bold mb-2">결과 분석 중</h2>
-        <p className="text-muted">AI가 면접 결과를 분석하고 있습니다</p>
+        <h2 className="text-2xl font-bold mb-2">{t("analyzing")}</h2>
+        <p className="text-muted">{t("analyzingDesc")}</p>
       </div>
     );
   }
 
   const phaseLabel: Record<string, string> = {
-    listening: "듣는 중",
-    speaking: "면접관 발언 중",
-    generating: "질문 생성 중",
-    processing: "답변 처리 중",
-    ended: "종료",
-    idle: "준비 중",
+    listening: t("phases.listening"),
+    speaking: t("phases.speaking"),
+    generating: t("phases.generating"),
+    processing: t("phases.processing"),
+    ended: t("phases.ended"),
+    idle: t("phases.idle"),
   };
 
   return (
@@ -655,14 +856,12 @@ export function InterviewScreen({
           {camOff && (
             <div className="absolute inset-0 bg-card flex items-center justify-center">
               <span className="text-muted text-sm font-medium">
-                카메라 꺼짐
+                {t("camOff")}
               </span>
             </div>
           )}
         </div>
       </div>
-
-      {mode === "practice" && <CoachOverlay />}
 
       {/* ── text input overlay ── */}
       {showTextInput && phase === "listening" && (
@@ -686,7 +885,7 @@ export function InterviewScreen({
                 setTextInput(e.target.value);
                 keepListeningAlive();
               }}
-              placeholder="타이핑으로 답변하기..."
+              placeholder={t("controls.textInputPlaceholder")}
               className="flex-1 h-9 px-4 rounded-lg bg-white/[0.04] border border-white/[0.06] text-foreground text-sm placeholder:text-muted focus:outline-none focus:border-foreground/30"
             />
             <button
@@ -694,7 +893,7 @@ export function InterviewScreen({
               disabled={!textInput.trim()}
               className="h-9 px-4 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
             >
-              전송
+              {t("controls.send")}
             </button>
           </form>
         </div>
@@ -722,6 +921,53 @@ export function InterviewScreen({
               />
             ))}
           </div>
+
+          <button
+            type="button"
+            onClick={() => keepListeningAlive()}
+            disabled={silenceProgress <= 0 || phase !== "listening"}
+            aria-label={t("controls.extendThinking")}
+            title="더 생각하기 (스페이스)"
+            className={cn(
+              "relative w-10 h-10 flex items-center justify-center rounded-full transition-opacity cursor-pointer disabled:cursor-default",
+              silenceProgress > 0 && phase === "listening"
+                ? "opacity-100"
+                : "opacity-0 pointer-events-none",
+            )}
+          >
+            <svg
+              width="36"
+              height="36"
+              viewBox="0 0 36 36"
+              className="-rotate-90"
+              aria-hidden="true"
+            >
+              <circle
+                cx="18"
+                cy="18"
+                r="14"
+                fill="none"
+                stroke="rgba(255,255,255,0.08)"
+                strokeWidth="2.5"
+              />
+              <circle
+                cx="18"
+                cy="18"
+                r="14"
+                fill="none"
+                stroke={
+                  silenceProgress >= 0.7
+                    ? "var(--color-red)"
+                    : "var(--color-yellow)"
+                }
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeDasharray={2 * Math.PI * 14}
+                strokeDashoffset={2 * Math.PI * 14 * (1 - silenceProgress)}
+                style={{ transition: "stroke 50ms linear" }}
+              />
+            </svg>
+          </button>
 
           <button
             type="button"
@@ -775,6 +1021,101 @@ export function InterviewScreen({
 
           <button
             type="button"
+            onClick={() => setDevicePanelOpen((v) => !v)}
+            className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer",
+              devicePanelOpen
+                ? "bg-indigo/15 text-indigo border border-indigo/30"
+                : "bg-card border border-border text-foreground hover:bg-card-hover",
+            )}
+            aria-label={t("device.title")}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h.01a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v.01a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePause}
+            disabled={userPaused || phase === "ended"}
+            className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed",
+              "bg-card border border-border text-foreground hover:bg-card-hover",
+            )}
+            aria-label={t("controls.pause")}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <rect x="6" y="5" width="4" height="14" rx="1" />
+              <rect x="14" y="5" width="4" height="14" rx="1" />
+            </svg>
+          </button>
+
+          {(phase === "listening" || phase === "speaking") && (
+            <button
+              type="button"
+              onClick={handleReplay}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer bg-card border border-border text-foreground hover:bg-card-hover"
+              aria-label={t("controls.replay")}
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="1 4 1 10 7 10" />
+                <path d="M3.51 15a9 9 0 102.13-9.36L1 10" />
+              </svg>
+            </button>
+          )}
+
+          {phase === "listening" && (
+            <button
+              type="button"
+              onClick={handleForceEnd}
+              className="h-10 px-4 rounded-full flex items-center gap-1.5 bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-colors cursor-pointer"
+              aria-label={t("controls.forceEnd")}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              {t("controls.forceEnd")}
+            </button>
+          )}
+
+          <button
+            type="button"
             onClick={() => setPinQuestion((v) => !v)}
             className={cn(
               "w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer",
@@ -782,7 +1123,7 @@ export function InterviewScreen({
                 ? "bg-indigo/15 text-indigo border border-indigo/30"
                 : "bg-card border border-border text-foreground hover:bg-card-hover",
             )}
-            aria-label="질문 고정"
+            aria-label={t("controls.pinQuestion")}
           >
             <svg
               width="18"
@@ -832,7 +1173,7 @@ export function InterviewScreen({
             onClick={handleEnd}
             className="h-10 px-5 rounded-full text-red text-sm font-medium hover:bg-red/10 transition-colors cursor-pointer"
           >
-            종료
+            {t("controls.end")}
           </button>
         </div>
 
@@ -840,6 +1181,47 @@ export function InterviewScreen({
           <span className="text-sm text-muted">{phaseLabel[phase] ?? ""}</span>
         </div>
       </div>
+
+      {/* ── device panel ── */}
+      <AnimatePresence>
+        {devicePanelOpen && (
+          <DevicePanel
+            open={devicePanelOpen}
+            onClose={() => setDevicePanelOpen(false)}
+            mics={mics}
+            speakers={speakers}
+            cams={cams}
+            audioInputId={audioInputId}
+            audioOutputId={audioOutputId}
+            videoInputId={videoInputId}
+            supportsSinkId={supportsSinkId}
+            onChangeMic={(id) => void changeMic(id)}
+            onChangeSpeaker={(id) => void changeSpeaker(id)}
+            onChangeCam={(id) => void changeCam(id)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── user pause overlay ── */}
+      <AnimatePresence>
+        {userPaused && <PauseOverlay onResume={handleResume} />}
+      </AnimatePresence>
+
+      {/* ── device toast ── */}
+      <AnimatePresence>
+        {deviceToast && (
+          <motion.div
+            key={deviceToast}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="absolute top-6 left-1/2 -translate-x-1/2 z-40 rounded-full bg-background/80 backdrop-blur-xl border border-white/[0.06] px-4 py-2 text-xs text-secondary"
+          >
+            {deviceToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── preparing overlay ── */}
       <AnimatePresence>
@@ -858,8 +1240,8 @@ export function InterviewScreen({
             >
               <h2 className="text-2xl font-bold text-center mb-12">
                 {prepSteps.every((s) => s.status === "done")
-                  ? "면접을 시작합니다"
-                  : "면접을 준비하고 있어요"}
+                  ? t("prep.starting")
+                  : t("prep.preparing")}
               </h2>
               <div className="space-y-5">
                 {prepSteps.map((step, i) => (

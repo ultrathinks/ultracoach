@@ -3,16 +3,51 @@ import type {
   EngineError,
   EnginePhase,
   HistoryEntry,
-  InterviewMode,
   InterviewType,
   JobResearch,
   QuestionEntry,
 } from "./types";
 
+const DEVICES_STORAGE_KEY = "ultracoach:devices";
+
+interface DevicePreferences {
+  audioInputId: string | null;
+  audioOutputId: string | null;
+  videoInputId: string | null;
+}
+
+function loadDevicePreferences(): DevicePreferences {
+  if (typeof window === "undefined") {
+    return { audioInputId: null, audioOutputId: null, videoInputId: null };
+  }
+  try {
+    const raw = window.localStorage.getItem(DEVICES_STORAGE_KEY);
+    if (!raw) {
+      return { audioInputId: null, audioOutputId: null, videoInputId: null };
+    }
+    const parsed = JSON.parse(raw) as Partial<DevicePreferences>;
+    return {
+      audioInputId: parsed.audioInputId ?? null,
+      audioOutputId: parsed.audioOutputId ?? null,
+      videoInputId: parsed.videoInputId ?? null,
+    };
+  } catch {
+    return { audioInputId: null, audioOutputId: null, videoInputId: null };
+  }
+}
+
+function saveDevicePreferences(prefs: DevicePreferences) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(DEVICES_STORAGE_KEY, JSON.stringify(prefs));
+  } catch {
+    // ignore quota or privacy mode failures
+  }
+}
+
 interface SessionState {
   jobTitle: string;
   interviewType: InterviewType;
-  mode: InterviewMode;
   resumeFileId: string | null;
   companyName: string | null;
   jobResearch: JobResearch | null;
@@ -25,10 +60,14 @@ interface SessionState {
   startTime: number | null;
   sessionDbId: string | null;
 
+  audioInputId: string | null;
+  audioOutputId: string | null;
+  videoInputId: string | null;
+  userPaused: boolean;
+
   setSetup: (setup: {
     jobTitle: string;
     interviewType: InterviewType;
-    mode: InterviewMode;
     resumeFileId?: string | null;
     companyName?: string | null;
   }) => void;
@@ -42,13 +81,14 @@ interface SessionState {
   setCurrentQuestion: (q: string | null) => void;
   setStartTime: (t: number) => void;
   setSessionDbId: (id: string) => void;
+  setDevices: (d: Partial<DevicePreferences>) => void;
+  setUserPaused: (paused: boolean) => void;
   reset: () => void;
 }
 
 const initialState = {
   jobTitle: "",
   interviewType: "personality" as InterviewType,
-  mode: "real" as InterviewMode,
   resumeFileId: null,
   companyName: null as string | null,
   jobResearch: null as JobResearch | null,
@@ -59,6 +99,8 @@ const initialState = {
   currentQuestion: null as string | null,
   startTime: null as number | null,
   sessionDbId: null as string | null,
+  ...loadDevicePreferences(),
+  userPaused: false,
 };
 
 export const useSessionStore = create<SessionState>((set) => ({
@@ -86,5 +128,23 @@ export const useSessionStore = create<SessionState>((set) => ({
   setCurrentQuestion: (q) => set({ currentQuestion: q }),
   setStartTime: (t) => set({ startTime: t }),
   setSessionDbId: (id) => set({ sessionDbId: id }),
-  reset: () => set(initialState),
+  setDevices: (d) =>
+    set((s) => {
+      const next: DevicePreferences = {
+        audioInputId: d.audioInputId ?? s.audioInputId,
+        audioOutputId: d.audioOutputId ?? s.audioOutputId,
+        videoInputId: d.videoInputId ?? s.videoInputId,
+      };
+      saveDevicePreferences(next);
+      return next;
+    }),
+  setUserPaused: (paused) => set({ userPaused: paused }),
+  reset: () =>
+    set((s) => ({
+      ...initialState,
+      audioInputId: s.audioInputId,
+      audioOutputId: s.audioOutputId,
+      videoInputId: s.videoInputId,
+      userPaused: false,
+    })),
 }));
