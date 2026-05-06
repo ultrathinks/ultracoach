@@ -51,6 +51,21 @@ export function LandingHero() {
       {/* ── Hero ── */}
       <section className="py-36 lg:py-52">
         <div className="max-w-4xl mx-auto px-6 text-center">
+          <motion.div
+            className="inline-flex items-center gap-2.5 px-4 py-2 mb-9 rounded-full text-sm sm:text-base font-medium text-foreground bg-white/[0.04] border border-white/[0.1]"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+          >
+            <span
+              aria-hidden="true"
+              className="inline-flex w-2 h-2 rounded-full bg-indigo animate-pulse"
+            />
+            <span>English support is now live</span>
+            <span className="text-muted">·</span>
+            <span className="text-secondary">한국어도 그대로</span>
+          </motion.div>
+
           <motion.h1
             className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight leading-[1.1] mb-7"
             initial={{ opacity: 0, y: 20 }}

@@ -5,9 +5,8 @@ export type {
   EngineError,
   EnginePhase,
   HistoryEntry,
-  InterviewMode,
   InterviewType,
   JobResearch,
   QuestionEntry,
 } from "./types";
-export { interviewModeSchema, interviewTypeSchema } from "./types";
+export { interviewTypeSchema } from "./types";

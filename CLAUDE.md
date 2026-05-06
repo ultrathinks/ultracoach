@@ -50,14 +50,7 @@ interview-screen에서 while 루프로 `질문 생성 → TTS → VAD 대기 →
 
 ### VAD (Voice Activity Detection)
 
-RMS 기반. threshold 0.035, 2.5초 무음 시 발화 종료 판정. 최소 발화 1초.
-
-### 코칭 엔진 4중 필터
-
-1. 발화 중 금지 (isSpeaking)
-2. 최소 간격 20초
-3. 쿨다운 20초
-4. 심각도 순위로 최악 1개만 알림
+RMS 기반. threshold 0.035, 무음 시 발화 종료 판정 (기본 3.5초, 짧은 발화 후엔 7초). 최소 발화 1초. `keepAlive()`로 silence 타이머 리셋.
 
 ### API route 인증
 

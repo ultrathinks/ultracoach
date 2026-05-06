@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { resolveLocale } from "@/i18n/request";
 import { auth } from "@/shared/lib/auth";
 import { rateLimit } from "@/shared/lib/rate-limit";
 
 const checkRate = rateLimit({ windowMs: 60_000, max: 60 });
 
-const VOICE_ID = "4JJwo477JUAx3HV0T7n7";
+const KO_VOICE_ID_DEFAULT = "4JJwo477JUAx3HV0T7n7";
+const EN_VOICE_ID_DEFAULT = "21m00Tcm4TlvDq8ikWAM";
 const MODEL_ID = "eleven_multilingual_v2";
 
 const requestSchema = z.object({
@@ -38,8 +40,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const locale = await resolveLocale();
+    const voiceId =
+      locale === "en"
+        ? (process.env.ELEVENLABS_VOICE_ID_EN ?? EN_VOICE_ID_DEFAULT)
+        : (process.env.ELEVENLABS_VOICE_ID_KO ?? KO_VOICE_ID_DEFAULT);
+
     const res = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
       {
         method: "POST",
         headers: {

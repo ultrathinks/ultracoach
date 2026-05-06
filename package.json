@@ -30,6 +30,7 @@
     "motion": "12.35.2",
     "next": "16.1.6",
     "next-auth": "^5.0.0-beta.28",
+    "next-intl": "^4.11.0",
     "openai": "6.26.0",
     "postgres": "^3.4.7",
     "react": "19.2.3",

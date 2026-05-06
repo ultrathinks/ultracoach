@@ -42,7 +42,6 @@ interface SessionSummary {
   id: string;
   jobTitle: string;
   interviewType: string;
-  mode: string;
   deliveryScore: number | null;
   contentScore: number | null;
   durationSec: number | null;
@@ -59,11 +58,6 @@ const typeLabel: Record<string, string> = {
   personality: "인성",
   technical: "기술",
   "culture-fit": "컬처핏",
-};
-
-const modeLabel: Record<string, string> = {
-  real: "실전",
-  practice: "연습",
 };
 
 function getScoreColor(score: number | null) {
@@ -202,8 +196,7 @@ export function HistoryDashboard({
                   <p className="font-semibold">{session.jobTitle}</p>
                   <p className="text-sm text-secondary mt-1">
                     {typeLabel[session.interviewType] ?? session.interviewType}{" "}
-                    · {modeLabel[session.mode] ?? session.mode} ·{" "}
-                    {formatDuration(session.durationSec)} ·{" "}
+                    · {formatDuration(session.durationSec)} ·{" "}
                     {new Date(session.createdAt).toLocaleDateString("ko-KR")}
                   </p>
                 </div>
