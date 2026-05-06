@@ -6,6 +6,9 @@ import { db } from "@/shared/db";
 import { feedback as feedbackTable, sessions } from "@/shared/db/schema";
 import { auth } from "@/shared/lib/auth";
 import { getOpenAI, parseJsonResponse } from "@/shared/lib/openai";
+import { rateLimit } from "@/shared/lib/rate-limit";
+
+const checkRate = rateLimit({ windowMs: 60_000, max: 10 });
 
 const requestSchema = z.object({
   metrics: z.record(z.string(), z.unknown()),
@@ -106,6 +109,9 @@ export async function POST(
     if (!session?.user?.id) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
+
+    const limited = checkRate(session.user.id, "session-feedback");
+    if (limited) return limited;
 
     const [target] = await db
       .select({

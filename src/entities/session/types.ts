@@ -1,5 +1,14 @@
-export type InterviewMode = "practice" | "real";
-export type InterviewType = "personality" | "technical" | "culture-fit";
+import { z } from "zod";
+
+export const interviewTypeSchema = z.enum([
+  "personality",
+  "technical",
+  "culture-fit",
+]);
+export const interviewModeSchema = z.enum(["practice", "real"]);
+
+export type InterviewType = z.infer<typeof interviewTypeSchema>;
+export type InterviewMode = z.infer<typeof interviewModeSchema>;
 export type EnginePhase =
   | "idle"
   | "generating"

@@ -1,8 +1,8 @@
-import { auth } from "@/shared/lib/auth";
-import { rateLimit } from "@/shared/lib/rate-limit";
-import { getOpenAI } from "@/shared/lib/openai";
 import { NextResponse } from "next/server";
 import { toFile } from "openai";
+import { auth } from "@/shared/lib/auth";
+import { getOpenAI } from "@/shared/lib/openai";
+import { rateLimit } from "@/shared/lib/rate-limit";
 
 const checkRate = rateLimit({ windowMs: 60_000, max: 10 });
 

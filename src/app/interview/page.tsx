@@ -1,10 +1,10 @@
 "use client";
 
-import { useSessionStore } from "@/entities/session";
+import { useCallback, useEffect, useState } from "react";
 import { useMetricsStore } from "@/entities/metrics";
+import { useSessionStore } from "@/entities/session";
 import { SetupForm, useJobResearch } from "@/features/setup";
 import { InterviewScreen } from "@/widgets/interview/interview-screen";
-import { useCallback, useEffect, useState } from "react";
 
 type Stage = "setup" | "interview";
 

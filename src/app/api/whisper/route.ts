@@ -1,7 +1,7 @@
-import { auth } from "@/shared/lib/auth";
-import { rateLimit } from "@/shared/lib/rate-limit";
-import { getOpenAI } from "@/shared/lib/openai";
 import { NextResponse } from "next/server";
+import { auth } from "@/shared/lib/auth";
+import { getOpenAI } from "@/shared/lib/openai";
+import { rateLimit } from "@/shared/lib/rate-limit";
 
 const MAX_AUDIO_SIZE = 25 * 1024 * 1024; // 25MB (Whisper API limit)
 const checkRate = rateLimit({ windowMs: 60_000, max: 60 });
@@ -56,7 +56,8 @@ export async function POST(request: Request) {
       file: audio,
       language: "ko",
       temperature: 0,
-      prompt: "면접관과 지원자의 대화입니다. 지원자가 면접 질문에 답변하고 있습니다.",
+      prompt:
+        "면접관과 지원자의 대화입니다. 지원자가 면접 질문에 답변하고 있습니다.",
     });
 
     const text = transcription.text.trim();

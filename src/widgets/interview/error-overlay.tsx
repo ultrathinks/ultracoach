@@ -1,8 +1,8 @@
 "use client";
 
+import { motion } from "motion/react";
 import { useSessionStore } from "@/entities/session";
 import { Button } from "@/shared/ui";
-import { motion } from "motion/react";
 
 interface ErrorOverlayProps {
   onRetry: () => void;

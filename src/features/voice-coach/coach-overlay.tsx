@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@/shared/lib/cn";
 import { AnimatePresence, motion } from "motion/react";
+import { cn } from "@/shared/lib/cn";
 import { useVoiceCoach } from "./use-voice-coach";
 
 const typeColors: Record<string, string> = {

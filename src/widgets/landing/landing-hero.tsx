@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "@/shared/ui";
-import { signIn, useSession } from "next-auth/react";
-import Link from "next/link";
 import { motion } from "motion/react";
+import Link from "next/link";
+import { signIn, useSession } from "next-auth/react";
+import { Button } from "@/shared/ui";
 
 const features = [
   { emoji: "🧠", category: "면접", title: "산업심리학 기반 구조화 면접" },

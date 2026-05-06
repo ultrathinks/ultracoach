@@ -223,7 +223,11 @@ export function ReportView({
             <h2 className="text-lg font-semibold mb-6">질문별 분석</h2>
             <div className="space-y-8">
               {feedback.questionAnalyses.map((qa, i) => (
-                <QuestionItem key={`${i}-${qa.questionId}`} qa={qa} sessionId={sessionId} />
+                <QuestionItem
+                  key={`${i}-${qa.questionId}`}
+                  qa={qa}
+                  sessionId={sessionId}
+                />
               ))}
             </div>
           </div>

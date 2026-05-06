@@ -1,6 +1,5 @@
 "use client";
 
-import type { TypeComparisonGroup } from "@/entities/analytics";
 import {
   Bar,
   BarChart,
@@ -9,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { TypeComparisonGroup } from "@/entities/analytics";
 
 interface TypeComparisonChartProps {
   data: TypeComparisonGroup[];

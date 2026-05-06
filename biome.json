@@ -24,6 +24,12 @@
   },
   "files": {
     "includes": ["**"],
-    "experimentalScannerIgnores": [".next", "node_modules", "drizzle"]
+    "experimentalScannerIgnores": [
+      ".next",
+      "node_modules",
+      "drizzle",
+      ".claude",
+      ".omc"
+    ]
   }
 }

@@ -1,6 +1,6 @@
+import { NextResponse } from "next/server";
 import NextAuth from "next-auth";
 import { authConfig } from "@/shared/lib/auth.config";
-import { NextResponse } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
@@ -15,5 +15,12 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/api/((?!auth).*)", "/interview", "/history", "/results/:path*"],
+  matcher: [
+    "/api/((?!auth).*)",
+    "/interview",
+    "/history",
+    "/results/:path*",
+    "/dashboard/:path*",
+    "/drill/:path*",
+  ],
 };

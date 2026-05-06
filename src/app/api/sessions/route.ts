@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { interviewModeSchema, interviewTypeSchema } from "@/entities/session";
 import { db } from "@/shared/db";
 import {
   metricSnapshots,
@@ -7,6 +8,9 @@ import {
   sessions,
 } from "@/shared/db/schema";
 import { auth } from "@/shared/lib/auth";
+import { rateLimit } from "@/shared/lib/rate-limit";
+
+const checkRate = rateLimit({ windowMs: 60_000, max: 10 });
 
 const metricSnapshotSchema = z.object({
   timestamp: z.number(),
@@ -38,8 +42,8 @@ const metricEventSchema = z.object({
 
 const requestSchema = z.object({
   jobTitle: z.string().max(200),
-  interviewType: z.string().max(50),
-  mode: z.string().max(20),
+  interviewType: interviewTypeSchema,
+  mode: interviewModeSchema,
   durationSec: z.number().int().min(0).max(86400),
   companyName: z.string().max(100).nullable().optional(),
   jobResearchJson: z.record(z.unknown()).nullable().optional(),
@@ -68,6 +72,9 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
+
+    const limited = checkRate(session.user.id, "sessions");
+    if (limited) return limited;
 
     const body = requestSchema.safeParse(await request.json());
     if (!body.success) {

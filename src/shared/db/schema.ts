@@ -1,5 +1,5 @@
 import {
-  boolean,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -18,57 +18,69 @@ export const users = pgTable("users", {
   image: text("image"),
 });
 
-export const accounts = pgTable("accounts", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  type: text("type").notNull(),
-  provider: text("provider").notNull(),
-  providerAccountId: text("provider_account_id").notNull(),
-  refresh_token: text("refresh_token"),
-  access_token: text("access_token"),
-  expires_at: integer("expires_at"),
-  token_type: text("token_type"),
-  scope: text("scope"),
-  id_token: text("id_token"),
-  session_state: text("session_state"),
-});
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("provider_account_id").notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: text("token_type"),
+    scope: text("scope"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
+  },
+  (t) => [index("accounts_user_id_idx").on(t.userId)],
+);
 
-export const sessions = pgTable("sessions", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  jobTitle: varchar("job_title", { length: 200 }).notNull(),
-  interviewType: varchar("interview_type", { length: 50 }).notNull(),
-  mode: varchar("mode", { length: 20 }).notNull(),
-  status: varchar("status", { length: 20 }).notNull().default("in_progress"),
-  durationSec: integer("duration_sec"),
-  deliveryScore: integer("delivery_score"),
-  contentScore: integer("content_score"),
-  resumeFileId: text("resume_file_id"),
-  companyName: varchar("company_name", { length: 255 }),
-  jobResearchJson: jsonb("job_research_json"),
-  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    jobTitle: varchar("job_title", { length: 200 }).notNull(),
+    interviewType: varchar("interview_type", { length: 50 }).notNull(),
+    mode: varchar("mode", { length: 20 }).notNull(),
+    status: varchar("status", { length: 20 }).notNull().default("in_progress"),
+    durationSec: integer("duration_sec"),
+    deliveryScore: integer("delivery_score"),
+    contentScore: integer("content_score"),
+    resumeFileId: text("resume_file_id"),
+    companyName: varchar("company_name", { length: 255 }),
+    jobResearchJson: jsonb("job_research_json"),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("sessions_user_id_created_at_idx").on(t.userId, t.createdAt)],
+);
 
-export const questions = pgTable("questions", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  sessionId: text("session_id")
-    .notNull()
-    .references(() => sessions.id, { onDelete: "cascade" }),
-  type: varchar("type", { length: 30 }).notNull(),
-  text: text("text").notNull(),
-  answer: text("answer"),
-  order: integer("order").notNull(),
-});
+export const questions = pgTable(
+  "questions",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    sessionId: text("session_id")
+      .notNull()
+      .references(() => sessions.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 30 }).notNull(),
+    text: text("text").notNull(),
+    answer: text("answer"),
+    order: integer("order").notNull(),
+  },
+  (t) => [index("questions_session_id_idx").on(t.sessionId)],
+);
 
 export const feedback = pgTable("feedback", {
   id: text("id")
@@ -84,13 +96,17 @@ export const feedback = pgTable("feedback", {
   questionAnalysesJson: jsonb("question_analyses_json"),
 });
 
-export const metricSnapshots = pgTable("metric_snapshots", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  sessionId: text("session_id")
-    .notNull()
-    .references(() => sessions.id, { onDelete: "cascade" }),
-  snapshotsJson: jsonb("snapshots_json"),
-  eventsJson: jsonb("events_json"),
-});
+export const metricSnapshots = pgTable(
+  "metric_snapshots",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    sessionId: text("session_id")
+      .notNull()
+      .references(() => sessions.id, { onDelete: "cascade" }),
+    snapshotsJson: jsonb("snapshots_json"),
+    eventsJson: jsonb("events_json"),
+  },
+  (t) => [index("metric_snapshots_session_id_idx").on(t.sessionId)],
+);

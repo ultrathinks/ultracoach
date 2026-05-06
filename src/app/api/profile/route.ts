@@ -3,12 +3,18 @@ import { NextResponse } from "next/server";
 import { db } from "@/shared/db";
 import { users } from "@/shared/db/schema";
 import { auth } from "@/shared/lib/auth";
+import { rateLimit } from "@/shared/lib/rate-limit";
+
+const checkRate = rateLimit({ windowMs: 60_000, max: 20 });
 
 export async function PATCH(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  const limited = checkRate(session.user.id, "profile");
+  if (limited) return limited;
 
   const body = await request.json();
   const name = typeof body.name === "string" ? body.name.trim() : null;
