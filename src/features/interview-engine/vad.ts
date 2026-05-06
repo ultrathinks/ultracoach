@@ -5,6 +5,7 @@ interface VadOptions {
   onSpeechStart?: () => void;
   onSpeechEnd?: () => void | Promise<void>;
   onLevel?: (rms: number) => void;
+  onSilenceProgress?: (progress: number) => void;
 }
 
 interface VadController {
@@ -16,11 +17,12 @@ interface VadController {
 export function createVad(options: VadOptions = {}): VadController {
   const {
     threshold = 0.035,
-    silenceDelay = 2500,
+    silenceDelay = 3500,
     minSpeechDuration = 1000,
     onSpeechStart,
     onSpeechEnd,
     onLevel,
+    onSilenceProgress,
   } = options;
 
   let audioContext: AudioContext | null = null;
@@ -47,6 +49,7 @@ export function createVad(options: VadOptions = {}): VadController {
 
     if (rms > threshold) {
       silenceStart = 0;
+      onSilenceProgress?.(0);
       if (!isSpeaking) {
         isSpeaking = true;
         speechStart = performance.now();
@@ -59,19 +62,21 @@ export function createVad(options: VadOptions = {}): VadController {
       const speechDuration = performance.now() - speechStart;
       const effectiveDelay =
         speechDuration < 5000 ? silenceDelay * 2 : silenceDelay;
-      if (
-        silenceStart > 0 &&
-        performance.now() - silenceStart > effectiveDelay
-      ) {
+      const elapsed = performance.now() - silenceStart;
+      onSilenceProgress?.(Math.min(elapsed / effectiveDelay, 1));
+      if (silenceStart > 0 && elapsed > effectiveDelay) {
         const duration = speechDuration;
         isSpeaking = false;
         silenceStart = 0;
         speechStart = 0;
+        onSilenceProgress?.(0);
         if (duration >= minSpeechDuration) {
           onSpeechEnd?.();
           return;
         }
       }
+    } else {
+      onSilenceProgress?.(0);
     }
 
     rafId = requestAnimationFrame(processFrame);
