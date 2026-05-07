@@ -1,13 +1,25 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { type MetricSnapshot, useMetricsStore } from "@/entities/metrics";
+import { z } from "zod";
+import { metricSnapshotSchema, useMetricsStore } from "@/entities/metrics";
 
 export interface Landmarks {
   face: number[][];
   pose: number[][];
   hands: number[][][];
 }
+
+const landmarksSchema = z.object({
+  face: z.array(z.array(z.number())),
+  pose: z.array(z.array(z.number())),
+  hands: z.array(z.array(z.array(z.number()))),
+});
+
+const workerMessageSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("snapshot"), data: metricSnapshotSchema }),
+  z.object({ type: z.literal("landmarks"), data: landmarksSchema }),
+]);
 
 export function useMediaPipe() {
   const workerRef = useRef<Worker | null>(null);
@@ -23,10 +35,12 @@ export function useMediaPipe() {
       );
 
       worker.onmessage = (e) => {
-        if (e.data.type === "snapshot") {
-          push(e.data.data as MetricSnapshot);
-        } else if (e.data.type === "landmarks") {
-          setLandmarks(e.data.data as Landmarks);
+        const parsed = workerMessageSchema.safeParse(e.data);
+        if (!parsed.success) return;
+        if (parsed.data.type === "snapshot") {
+          push(parsed.data.data);
+        } else {
+          setLandmarks(parsed.data.data);
         }
       };
 

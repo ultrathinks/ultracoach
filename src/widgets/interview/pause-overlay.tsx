@@ -22,7 +22,7 @@ export function PauseOverlay({ onResume }: PauseOverlayProps) {
       exit={{ opacity: 0 }}
       className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
     >
-      <div className="bg-background/80 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-8 max-w-sm mx-4 text-center space-y-5">
+      <div className="glass rounded-2xl p-8 max-w-sm mx-4 text-center space-y-4">
         <div className="w-16 h-16 mx-auto rounded-full bg-yellow/15 flex items-center justify-center">
           <svg
             width="28"

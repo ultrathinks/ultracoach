@@ -1,8 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMetricsStore } from "@/entities/metrics";
 import { useSessionStore } from "@/entities/session";
@@ -20,6 +20,10 @@ interface InterviewScreenProps {
   researchStatus?: "idle" | "loading" | "done";
 }
 
+const MIN_PIP_WIDTH = 160;
+const MAX_PIP_WIDTH = 720;
+const DEFAULT_PIP_WIDTH = 288;
+
 export function InterviewScreen({
   researchStatus = "done",
 }: InterviewScreenProps) {
@@ -36,13 +40,14 @@ export function InterviewScreen({
     silenceProgress,
   } = useInterviewEngine();
   const { liveCaption, start: startSpeech, stop: stopSpeech } = useWebSpeech();
+  const avatarId = useSessionStore((s) => s.avatarId);
   const {
     connect: connectAvatar,
     speak: avatarSpeak,
     disconnect: disconnectAvatar,
     isConnected: avatarConnected,
     isSpeaking: avatarIsSpeaking,
-  } = useAvatar();
+  } = useAvatar({ avatarId });
   const {
     start: startMediaPipe,
     stop: stopMediaPipe,
@@ -62,11 +67,16 @@ export function InterviewScreen({
   const audioInputId = useSessionStore((s) => s.audioInputId);
   const audioOutputId = useSessionStore((s) => s.audioOutputId);
   const videoInputId = useSessionStore((s) => s.videoInputId);
-  const setStoreDevices = useSessionStore((s) => s.setDevices);
+  const setDevices = useSessionStore((s) => s.setDevices);
   const userPaused = useSessionStore((s) => s.userPaused);
   const setUserPaused = useSessionStore((s) => s.setUserPaused);
-  const { mics, speakers, cams, refresh: refreshDevices, supportsSinkId } =
-    useDevices();
+  const {
+    mics,
+    speakers,
+    cams,
+    refresh: refreshDevices,
+    supportsSinkId,
+  } = useDevices();
 
   const streamRef = useRef<MediaStream | null>(null);
   const streamReadyRef = useRef<(() => void) | null>(null);
@@ -90,6 +100,10 @@ export function InterviewScreen({
   const [textInput, setTextInput] = useState("");
   const [devicePanelOpen, setDevicePanelOpen] = useState(false);
   const [deviceToast, setDeviceToast] = useState<string | null>(null);
+  const [isSwapped, setIsSwapped] = useState(false);
+  const [pipWidth, setPipWidth] = useState(DEFAULT_PIP_WIDTH);
+  const pipWidthRef = useRef(pipWidth);
+  pipWidthRef.current = pipWidth;
   const textInputRef = useRef<HTMLInputElement>(null);
   const [prepSteps, setPrepSteps] = useState<
     { label: string; status: "pending" | "loading" | "done" }[]
@@ -323,10 +337,7 @@ export function InterviewScreen({
       useSessionStore.getState().setStartTime(Date.now());
 
       while (!loopAbortRef.current) {
-        while (
-          useSessionStore.getState().userPaused &&
-          !loopAbortRef.current
-        ) {
+        while (useSessionStore.getState().userPaused && !loopAbortRef.current) {
           await new Promise((r) => setTimeout(r, 200));
         }
         if (loopAbortRef.current) break;
@@ -356,10 +367,7 @@ export function InterviewScreen({
         if (loopAbortRef.current) break;
 
         // 면접관 발화 끝난 시점에 사용자가 일시정지를 눌렀다면 listening 진입 전에 멈춘다
-        while (
-          useSessionStore.getState().userPaused &&
-          !loopAbortRef.current
-        ) {
+        while (useSessionStore.getState().userPaused && !loopAbortRef.current) {
           await new Promise((r) => setTimeout(r, 200));
         }
         if (loopAbortRef.current) break;
@@ -370,7 +378,10 @@ export function InterviewScreen({
         }
 
         startSpeech();
-        await startListening(stream);
+        await startListening(
+          stream,
+          useSessionStore.getState().calibratedVadThreshold ?? undefined,
+        );
         stopSpeech();
 
         if (loopAbortRef.current) break;
@@ -416,6 +427,7 @@ export function InterviewScreen({
         body: JSON.stringify({
           jobTitle: state.jobTitle,
           interviewType: state.interviewType,
+          avatarId: state.avatarId,
           durationSec: duration,
           companyName: state.companyName,
           jobResearchJson: state.jobResearch,
@@ -509,7 +521,7 @@ export function InterviewScreen({
         stopListening();
         disposeRecording();
         startRecording(stream);
-        setStoreDevices({ audioInputId: deviceId || null });
+        setDevices({ audioInputId: deviceId || null });
         setMicMuted(!newTrack.enabled);
         showDeviceToast(t("toasts.micChanged"));
       } catch (err) {
@@ -521,7 +533,7 @@ export function InterviewScreen({
       stopListening,
       disposeRecording,
       startRecording,
-      setStoreDevices,
+      setDevices,
       showDeviceToast,
     ],
   );
@@ -545,7 +557,7 @@ export function InterviewScreen({
           webcamRef.current.srcObject = stream;
           startMediaPipe(webcamRef.current);
         }
-        setStoreDevices({ videoInputId: deviceId || null });
+        setDevices({ videoInputId: deviceId || null });
         setCamOff(!newTrack.enabled);
         showDeviceToast(t("toasts.camChanged"));
       } catch (err) {
@@ -553,7 +565,7 @@ export function InterviewScreen({
         showDeviceToast(t("toasts.camChangeFailed"));
       }
     },
-    [startMediaPipe, setStoreDevices, showDeviceToast],
+    [startMediaPipe, setDevices, showDeviceToast],
   );
 
   const changeSpeaker = useCallback(
@@ -568,10 +580,10 @@ export function InterviewScreen({
           return;
         }
       }
-      setStoreDevices({ audioOutputId: deviceId || null });
+      setDevices({ audioOutputId: deviceId || null });
       showDeviceToast(t("toasts.speakerChanged"));
     },
-    [setStoreDevices, showDeviceToast],
+    [setDevices, showDeviceToast],
   );
 
   useEffect(() => {
@@ -594,7 +606,7 @@ export function InterviewScreen({
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
         return true;
       }
-      return (el as HTMLElement).isContentEditable;
+      return el instanceof HTMLElement && el.isContentEditable;
     }
     function handleKey(e: KeyboardEvent) {
       if (e.code !== "Space") return;
@@ -675,6 +687,37 @@ export function InterviewScreen({
     }
     replayBusyRef.current = false;
   }, [avatarSpeak, avatarIsSpeaking, keepListeningAlive]);
+
+  const handleSwapView = useCallback(() => {
+    setIsSwapped((v) => !v);
+  }, []);
+
+  const handlePipResizeStart = useCallback(
+    (e: React.PointerEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startWidth = pipWidthRef.current;
+      const handleMove = (ev: PointerEvent) => {
+        const dx = startX - ev.clientX;
+        const dy = startY - ev.clientY;
+        const delta = Math.max(dx, dy * 1.6);
+        const next = Math.max(
+          MIN_PIP_WIDTH,
+          Math.min(MAX_PIP_WIDTH, startWidth + delta),
+        );
+        setPipWidth(next);
+      };
+      const handleUp = () => {
+        window.removeEventListener("pointermove", handleMove);
+        window.removeEventListener("pointerup", handleUp);
+      };
+      window.addEventListener("pointermove", handleMove);
+      window.addEventListener("pointerup", handleUp);
+    },
+    [],
+  );
 
   const toggleMic = useCallback(() => {
     const track = streamRef.current?.getAudioTracks()[0];
@@ -812,67 +855,56 @@ export function InterviewScreen({
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col">
       {/* ── video area ── */}
-      <div className="flex-1 relative min-h-0">
-        <div className="relative w-full h-full overflow-hidden bg-background flex items-center justify-center">
+      <div className="flex-1 relative min-h-0 overflow-hidden">
+        {/* avatar surface */}
+        <div
+          className={cn(
+            "absolute",
+            isSwapped
+              ? "rounded-xl overflow-hidden border border-border-subtle shadow-2xl z-10 bottom-20 right-4 lg:right-6 bg-background"
+              : "inset-0 bg-background overflow-hidden flex items-center justify-center",
+          )}
+          style={
+            isSwapped ? { width: pipWidth, aspectRatio: "1 / 1" } : undefined
+          }
+        >
           <video
             ref={avatarVideoRef}
             autoPlay
             playsInline
-            className="h-full aspect-square max-w-full object-contain"
+            className={cn(
+              isSwapped
+                ? "w-full h-full object-contain"
+                : "h-full aspect-square max-w-full object-contain",
+            )}
           />
-          <audio ref={avatarAudioRef} autoPlay />
-
           {!avatarConnected && (
             <div className="absolute inset-0 bg-background flex items-center justify-center">
-              <div className="w-20 h-20 rounded-full bg-white/[0.04] border border-border flex items-center justify-center text-2xl font-bold text-muted">
+              <div
+                className={cn(
+                  "rounded-full bg-white/[0.04] border border-border flex items-center justify-center font-bold text-muted",
+                  isSwapped ? "w-10 h-10 text-xs" : "w-20 h-20 text-2xl",
+                )}
+              >
                 AI
               </div>
             </div>
           )}
-
-          {/* question/caption overlay — bottom of video */}
-          <div className="absolute bottom-0 inset-x-0 pointer-events-none">
-            <div className="bg-gradient-to-t from-background via-background/60 to-transparent pt-20 pb-6 px-6">
-              {pinQuestion &&
-                currentQuestion &&
-                (phase === "speaking" || phase === "listening") && (
-                  <p className="text-foreground/50 text-center text-sm max-w-2xl mx-auto mb-2">
-                    {currentQuestion}
-                  </p>
-                )}
-              <AnimatePresence mode="wait">
-                {liveCaption && phase === "listening" ? (
-                  <motion.p
-                    key="caption"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-secondary text-center text-[15px] max-w-2xl mx-auto"
-                  >
-                    {liveCaption}
-                  </motion.p>
-                ) : currentQuestion &&
-                  ((phase === "speaking" && avatarIsSpeaking) ||
-                    (phase === "listening" && !pinQuestion)) ? (
-                  <motion.p
-                    key={currentQuestion}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-foreground text-center text-[15px] max-w-2xl mx-auto leading-relaxed"
-                  >
-                    {currentQuestion}
-                  </motion.p>
-                ) : null}
-              </AnimatePresence>
-            </div>
-          </div>
         </div>
 
-        {/* webcam PIP */}
+        <audio ref={avatarAudioRef} autoPlay />
+
+        {/* webcam surface */}
         <div
-          onClick={() => setShowLandmarks((v) => !v)}
-          className="absolute bottom-20 right-4 lg:right-6 w-56 lg:w-72 aspect-video rounded-xl overflow-hidden border border-white/[0.06] shadow-2xl z-10 cursor-pointer"
+          className={cn(
+            "absolute",
+            isSwapped
+              ? "inset-0 bg-background overflow-hidden"
+              : "rounded-xl overflow-hidden border border-border-subtle shadow-2xl z-10 bottom-20 right-4 lg:right-6",
+          )}
+          style={
+            !isSwapped ? { width: pipWidth, aspectRatio: "16 / 9" } : undefined
+          }
         >
           <video
             ref={webcamRef}
@@ -897,6 +929,67 @@ export function InterviewScreen({
             </div>
           )}
         </div>
+
+        {/* pip overlay controls (always positioned at the pip slot) */}
+        <div
+          className="absolute bottom-20 right-4 lg:right-6 z-20 rounded-xl"
+          style={{
+            width: pipWidth,
+            aspectRatio: isSwapped ? "1 / 1" : "16 / 9",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setShowLandmarks((v) => !v)}
+            aria-pressed={showLandmarks}
+            aria-label={t("controls.toggleLandmarks")}
+            className="absolute inset-0 cursor-pointer rounded-xl"
+          />
+          <button
+            type="button"
+            onPointerDown={handlePipResizeStart}
+            aria-label={t("controls.resizePip")}
+            className="absolute top-0 left-0 w-5 h-5 cursor-nwse-resize bg-transparent"
+          />
+        </div>
+
+        {/* question/caption overlay — bottom of video */}
+        <div className="absolute bottom-0 inset-x-0 pointer-events-none z-[15]">
+          <div className="bg-gradient-to-t from-background via-background/60 to-transparent pt-20 pb-6 px-6">
+            {pinQuestion &&
+              currentQuestion &&
+              (phase === "speaking" || phase === "listening") && (
+                <p className="text-foreground/50 text-center text-sm max-w-2xl mx-auto mb-2">
+                  {currentQuestion}
+                </p>
+              )}
+            <AnimatePresence mode="wait">
+              {liveCaption && phase === "listening" ? (
+                <motion.p
+                  key="caption"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-secondary text-center text-[15px] max-w-2xl mx-auto"
+                >
+                  {liveCaption}
+                </motion.p>
+              ) : currentQuestion &&
+                ((phase === "speaking" && avatarIsSpeaking) ||
+                  (phase === "listening" && !pinQuestion)) ? (
+                <motion.p
+                  key={currentQuestion}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-foreground text-center text-[15px] max-w-2xl mx-auto leading-relaxed"
+                >
+                  {currentQuestion}
+                </motion.p>
+              ) : null}
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
 
       {/* ── text input overlay ── */}
@@ -911,7 +1004,7 @@ export function InterviewScreen({
               setTextInput("");
               setShowTextInput(false);
             }}
-            className="flex items-center gap-2 max-w-2xl mx-auto bg-background/80 backdrop-blur-xl rounded-xl p-2 border border-white/[0.06]"
+            className="flex items-center gap-2 max-w-2xl mx-auto glass rounded-xl p-2"
           >
             <input
               ref={textInputRef}
@@ -922,7 +1015,7 @@ export function InterviewScreen({
                 keepListeningAlive();
               }}
               placeholder={t("controls.textInputPlaceholder")}
-              className="flex-1 h-9 px-4 rounded-lg bg-white/[0.04] border border-white/[0.06] text-foreground text-sm placeholder:text-muted focus:outline-none focus:border-foreground/30"
+              className="flex-1 h-9 px-4 rounded-lg bg-white/[0.04] border border-border-subtle text-foreground text-sm placeholder:text-muted focus:outline-none focus:border-foreground/30"
             />
             <button
               type="submit"
@@ -1133,6 +1226,36 @@ export function InterviewScreen({
 
           <button
             type="button"
+            onClick={handleSwapView}
+            aria-pressed={isSwapped}
+            aria-label={t("controls.swapView")}
+            className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer",
+              isSwapped
+                ? "bg-indigo/15 text-indigo border border-indigo/30"
+                : "bg-card border border-border text-foreground hover:bg-card-hover",
+            )}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="17 1 21 5 17 9" />
+              <path d="M3 11V9a4 4 0 014-4h14" />
+              <polyline points="7 23 3 19 7 15" />
+              <path d="M21 13v2a4 4 0 01-4 4H3" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setPinQuestion((v) => !v)}
             className={cn(
               "w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer",
@@ -1233,7 +1356,7 @@ export function InterviewScreen({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="absolute top-6 left-1/2 -translate-x-1/2 z-40 rounded-full bg-background/80 backdrop-blur-xl border border-white/[0.06] px-4 py-2 text-xs text-secondary"
+            className="absolute top-6 left-1/2 -translate-x-1/2 z-40 glass rounded-full px-4 py-2 text-xs text-secondary"
           >
             {deviceToast}
           </motion.div>

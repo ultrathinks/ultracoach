@@ -6,6 +6,12 @@ import { useCallback, useEffect, useRef } from "react";
 import type { DeviceOption } from "@/features/setup/use-devices";
 import { Select } from "@/shared/ui";
 
+declare global {
+  interface Window {
+    webkitAudioContext?: typeof AudioContext;
+  }
+}
+
 interface DevicePanelProps {
   open: boolean;
   onClose: () => void;
@@ -29,12 +35,8 @@ function toOptions(devices: DeviceOption[], defaultLabel: string) {
 }
 
 async function playTestBeep(deviceId: string | null) {
-  const Ctor =
-    typeof window !== "undefined"
-      ? (window.AudioContext ??
-        (window as Window & { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext)
-      : null;
+  if (typeof window === "undefined") return;
+  const Ctor = window.AudioContext ?? window.webkitAudioContext;
   if (!Ctor) return;
 
   const ctx = new Ctor();
@@ -95,7 +97,9 @@ export function DevicePanel({
     if (!open) return;
     function handleMouseDown(e: MouseEvent) {
       if (!ref.current) return;
-      if (!ref.current.contains(e.target as Node)) onClose();
+      if (e.target instanceof Node && !ref.current.contains(e.target)) {
+        onClose();
+      }
     }
     document.addEventListener("mousedown", handleMouseDown);
     return () => {
