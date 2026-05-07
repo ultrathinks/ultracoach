@@ -37,14 +37,6 @@ interface MetricSnapshotRow {
   snapshotsJson: unknown;
 }
 
-// --- Label map ---
-
-const TYPE_LABELS: Record<string, string> = {
-  personality: "인성",
-  technical: "기술",
-  "culture-fit": "컬처핏",
-};
-
 // --- Public API ---
 
 export function computeAnalytics(
@@ -88,10 +80,10 @@ export function computeBodyLanguage(
 ): BodyLanguageData {
   const noData: BodyLanguageData = {
     categories: [
-      { key: "gaze", label: "시선", score: 0, trend: "none" },
-      { key: "posture", label: "자세", score: 0, trend: "none" },
-      { key: "expression", label: "표정", score: 0, trend: "none" },
-      { key: "gesture", label: "제스처", score: 0, trend: "none" },
+      { key: "gaze", score: 0, trend: "none" },
+      { key: "posture", score: 0, trend: "none" },
+      { key: "expression", score: 0, trend: "none" },
+      { key: "gesture", score: 0, trend: "none" },
     ],
     hasData: false,
   };
@@ -143,25 +135,21 @@ export function computeBodyLanguage(
     categories: [
       {
         key: "gaze",
-        label: "시선",
         score: latest.gaze,
         trend: trend(latest.gaze, previous?.gaze ?? null),
       },
       {
         key: "posture",
-        label: "자세",
         score: latest.posture,
         trend: trend(latest.posture, previous?.posture ?? null),
       },
       {
         key: "expression",
-        label: "표정",
         score: latest.expression,
         trend: trend(latest.expression, previous?.expression ?? null),
       },
       {
         key: "gesture",
-        label: "제스처",
         score: latest.gesture,
         trend: trend(latest.gesture, previous?.gesture ?? null),
       },
@@ -201,7 +189,6 @@ function buildTypeComparison(completed: SessionRow[]): TypeComparisonGroup[] {
   for (const [type, data] of groups) {
     result.push({
       type,
-      typeLabel: TYPE_LABELS[type] ?? type,
       avgDelivery: Math.round(
         data.delivery.reduce((a, b) => a + b, 0) / data.delivery.length,
       ),
@@ -212,7 +199,6 @@ function buildTypeComparison(completed: SessionRow[]): TypeComparisonGroup[] {
     });
   }
 
-  // Sort: 인성 → 기술 → 컬처핏
   const order = ["personality", "technical", "culture-fit"];
   return result.sort(
     (a, b) =>

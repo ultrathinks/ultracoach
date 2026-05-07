@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { BodyLanguageData } from "@/entities/analytics";
 
 interface BodyLanguagePanelProps {
@@ -20,14 +21,14 @@ function TrendIndicator({ trend }: { trend: "up" | "down" | "flat" | "none" }) {
 }
 
 function BodyLanguagePanelInner({ data }: BodyLanguagePanelProps) {
+  const t = useTranslations("history");
+
   if (!data.hasData) {
     return (
       <div className="rounded-xl bg-card border border-white/[0.1] p-6">
-        <h3 className="text-base font-semibold mb-4">바디랭귀지</h3>
+        <h3 className="text-base font-semibold mb-4">{t("bodyLanguage")}</h3>
         <div className="flex flex-col items-center justify-center py-10 text-center">
-          <p className="text-secondary text-sm">
-            카메라를 켜고 면접하면 바디랭귀지를 분석할 수 있어요
-          </p>
+          <p className="text-secondary text-sm">{t("bodyLanguageEmpty")}</p>
         </div>
       </div>
     );
@@ -37,12 +38,14 @@ function BodyLanguagePanelInner({ data }: BodyLanguagePanelProps) {
 
   return (
     <div className="rounded-xl bg-card border border-white/[0.1] p-6">
-      <h3 className="text-base font-semibold mb-4">바디랭귀지</h3>
+      <h3 className="text-base font-semibold mb-4">{t("bodyLanguage")}</h3>
       <div className="space-y-5">
         {data.categories.map((category) => (
           <div key={category.key}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-secondary">{category.label}</span>
+              <span className="text-sm text-secondary">
+                {t(`bodyLanguageCategories.${category.key}`)}
+              </span>
               <div className="flex items-center">
                 <span className="text-2xl font-bold">{category.score}</span>
                 <TrendIndicator trend={category.trend} />
@@ -59,7 +62,7 @@ function BodyLanguagePanelInner({ data }: BodyLanguagePanelProps) {
       </div>
       {!hasTrends && (
         <p className="text-muted text-sm mt-4 text-center">
-          추이 변화는 2개 이상 세션에서 확인할 수 있어요
+          {t("bodyLanguageNoTrend")}
         </p>
       )}
     </div>

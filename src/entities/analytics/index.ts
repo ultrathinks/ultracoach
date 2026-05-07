@@ -3,6 +3,7 @@ export type {
   ActionTrackerData,
   AiRecommendationData,
   BodyLanguageCategory,
+  BodyLanguageCategoryKey,
   BodyLanguageData,
   ChangeRate,
   DashboardAnalytics,

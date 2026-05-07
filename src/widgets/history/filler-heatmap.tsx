@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { FillerHeatmapData } from "@/entities/analytics";
 import { cn } from "@/shared/lib/cn";
 
@@ -8,14 +9,14 @@ interface FillerHeatmapProps {
 }
 
 function FillerHeatmapInner({ data }: FillerHeatmapProps) {
+  const t = useTranslations("history");
+
   if (data.sessions.length === 0 || data.words.length === 0) {
     return (
       <div className="rounded-xl bg-card border border-white/[0.1] p-6">
-        <h3 className="text-base font-semibold mb-4">추임새 빈도</h3>
+        <h3 className="text-base font-semibold mb-4">{t("fillerFrequency")}</h3>
         <div className="flex flex-col items-center justify-center py-10 text-center">
-          <p className="text-secondary text-sm">
-            세션이 쌓이면 추임새 패턴을 한눈에 볼 수 있어요
-          </p>
+          <p className="text-secondary text-sm">{t("fillerEmpty")}</p>
         </div>
       </div>
     );
@@ -24,7 +25,6 @@ function FillerHeatmapInner({ data }: FillerHeatmapProps) {
   // aggregate: average freq per word across all sessions
   const wordStats = data.words.map((word, wi) => {
     const freqs = data.sessions.map((_, si) => {
-      const key = `${si}-${wi}`;
       return (
         data.cells.find((c) => c.sessionIdx === si && c.wordIdx === wi)
           ?.freqPerMin ?? 0
@@ -60,14 +60,14 @@ function FillerHeatmapInner({ data }: FillerHeatmapProps) {
 
   return (
     <div className="rounded-xl bg-card border border-white/[0.1] p-6">
-      <h3 className="text-base font-semibold mb-5">추임새 빈도</h3>
+      <h3 className="text-base font-semibold mb-5">{t("fillerFrequency")}</h3>
       <div className="space-y-3">
         {wordStats.map(({ word, avg, trend, recentFreqs }) => (
           <div key={word} className="flex items-center gap-4">
             <span className="text-sm font-medium w-12 shrink-0 text-right">
               {word}
             </span>
-            <div className="flex-1 flex items-center gap-3">
+            <div className="flex-1 flex items-center gap-2">
               <div className="flex-1 h-7 bg-white/[0.03] rounded-lg overflow-hidden relative">
                 <div
                   className={cn(
@@ -83,7 +83,7 @@ function FillerHeatmapInner({ data }: FillerHeatmapProps) {
                   }}
                 />
                 <span className="absolute inset-0 flex items-center px-3 text-xs text-foreground/70">
-                  {avg.toFixed(1)}/분
+                  {t("fillerPerMin", { value: avg.toFixed(1) })}
                 </span>
               </div>
               {/* mini sparkline */}
