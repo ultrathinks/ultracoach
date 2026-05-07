@@ -1,4 +1,10 @@
+import { z } from "zod";
 import { create } from "zustand";
+import {
+  AVATARS,
+  type AvatarId,
+  DEFAULT_AVATAR_ID,
+} from "@/shared/config/avatars";
 import type {
   EngineError,
   EnginePhase,
@@ -9,12 +15,19 @@ import type {
 } from "./types";
 
 const DEVICES_STORAGE_KEY = "ultracoach:devices";
+const AVATAR_STORAGE_KEY = "ultracoach:preferred-avatar";
 
 interface DevicePreferences {
   audioInputId: string | null;
   audioOutputId: string | null;
   videoInputId: string | null;
 }
+
+const devicePreferencesSchema = z.object({
+  audioInputId: z.string().nullable().optional(),
+  audioOutputId: z.string().nullable().optional(),
+  videoInputId: z.string().nullable().optional(),
+});
 
 function loadDevicePreferences(): DevicePreferences {
   if (typeof window === "undefined") {
@@ -25,11 +38,14 @@ function loadDevicePreferences(): DevicePreferences {
     if (!raw) {
       return { audioInputId: null, audioOutputId: null, videoInputId: null };
     }
-    const parsed = JSON.parse(raw) as Partial<DevicePreferences>;
+    const parsed = devicePreferencesSchema.safeParse(JSON.parse(raw));
+    if (!parsed.success) {
+      return { audioInputId: null, audioOutputId: null, videoInputId: null };
+    }
     return {
-      audioInputId: parsed.audioInputId ?? null,
-      audioOutputId: parsed.audioOutputId ?? null,
-      videoInputId: parsed.videoInputId ?? null,
+      audioInputId: parsed.data.audioInputId ?? null,
+      audioOutputId: parsed.data.audioOutputId ?? null,
+      videoInputId: parsed.data.videoInputId ?? null,
     };
   } catch {
     return { audioInputId: null, audioOutputId: null, videoInputId: null };
@@ -45,7 +61,28 @@ function saveDevicePreferences(prefs: DevicePreferences) {
   }
 }
 
-interface SessionState {
+function loadPreferredAvatar(): AvatarId {
+  if (typeof window === "undefined") return DEFAULT_AVATAR_ID;
+  try {
+    const raw = window.localStorage.getItem(AVATAR_STORAGE_KEY);
+    if (!raw) return DEFAULT_AVATAR_ID;
+    const valid = AVATARS.find((a) => a.id === raw);
+    return valid ? valid.id : DEFAULT_AVATAR_ID;
+  } catch {
+    return DEFAULT_AVATAR_ID;
+  }
+}
+
+function savePreferredAvatar(id: AvatarId) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(AVATAR_STORAGE_KEY, id);
+  } catch {
+    // ignore quota or privacy mode failures
+  }
+}
+
+interface SessionData {
   jobTitle: string;
   interviewType: InterviewType;
   resumeFileId: string | null;
@@ -64,7 +101,11 @@ interface SessionState {
   audioOutputId: string | null;
   videoInputId: string | null;
   userPaused: boolean;
+  avatarId: AvatarId;
+  calibratedVadThreshold: number | null;
+}
 
+interface SessionActions {
   setSetup: (setup: {
     jobTitle: string;
     interviewType: InterviewType;
@@ -83,25 +124,38 @@ interface SessionState {
   setSessionDbId: (id: string) => void;
   setDevices: (d: Partial<DevicePreferences>) => void;
   setUserPaused: (paused: boolean) => void;
+  setAvatar: (id: AvatarId) => void;
+  setCalibratedVadThreshold: (threshold: number | null) => void;
   reset: () => void;
 }
 
-const initialState = {
-  jobTitle: "",
-  interviewType: "personality" as InterviewType,
-  resumeFileId: null,
-  companyName: null as string | null,
-  jobResearch: null as JobResearch | null,
-  phase: "idle" as EnginePhase,
-  error: null as EngineError | null,
-  history: [] as HistoryEntry[],
-  questions: [] as QuestionEntry[],
-  currentQuestion: null as string | null,
-  startTime: null as number | null,
-  sessionDbId: null as string | null,
-  ...loadDevicePreferences(),
-  userPaused: false,
-};
+type SessionState = SessionData & SessionActions;
+
+function buildInitialState(): SessionData {
+  const devices = loadDevicePreferences();
+  return {
+    jobTitle: "",
+    interviewType: "personality",
+    resumeFileId: null,
+    companyName: null,
+    jobResearch: null,
+    phase: "idle",
+    error: null,
+    history: [],
+    questions: [],
+    currentQuestion: null,
+    startTime: null,
+    sessionDbId: null,
+    audioInputId: devices.audioInputId,
+    audioOutputId: devices.audioOutputId,
+    videoInputId: devices.videoInputId,
+    userPaused: false,
+    avatarId: loadPreferredAvatar(),
+    calibratedVadThreshold: null,
+  };
+}
+
+const initialState = buildInitialState();
 
 export const useSessionStore = create<SessionState>((set) => ({
   ...initialState,
@@ -139,12 +193,20 @@ export const useSessionStore = create<SessionState>((set) => ({
       return next;
     }),
   setUserPaused: (paused) => set({ userPaused: paused }),
+  setAvatar: (id) => {
+    savePreferredAvatar(id);
+    set({ avatarId: id });
+  },
+  setCalibratedVadThreshold: (threshold) =>
+    set({ calibratedVadThreshold: threshold }),
   reset: () =>
     set((s) => ({
       ...initialState,
       audioInputId: s.audioInputId,
       audioOutputId: s.audioOutputId,
       videoInputId: s.videoInputId,
+      avatarId: s.avatarId,
+      calibratedVadThreshold: s.calibratedVadThreshold,
       userPaused: false,
     })),
 }));

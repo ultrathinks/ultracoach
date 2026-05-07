@@ -43,3 +43,13 @@ export interface JobResearch {
   recentNews?: string[];
   interviewTrends: string[];
 }
+
+export interface SessionSummary {
+  id: string;
+  jobTitle: string;
+  interviewType: string;
+  deliveryScore: number | null;
+  contentScore: number | null;
+  durationSec: number | null;
+  createdAt: string;
+}
