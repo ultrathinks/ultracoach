@@ -20,6 +20,11 @@ interface InterviewScreenProps {
   researchStatus?: "idle" | "loading" | "done";
 }
 
+const PIP_DEFAULT_WIDTH = 420;
+const PIP_MIN_WIDTH = 180;
+const PIP_MAX_WIDTH = 900;
+const PIP_WIDTH_STORAGE_KEY = "ultracoach:pipWidth";
+
 export function InterviewScreen({
   researchStatus = "done",
 }: InterviewScreenProps) {
@@ -84,6 +89,8 @@ export function InterviewScreen({
   const [micMuted, setMicMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [showLandmarks, setShowLandmarks] = useState(false);
+  const [pipWidth, setPipWidth] = useState(PIP_DEFAULT_WIDTH);
+  const pipResizeRef = useRef<{ startX: number; startW: number } | null>(null);
   const [preparing, setPreparing] = useState(true);
   const [pinQuestion, setPinQuestion] = useState(false);
   const [showTextInput, setShowTextInput] = useState(false);
@@ -574,6 +581,63 @@ export function InterviewScreen({
     [setStoreDevices, showDeviceToast],
   );
 
+  // restore PIP width from localStorage on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem(PIP_WIDTH_STORAGE_KEY);
+    const n = saved ? Number(saved) : NaN;
+    if (Number.isFinite(n)) {
+      setPipWidth(Math.min(PIP_MAX_WIDTH, Math.max(PIP_MIN_WIDTH, n)));
+    }
+  }, []);
+
+  // persist PIP width
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(PIP_WIDTH_STORAGE_KEY, String(pipWidth));
+  }, [pipWidth]);
+
+  const handlePipResizeStart = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const target = e.currentTarget;
+      target.setPointerCapture(e.pointerId);
+      pipResizeRef.current = { startX: e.clientX, startW: pipWidth };
+    },
+    [pipWidth],
+  );
+
+  const handlePipResizeMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!pipResizeRef.current) return;
+      const dx = pipResizeRef.current.startX - e.clientX;
+      const viewportCap =
+        typeof window !== "undefined"
+          ? Math.max(PIP_MIN_WIDTH, window.innerWidth - 32)
+          : PIP_MAX_WIDTH;
+      const max = Math.min(PIP_MAX_WIDTH, viewportCap);
+      const next = Math.min(
+        max,
+        Math.max(PIP_MIN_WIDTH, pipResizeRef.current.startW + dx),
+      );
+      setPipWidth(next);
+    },
+    [],
+  );
+
+  const handlePipResizeEnd = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!pipResizeRef.current) return;
+      pipResizeRef.current = null;
+      const target = e.currentTarget;
+      if (target.hasPointerCapture(e.pointerId)) {
+        target.releasePointerCapture(e.pointerId);
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     if (typeof navigator === "undefined") return;
     const handler = () => {
@@ -872,7 +936,8 @@ export function InterviewScreen({
         {/* webcam PIP */}
         <div
           onClick={() => setShowLandmarks((v) => !v)}
-          className="absolute bottom-20 right-4 lg:right-6 w-56 lg:w-72 aspect-video rounded-xl overflow-hidden border border-white/[0.06] shadow-2xl z-10 cursor-pointer"
+          style={{ width: pipWidth }}
+          className="group absolute bottom-20 right-4 lg:right-6 aspect-video rounded-xl overflow-hidden border border-white/[0.06] shadow-2xl z-10 cursor-pointer"
         >
           <video
             ref={webcamRef}
@@ -896,6 +961,43 @@ export function InterviewScreen({
               </span>
             </div>
           )}
+          {/* resize handle — drag to resize, double-click to reset */}
+          <div
+            role="slider"
+            aria-label="카메라 크기 조절"
+            aria-valuemin={PIP_MIN_WIDTH}
+            aria-valuemax={PIP_MAX_WIDTH}
+            aria-valuenow={Math.round(pipWidth)}
+            tabIndex={-1}
+            onPointerDown={handlePipResizeStart}
+            onPointerMove={handlePipResizeMove}
+            onPointerUp={handlePipResizeEnd}
+            onPointerCancel={handlePipResizeEnd}
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              setPipWidth(PIP_DEFAULT_WIDTH);
+            }}
+            className="absolute top-1.5 left-1.5 w-7 h-7 rounded-md flex items-center justify-center text-white/40 hover:text-white/90 hover:bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-nwse-resize touch-none select-none"
+            title="드래그로 크기 조절 · 더블클릭으로 초기화"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M3 9V3h6" />
+              <path d="M21 15v6h-6" />
+              <path d="M3 3l7 7" />
+              <path d="M21 21l-7-7" />
+            </svg>
+          </div>
         </div>
       </div>
 
