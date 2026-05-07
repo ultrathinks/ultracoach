@@ -8,7 +8,9 @@
   --color-card: #18181b;
   --color-card-hover: #27272a;
   --color-border: #27272a;
-  --color-border-subtle: #1e1e22;
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
+  --color-border-default: rgba(255, 255, 255, 0.1);
+  --color-border-strong: rgba(255, 255, 255, 0.15);
   --color-foreground: #fafafa;
   --color-secondary: #a1a1aa;
   --color-muted: #71717a;
