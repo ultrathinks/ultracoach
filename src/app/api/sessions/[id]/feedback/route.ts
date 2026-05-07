@@ -4,6 +4,7 @@ import { z } from "zod";
 import { sessionFeedbackSchema } from "@/entities/feedback/schema";
 import { db } from "@/shared/db";
 import { feedback as feedbackTable, sessions } from "@/shared/db/schema";
+import { Problems, problemDetails } from "@/shared/lib/api-error";
 import { auth } from "@/shared/lib/auth";
 import { getOpenAI, parseJsonResponse } from "@/shared/lib/openai";
 import { rateLimit } from "@/shared/lib/rate-limit";
@@ -52,30 +53,44 @@ async function generateSuggestedAnswers(
     language: string;
   },
 ): Promise<Map<number, string>> {
-  const languageNote =
-    context.language === "en"
-      ? "\nWrite all suggestedAnswer values in natural spoken English."
-      : "\n모든 모범 답안은 자연스러운 한국어 구어체로 작성하세요.";
+  const isEn = context.language === "en";
+  const languageNote = isEn
+    ? "Write every suggestedAnswer in natural spoken English (3-5 sentences)."
+    : "각 suggestedAnswer는 자연스러운 한국어 구어체 3-5문장으로 작성.";
 
-  const systemPrompt = `당신은 한국 면접 전문 코치입니다. 각 면접 질문에 대해 모범 답안을 작성하세요.
+  const systemPrompt = `${isEn ? "You are a senior interview coach in Korea. Draft a model answer for each interview question." : "당신은 한국 면접 전문 코치입니다. 각 질문에 대한 모범 답안을 작성하세요."}
 
-## 규칙
-- 실제 면접에서 말하는 것처럼 자연스러운 구어체로 작성
-- 각 답안은 3-5문장으로 간결하게
-- STAR 구조가 적합한 질문이면 STAR 구조를 활용
-- 추상적 미사여구 금지 — 구체적이고 실전적인 답변만
-- 지원 직무와 기업 맥락을 반영${languageNote}
+## ${isEn ? "Rules" : "규칙"}
 
-## 맥락
-- 직무: ${context.jobTitle}
-- 면접 유형: ${context.interviewType}
-${context.companyName ? `- 기업: ${context.companyName}` : ""}
-${context.jobResearchJson ? `- 기업 조사:\n${JSON.stringify(context.jobResearchJson)}` : ""}
+${
+  isEn
+    ? `- Speak as a real candidate would (natural spoken English).
+- 3-5 sentences per answer.
+- Use STAR structure for experience-based questions only. Skip STAR for hypothetical or knowledge questions.
+- No abstract platitudes — concrete and actionable only.
+- Reflect the job role and company context when provided.
+- Never name interview frameworks (STAR, etc.) in the answer text.`
+    : `- 실제 지원자가 말하듯 자연스러운 구어체.
+- 답안마다 3-5문장.
+- 경험 기반 질문에만 STAR 구조 활용 (가정형/지식형 질문은 STAR 무시).
+- 추상적 미사여구 금지 — 구체적·실전적 내용만.
+- 직무·기업 맥락 반영.
+- 답안 본문에 면접 프레임워크 이름(STAR 등) 언급 금지.`
+}
+${languageNote}
 
-## 출력 (JSON)
-{
-  "answers": [{ "questionId": number, "suggestedAnswer": "모범 답안" }]
-}`;
+## ${isEn ? "Context" : "맥락"}
+
+- ${isEn ? "Role" : "직무"}: ${context.jobTitle}
+- ${isEn ? "Interview type" : "면접 유형"}: ${context.interviewType}
+${context.companyName ? `- ${isEn ? "Company" : "기업"}: ${context.companyName}` : ""}
+${context.jobResearchJson ? `- ${isEn ? "Company research" : "기업 조사"}:\n${JSON.stringify(context.jobResearchJson)}` : ""}
+
+## ${isEn ? "Output" : "출력"} (JSON)
+
+\`\`\`json
+{ "answers": [{ "questionId": number, "suggestedAnswer": "..." }] }
+\`\`\``;
 
   const questionList = questions
     .map((q, i) => `${i + 1}. [ID: ${q.id}] ${q.text ?? q.questionText ?? ""}`)
@@ -113,7 +128,7 @@ export async function POST(
     // session ownership check
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+      return Problems.unauthorized(`/api/sessions/${id}/feedback`);
     }
 
     const limited = checkRate(session.user.id, "session-feedback");
@@ -134,11 +149,11 @@ export async function POST(
       .limit(1);
 
     if (!target) {
-      return NextResponse.json({ error: "session not found" }, { status: 404 });
+      return Problems.notFound(`/api/sessions/${id}/feedback`);
     }
 
     if (target.userId !== session.user.id) {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      return Problems.forbidden(`/api/sessions/${id}/feedback`);
     }
 
     const [existing] = await db
@@ -148,89 +163,77 @@ export async function POST(
       .limit(1);
 
     if (existing) {
-      return NextResponse.json(
-        { error: "feedback already exists" },
-        { status: 409 },
-      );
+      return problemDetails({
+        type: "https://ultracoach.kr/errors/feedback-already-exists",
+        title: "feedback already exists",
+        instance: `/api/sessions/${id}/feedback`,
+        status: 409,
+      });
     }
 
     const body = requestSchema.safeParse(await request.json());
     if (!body.success) {
-      return NextResponse.json(
-        { error: "invalid request body" },
-        { status: 400 },
+      return Problems.validation(
+        "invalid request body",
+        `/api/sessions/${id}/feedback`,
       );
     }
 
     const { metrics, transcript, questions, historySummary } = body.data;
 
+    const isEn = target.language === "en";
+
     const growthInstruction = historySummary
-      ? `\n\n성장 추적:
-- 첫 세션 전달력: ${historySummary.firstDelivery ?? "없음"}, 답변력: ${historySummary.firstContent ?? "없음"}
-- 직전 세션 전달력: ${historySummary.prevDelivery ?? "없음"}, 답변력: ${historySummary.prevContent ?? "없음"}
-- 이전 액션 아이템: ${JSON.stringify(historySummary.prevActionItems ?? [])}
-- growthComparison에 첫 세션 대비 변화율을 포함하세요
-- 이전 액션 아이템의 실제 개선 여부를 summary에 언급하세요
-- 연속 향상 횟수: ${historySummary.streakCount ?? 0}회`
+      ? isEn
+        ? `\n\n## Growth tracking\n\n- First session: delivery ${historySummary.firstDelivery ?? "n/a"}, content ${historySummary.firstContent ?? "n/a"}\n- Previous session: delivery ${historySummary.prevDelivery ?? "n/a"}, content ${historySummary.prevContent ?? "n/a"}\n- Previous action items: ${JSON.stringify(historySummary.prevActionItems ?? [])}\n- Streak: ${historySummary.streakCount ?? 0}\n- Include growthComparison change vs first session.\n- Mention whether previous action items were addressed in summary.`
+        : `\n\n## 성장 추적\n\n- 첫 세션 전달력 ${historySummary.firstDelivery ?? "없음"} / 답변력 ${historySummary.firstContent ?? "없음"}\n- 직전 세션 전달력 ${historySummary.prevDelivery ?? "없음"} / 답변력 ${historySummary.prevContent ?? "없음"}\n- 이전 액션 아이템: ${JSON.stringify(historySummary.prevActionItems ?? [])}\n- 연속 향상 ${historySummary.streakCount ?? 0}회\n- growthComparison에 첫 세션 대비 변화율 포함\n- 이전 액션 아이템 개선 여부를 summary에 언급`
       : "";
 
-    const languageInstruction =
-      target.language === "en"
-        ? "Write every feedback string (summary, keyMoments.description, actionItems.text, nextSessionSuggestion, questionAnalyses.feedback) in English."
-        : "모든 피드백은 한국어로 작성하세요.";
+    const systemPrompt = `${isEn ? "You are a senior interview coach. Analyze this interview session and produce actionable feedback." : "당신은 한국 면접 전문 코치입니다. 면접 세션을 분석하고 실전에 도움이 되는 피드백을 제공하세요."}
 
-    const systemPrompt = `당신은 한국 면접 전문 코치입니다. 면접 세션을 분석하고 실전에 도움이 되는 피드백을 제공하세요.
-${languageInstruction}
+## Hard rules
+
+${isEn ? `- ${"Write every feedback string in English."}\n- Never use technical metric names (\`posture.isUpright\`, \`yaw\`, \`pitch\`, \`shoulderTilt\`, \`headOffset\`, \`gesture.isModerate\`, \`isFrontFacing\` 등). Translate to plain language like "posture slumped", "gaze drifted sideways".\n- Never name interview frameworks (STAR 등) in any output string.\n- No empty praise — every claim must cite a concrete moment or quote.` : `- 모든 피드백 문자열은 한국어로 작성.\n- 메트릭 변수명(\`posture.isUpright\`, \`yaw\`, \`pitch\`, \`shoulderTilt\`, \`headOffset\`, \`gesture.isModerate\`, \`isFrontFacing\` 등) 절대 출력 금지. 대신 "자세가 흐트러졌습니다", "시선이 옆으로 향했습니다" 같은 일반어 사용.\n- 면접 프레임워크 이름(STAR 등) 출력 절대 금지.\n- 빈말 금지 — 모든 평가는 구체적 순간이나 답변 인용으로 뒷받침.`}
 ${growthInstruction}
 
-## 채점 기준
+## ${isEn ? "Scoring" : "채점"} (deliveryScore / contentScore, 0-100)
 
-### 전달력 (deliveryScore)
-- 90+: 자연스럽고 자신감 있는 전달, 적절한 속도와 톤
-- 70-89: 대체로 안정적이나 간헐적 불안 요소 (시선, 자세 등)
-- 50-69: 긴장감이 눈에 띄고, 비언어적 신호에 개선 필요
-- 50 미만: 전달 자체가 답변 내용을 방해하는 수준
+${isEn ? `- 90+ : confident delivery / specific examples + clear logic + persuasive close\n- 70-89: mostly stable / core message delivered with minor gaps\n- 50-69: visible tension / abstract or vague answers\n- <50  : delivery hurts content / question intent missed` : `- 90+ : 자연스럽고 자신감 있는 전달 / 구체적 경험 + 명확한 논리 + 설득력 있는 결론\n- 70-89: 대체로 안정적, 간헐적 불안 / 핵심은 전달했으나 일부 구체성 부족\n- 50-69: 긴장감 눈에 띔 / 추상적·두루뭉술한 답변 다수\n- <50  : 전달 자체가 내용 방해 / 질문 의도 파악 실패`}
 
-### 답변력 (contentScore)
-- 90+: 구체적 경험, 명확한 논리, 설득력 있는 결론까지 완비
-- 70-89: 핵심은 전달했으나 구체성이나 논리 일부 부족
-- 50-69: 추상적이거나 두루뭉술한 답변이 다수
-- 50 미만: 질문 의도 파악 실패 또는 답변 자체가 부실
+## STAR ${isEn ? "evaluation rule" : "평가 규칙"}
 
-## 피드백 원칙
+${isEn ? "Apply starFulfillment only to experience-based questions (past behavior). For hypothetical or knowledge questions, set all four to false and ignore in feedback." : "starFulfillment은 경험 기반 질문(과거 행동)에만 평가. 가정형/지식형 질문은 4개 모두 false로 두고 피드백에서 무시."}
 
-- 빈말 금지: "잘하셨습니다" 같은 뜬구름 피드백 대신 구체적 근거 제시
-- 질문별 분석에서 실제 답변을 인용하며 무엇이 좋았고 무엇이 부족했는지 지적
-- actionItems는 당장 다음 면접에서 적용할 수 있는 구체적 행동 제시
-- STAR 충족도는 해당 질문이 경험 기반 질문일 때만 의미 있음. 기술 질문이나 상황 가정 질문에는 관대하게 평가
-- 기술 용어 절대 금지: 메트릭 데이터의 변수명(posture.isUpright, yaw, pitch, shoulderTilt, headOffset, gesture.isModerate, isFrontFacing 등)을 절대 사용하지 마라. 대신 "자세가 흐트러졌습니다", "시선이 옆으로 향했습니다", "어깨가 기울었습니다", "손동작이 커졌습니다" 등 일반인이 이해할 수 있는 자연스러운 한국어로 표현하라
+## ${isEn ? "Output" : "출력"} (JSON)
 
-## 출력 (JSON)
-
+\`\`\`json
 {
-  "deliveryScore": number (0-100),
-  "contentScore": number (0-100),
-  "summary": "1-2문장 종합 평가 — 강점 1개, 약점 1개를 반드시 포함",
+  "deliveryScore": number,
+  "contentScore": number,
+  "summary": "${isEn ? "1-2 sentences with one strength and one weakness" : "1-2문장, 강점 1개와 약점 1개 포함"}",
   "growthComparison": { "deliveryChange": number, "contentChange": number } | null,
-  "keyMoments": [{ "timestamp": number, "duration": number, "description": "구체적으로 무슨 일이 있었는지", "type": "positive"|"negative" }],
-  "actionItems": [{ "id": number, "text": "다음 면접에서 바로 실천할 수 있는 구체적 행동" }] (정확히 3개),
-  "nextSessionSuggestion": "다음 연습 세션에서 집중할 영역 추천",
+  "keyMoments": [{ "timestamp": number, "duration": number, "description": "...", "type": "positive"|"negative" }],
+  "actionItems": [{ "id": number, "text": "..." }],
+  "nextSessionSuggestion": "...",
   "questionAnalyses": [{
     "questionId": number,
-    "questionText": "질문 원문",
-    "answer": "답변 원문",
+    "questionText": "...",
+    "answer": "...",
     "starFulfillment": { "situation": boolean, "task": boolean, "action": boolean, "result": boolean },
-    "fillerWords": [{ "word": "어", "count": 3 }],
+    "fillerWords": [{ "word": "...", "count": number }],
     "durationSec": number,
-    "contentScore": number (0-100),
-    "feedback": "이 답변의 구체적 강점/약점 — 실제 답변 내용을 인용하며 분석"
+    "contentScore": number,
+    "feedback": "..."
   }]
-}`;
+}
+\`\`\`
+
+${isEn ? "actionItems must contain exactly 3 entries." : "actionItems는 정확히 3개."}`;
 
     const userPrompt = [
-      `메트릭 데이터:\n${JSON.stringify(metrics)}`,
-      `트랜스크립트:\n${transcript}`,
-      `질문 목록:\n${JSON.stringify(questions)}`,
+      `${target.language === "en" ? "Metrics" : "메트릭"}:\n${JSON.stringify(metrics)}`,
+      `${target.language === "en" ? "Transcript" : "트랜스크립트"}:\n${transcript}`,
+      `${target.language === "en" ? "Questions" : "질문 목록"}:\n${JSON.stringify(questions)}`,
     ].join("\n\n---\n\n");
 
     const feedbackCall = getOpenAI()
@@ -309,9 +312,6 @@ ${growthInstruction}
     return NextResponse.json(mergedFeedback);
   } catch (error) {
     console.error("feedback generation failed:", error);
-    return NextResponse.json(
-      { error: "failed to generate feedback" },
-      { status: 500 },
-    );
+    return Problems.internal("failed to generate feedback");
   }
 }
