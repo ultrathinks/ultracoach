@@ -40,6 +40,15 @@ body {
   font-family: var(--font-sans);
 }
 
+html {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
 .gradient-text {
   background: linear-gradient(
     135deg,
