@@ -88,7 +88,6 @@ export function createVad(options: VadOptions = {}): VadController {
       audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
 
-      // High-pass filter to reduce speaker bleed / echo
       const highpass = audioContext.createBiquadFilter();
       highpass.type = "highpass";
       highpass.frequency.value = 200;
@@ -120,7 +119,7 @@ export function createVad(options: VadOptions = {}): VadController {
   };
 }
 
-export async function calibrate(
+export async function calibrateVad(
   stream: MediaStream,
   durationMs = 2000,
 ): Promise<number> {

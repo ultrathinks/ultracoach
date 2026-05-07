@@ -1,11 +1,12 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useRef, useState } from "react";
 import { z } from "zod";
 import type { InterviewConfig } from "@/entities/session";
 import { useSessionStore } from "@/entities/session";
-import { createVad } from "./vad";
+import { transcribeAudio } from "@/shared/lib/transcribe";
+import { createVad } from "@/shared/lib/vad";
 
 const questionResponseSchema = z.object({
   question: z.string(),
@@ -13,12 +14,9 @@ const questionResponseSchema = z.object({
   shouldEnd: z.boolean().optional(),
 });
 
-const transcribeResponseSchema = z.object({
-  text: z.string(),
-});
-
 export function useInterviewEngine(config?: InterviewConfig) {
   const t = useTranslations("interview");
+  const locale = useLocale();
   const vadRef = useRef<ReturnType<typeof createVad> | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -49,6 +47,7 @@ export function useInterviewEngine(config?: InterviewConfig) {
       body: JSON.stringify({
         jobTitle: store.jobTitle,
         interviewType: store.interviewType,
+        avatarId: store.avatarId,
         resumeFileId: store.resumeFileId,
         jobResearch: store.jobResearch,
         history: store.history,
@@ -81,20 +80,6 @@ export function useInterviewEngine(config?: InterviewConfig) {
       shouldEnd: data.shouldEnd ?? false,
     };
   }, [targetQuestionCount, maxQuestionCount]);
-
-  const transcribeAudio = useCallback(async (audioBlob: Blob) => {
-    const formData = new FormData();
-    formData.append("audio", audioBlob, "answer.webm");
-
-    const res = await fetch("/api/whisper", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!res.ok) throw new Error("failed to transcribe");
-    const data = transcribeResponseSchema.parse(await res.json());
-    return data.text;
-  }, []);
 
   const startListening = useCallback(
     (stream: MediaStream, calibratedThreshold?: number): Promise<void> => {
@@ -157,7 +142,7 @@ export function useInterviewEngine(config?: InterviewConfig) {
             } else {
               const store = useSessionStore.getState();
               try {
-                const text = await transcribeAudio(audioBlob);
+                const text = await transcribeAudio(audioBlob, locale);
                 store.addHistory({ role: "interviewee", content: text });
                 store.updateLastAnswer(text);
               } catch {
@@ -195,13 +180,7 @@ export function useInterviewEngine(config?: InterviewConfig) {
         }, gracePeriod);
       });
     },
-    [
-      transcribeAudio,
-      vadThreshold,
-      silenceDelay,
-      minSpeechDuration,
-      gracePeriod,
-    ],
+    [locale, vadThreshold, silenceDelay, minSpeechDuration, gracePeriod, t],
   );
 
   const stopListening = useCallback(() => {
