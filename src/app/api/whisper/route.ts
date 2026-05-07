@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveLocale } from "@/i18n/request";
+import { Problems } from "@/shared/lib/api-error";
 import { auth } from "@/shared/lib/auth";
 import { getOpenAI } from "@/shared/lib/openai";
 import { rateLimit } from "@/shared/lib/rate-limit";
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+      return Problems.unauthorized("/api/whisper");
     }
 
     const limited = checkRate(session.user.id, "whisper");
@@ -54,20 +55,20 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const audio = formData.get("audio");
     if (!(audio instanceof File)) {
-      return NextResponse.json({ error: "no audio file" }, { status: 400 });
+      return Problems.validation("no audio file", "/api/whisper");
     }
 
     if (audio.size > MAX_AUDIO_SIZE) {
-      return NextResponse.json(
-        { error: "audio file too large, max 25MB" },
-        { status: 400 },
+      return Problems.validation(
+        "audio file too large, max 25MB",
+        "/api/whisper",
       );
     }
 
     if (!audio.type.startsWith("audio/")) {
-      return NextResponse.json(
-        { error: "only audio files are allowed" },
-        { status: 400 },
+      return Problems.validation(
+        "only audio files are allowed",
+        "/api/whisper",
       );
     }
 
@@ -90,9 +91,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ text });
   } catch (error) {
     console.error("whisper transcription failed:", error);
-    return NextResponse.json(
-      { error: "failed to transcribe audio" },
-      { status: 500 },
-    );
+    return Problems.internal("failed to transcribe audio");
   }
 }

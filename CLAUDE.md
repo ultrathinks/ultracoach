@@ -26,12 +26,34 @@ FSD 간소화. 의존성: `app/ → widgets → features → entities → shared
 ## 코드 규칙
 
 - Biome 2 설정을 따름 (double quotes, semicolons, space indent 2)
-- `as` 타입 단언 금지. 올바른 타입을 찾아 사용
+- `as` 타입 단언 금지 (`as const`만 허용). 올바른 타입을 찾아 사용
 - 에러 메시지: 소문자 시작, 마침표 없음
 - 컴포넌트: named export (page/layout만 default export)
 - 파일명: kebab-case
 - index.ts는 re-export만. 로직 넣지 않음
 - path alias: `@/*` → `./src/*`
+
+## 네이밍 규칙
+
+- **boolean**: `is*` / `has*` / `can*` / `should*`
+- **ref**: `*Ref` suffix 1회만 (`xxxTimerRef` 같은 이중 suffix 금지)
+- **이벤트**: 컴포넌트 내부 `handle*`, props로 받을 때 `on*`
+- **비동기 함수**: 동사 원형 (`fetchQuestion`, NOT `fetchingQuestion`)
+- **vendor 이름은 `providers/<vendor>.ts` 안에서만**: 함수명·타입명 외부 노출 금지 (`createSimliAvatar` 같은 이름 X)
+- **store action alias 변경 금지**: `useStore(s => s.setDevices)`를 `setStoreDevices`로 받지 말 것. 같은 이름 유지
+- **DB column suffix(`*Json`)는 도메인 타입에 노출 금지**: queries 레이어에서 `summaryJson` → `summary`로 매핑
+- **gap/padding**: Tailwind 숫자 단계 사용. `gap-2/4/6/8` 위주, `gap-3/5/7` 사용 금지
+
+## API 라우트 규칙
+
+- 컬렉션은 복수 명사: `/api/sessions`, `/api/payment-methods`
+- URL 경로 kebab-case, JSON body camelCase
+- 표준 동사 우선 (POST/GET/PATCH/DELETE), 액션은 POST + 동사 서브리소스 (`/subscriptions/current/resume`)
+- 모든 에러 응답: RFC 9457 Problem Details 형식 + `Content-Type: application/problem+json`
+- 멱등성 필요한 POST: `Idempotency-Key` 헤더 처리 (예: 토스 결제는 orderId)
+- pagination: cursor 기반 (`?limit=20&starting_after=:id`), offset/skip 금지
+- timestamp: ISO 8601 UTC (`Z` suffix)
+- admin 전용: `/api/admin/*` 네임스페이스. proxy.ts에서 role 검사 일괄 적용
 
 ## 디자인 시스템
 

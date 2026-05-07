@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { sessionFeedbackSchema } from "@/entities/feedback";
 import { ReportView } from "@/widgets/report/report-view";
 
@@ -18,11 +19,13 @@ interface ResultsClientProps {
 }
 
 export function ResultsClient({ session, feedback }: ResultsClientProps) {
+  const t = useTranslations("results");
+
   if (!feedback) {
     return (
       <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center px-6 text-center">
-        <h1 className="text-2xl font-bold mb-2">피드백을 찾을 수 없습니다</h1>
-        <p className="text-muted">면접 결과가 아직 생성되지 않았습니다</p>
+        <h1 className="text-2xl font-bold mb-2">{t("notFoundTitle")}</h1>
+        <p className="text-muted">{t("notFoundDesc")}</p>
       </div>
     );
   }
@@ -31,10 +34,8 @@ export function ResultsClient({ session, feedback }: ResultsClientProps) {
   if (!result.success) {
     return (
       <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center px-6 text-center">
-        <h1 className="text-2xl font-bold mb-2">
-          피드백 데이터가 손상되었습니다
-        </h1>
-        <p className="text-muted">결과를 표시할 수 없습니다</p>
+        <h1 className="text-2xl font-bold mb-2">{t("corruptedTitle")}</h1>
+        <p className="text-muted">{t("corruptedDesc")}</p>
       </div>
     );
   }

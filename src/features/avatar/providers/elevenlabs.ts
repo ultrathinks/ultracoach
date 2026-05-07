@@ -1,6 +1,11 @@
-const TTS_TIMEOUT = 30000;
+const TTS_TIMEOUT_MS = 30_000;
 
-export function createElevenLabsTTS() {
+export interface TtsClient {
+  speak: (text: string) => Promise<ArrayBuffer>;
+  stop: () => void;
+}
+
+export function createElevenLabsTts(options: { avatarId: string }): TtsClient {
   let abortController: AbortController | null = null;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -11,7 +16,7 @@ export function createElevenLabsTTS() {
       timeoutId = setTimeout(() => {
         abortController?.abort();
         reject(new Error("tts timeout"));
-      }, TTS_TIMEOUT);
+      }, TTS_TIMEOUT_MS);
     });
 
     try {
@@ -19,16 +24,14 @@ export function createElevenLabsTTS() {
         fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text, avatarId: options.avatarId }),
           signal: abortController.signal,
         }),
         timeoutPromise,
       ]);
 
       if (!res.ok) throw new Error("tts request failed");
-
-      const buffer = await res.arrayBuffer();
-      return buffer;
+      return await res.arrayBuffer();
     } finally {
       if (timeoutId) {
         clearTimeout(timeoutId);

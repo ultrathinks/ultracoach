@@ -2,11 +2,13 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDrillEngine } from "@/features/drill";
 import { DrillPrepScreen } from "@/features/drill/drill-prep-screen";
 import { useWebSpeech } from "@/features/interview-engine/use-web-speech";
 import { cn } from "@/shared/lib/cn";
+import { Button, FormError, LinkButton, Spinner } from "@/shared/ui";
 import { ScoreRing } from "@/widgets/report/score-ring";
 
 interface DrillScreenProps {
@@ -18,12 +20,7 @@ interface DrillScreenProps {
   nextQuestionId: number | null;
 }
 
-const starLabels = [
-  { key: "situation" as const, label: "Situation" },
-  { key: "task" as const, label: "Task" },
-  { key: "action" as const, label: "Action" },
-  { key: "result" as const, label: "Result" },
-];
+const STAR_KEYS = ["situation", "task", "action", "result"] as const;
 
 export function DrillScreen({
   sessionId,
@@ -33,6 +30,7 @@ export function DrillScreen({
   jobTitle,
   nextQuestionId,
 }: DrillScreenProps) {
+  const t = useTranslations("drill");
   const router = useRouter();
   const {
     drillPhase,
@@ -59,7 +57,6 @@ export function DrillScreen({
     };
   }, [cleanup]);
 
-  // Prep → speaking/listening 전환 시 video element에 stream 연결
   useEffect(() => {
     if (
       (drillPhase === "speaking" || drillPhase === "listening") &&
@@ -70,7 +67,6 @@ export function DrillScreen({
     }
   }, [drillPhase, streamRef]);
 
-  // listening 시작/종료 시 실시간 자막 on/off
   useEffect(() => {
     if (drillPhase === "listening") {
       startSpeech();
@@ -108,7 +104,6 @@ export function DrillScreen({
 
   const normalizedLevel = Math.min(audioLevel / 0.1, 1);
 
-  // Prep phase
   if (drillPhase === "prep") {
     return (
       <DrillPrepScreen
@@ -119,17 +114,15 @@ export function DrillScreen({
     );
   }
 
-  // Processing phase
   if (drillPhase === "processing") {
     return (
       <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin mb-4" />
-        <p className="text-secondary">분석 중</p>
+        <Spinner size="lg" className="mb-4" />
+        <p className="text-secondary">{t("analyzing")}</p>
       </div>
     );
   }
 
-  // Done + goal achieved
   if (drillPhase === "done" && goalAchieved) {
     return (
       <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center px-6 text-center">
@@ -139,113 +132,97 @@ export function DrillScreen({
           className="space-y-6"
         >
           <div className="text-5xl font-bold gradient-text">&#x2605;</div>
-          <h1 className="text-2xl font-bold gradient-text">목표 달성!</h1>
-          <ScoreRing score={bestScore} label="최종 점수" size={140} />
-          <div className="flex flex-col gap-3">
+          <h1 className="text-2xl font-bold gradient-text">
+            {t("goalAchieved")}
+          </h1>
+          <ScoreRing score={bestScore} label={t("finalScore")} size={140} />
+          <div className="flex flex-col gap-2">
             {nextQuestionId !== null && (
-              <button
-                type="button"
-                onClick={handleNextQuestion}
-                className="px-6 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90 transition-opacity cursor-pointer"
-              >
-                다음 아쉬운 답변으로
-              </button>
+              <Button size="lg" onClick={handleNextQuestion}>
+                {t("nextWeak")}
+              </Button>
             )}
-            <button
-              type="button"
-              onClick={handleGoToResults}
-              className="px-6 py-3 rounded-xl text-sm font-medium border border-white/[0.06] hover:bg-card-hover transition-colors cursor-pointer"
-            >
-              결과 화면으로
-            </button>
+            <Button variant="secondary" size="lg" onClick={handleGoToResults}>
+              {t("toResults")}
+            </Button>
           </div>
         </motion.div>
       </div>
     );
   }
 
-  // Done + goal not achieved
   if (drillPhase === "done" && !goalAchieved) {
     return (
       <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center px-6 text-center">
         <div className="space-y-6">
-          <h1 className="text-2xl font-bold">연습을 마쳤습니다</h1>
-          <p className="text-secondary">5회 시도 중 최고 점수</p>
-          <ScoreRing score={bestScore} label="최고 점수" size={140} />
-          <p className="text-sm text-muted max-w-sm">
-            꾸준한 연습이 실력을 만듭니다. 다음에 다시 도전해 보세요
-          </p>
-          <button
-            type="button"
-            onClick={handleGoToResults}
-            className="px-6 py-3 rounded-xl text-sm font-medium border border-white/[0.06] hover:bg-card-hover transition-colors cursor-pointer"
-          >
-            결과 화면으로
-          </button>
+          <h1 className="text-2xl font-bold">{t("drillEnded")}</h1>
+          <p className="text-secondary">{t("drillEndedDesc")}</p>
+          <ScoreRing score={bestScore} label={t("bestScore")} size={140} />
+          <p className="text-sm text-muted max-w-sm">{t("encourage")}</p>
+          <Button variant="secondary" size="lg" onClick={handleGoToResults}>
+            {t("toResults")}
+          </Button>
         </div>
       </div>
     );
   }
 
-  // Feedback phase
   if (drillPhase === "feedback") {
     return (
       <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center px-6 py-10">
         <div className="w-full max-w-lg space-y-6 text-center">
           {validationError ? (
             <>
-              <p className="text-sm text-yellow-400">{validationError}</p>
-              <button
-                type="button"
-                onClick={handleRetry}
-                className="px-6 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90 transition-opacity cursor-pointer"
-              >
-                다시 시도
-              </button>
+              <FormError tone="warning">{validationError}</FormError>
+              <Button size="lg" onClick={handleRetry}>
+                {t("retry")}
+              </Button>
             </>
           ) : result ? (
             <>
-              <ScoreRing score={result.contentScore} label="내용 점수" />
+              <ScoreRing score={result.contentScore} label={t("score")} />
               <p className="text-sm text-secondary leading-relaxed text-left">
                 {result.feedback}
               </p>
 
-              {/* STAR indicators */}
               <div className="flex justify-center gap-4">
-                {starLabels.map(({ key, label }) => (
-                  <div key={key} className="flex flex-col items-center gap-1">
+                {STAR_KEYS.map((key) => (
+                  <div key={key} className="flex flex-col items-center gap-2">
                     <div
                       className={cn(
                         "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold",
                         result.starFulfillment[key]
-                          ? "bg-green-500/15 text-green-400"
+                          ? "bg-green/15 text-green"
                           : "bg-white/[0.06] text-muted",
                       )}
                     >
-                      {label[0]}
+                      {key[0].toUpperCase()}
                     </div>
-                    <span className="text-xs text-muted">{label}</span>
+                    <span className="text-xs text-muted">
+                      {t(
+                        `starLabels.${key}` as
+                          | "starLabels.situation"
+                          | "starLabels.task"
+                          | "starLabels.action"
+                          | "starLabels.result",
+                      )}
+                    </span>
                   </div>
                 ))}
               </div>
 
-              {/* CTA buttons */}
-              <div className="flex flex-col gap-3">
-                <button
-                  type="button"
-                  onClick={handleRetry}
-                  className="px-6 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90 transition-opacity cursor-pointer"
-                >
-                  다시 시도
-                </button>
+              <div className="flex flex-col gap-2">
+                <Button size="lg" onClick={handleRetry}>
+                  {t("retry")}
+                </Button>
                 {nextQuestionId !== null && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
+                    size="lg"
                     onClick={handleNextQuestion}
-                    className="px-6 py-3 rounded-xl text-sm font-medium border border-white/[0.06] hover:bg-card-hover transition-colors cursor-pointer"
                   >
-                    다음 질문으로
-                  </button>
+                    {t("nextQuestion")}
+                  </Button>
                 )}
               </div>
             </>
@@ -255,19 +232,16 @@ export function DrillScreen({
     );
   }
 
-  // Listening phase (default)
   return (
     <div className="min-h-[calc(100dvh-4rem)] flex flex-col px-6 py-6">
-      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <span className="text-sm text-muted">{jobTitle}</span>
         <span className="text-sm text-secondary font-medium">
-          시도 {attemptCount + 1}/5
+          {t("attempt", { n: attemptCount + 1 })}
         </span>
       </div>
 
-      {/* Camera */}
-      <div className="relative w-full max-w-2xl mx-auto aspect-video rounded-xl overflow-hidden bg-card border border-white/[0.06]">
+      <div className="relative w-full max-w-2xl mx-auto aspect-video rounded-xl overflow-hidden bg-card border border-border-subtle">
         <video
           ref={webcamRef}
           autoPlay
@@ -277,19 +251,18 @@ export function DrillScreen({
         />
       </div>
 
-      {/* Audio level bar / speaking indicator */}
       {drillPhase === "speaking" ? (
         <p className="text-sm text-center text-secondary mt-4 h-6 animate-pulse">
-          질문을 읽는 중...
+          {t("speakingHint")}
         </p>
       ) : (
         <div className="flex items-center justify-center gap-1 mt-4 h-6">
-          {[0.15, 0.35, 0.55, 0.75, 0.9].map((t, i) => (
+          {[0.15, 0.35, 0.55, 0.75, 0.9].map((threshold, i) => (
             <div
-              key={t}
+              key={threshold}
               className={cn(
                 "w-1 rounded-full transition-colors duration-75",
-                normalizedLevel > t ? "bg-green" : "bg-white/[0.06]",
+                normalizedLevel > threshold ? "bg-green" : "bg-white/[0.06]",
               )}
               style={{ height: `${8 + i * 3}px` }}
             />
@@ -297,7 +270,6 @@ export function DrillScreen({
         </div>
       )}
 
-      {/* Live caption / Question */}
       <AnimatePresence mode="wait">
         {liveCaption && drillPhase === "listening" ? (
           <motion.p
@@ -322,16 +294,16 @@ export function DrillScreen({
         )}
       </AnimatePresence>
 
-      {/* Collapsible suggested answer */}
       {suggestedAnswer && (
         <button
           type="button"
-          className="mt-4 max-w-2xl mx-auto w-full rounded-xl bg-card border border-white/[0.06] p-4 cursor-pointer select-none text-left"
+          className="mt-4 max-w-2xl mx-auto w-full rounded-xl bg-card border border-border-subtle p-4 cursor-pointer select-none text-left"
           onClick={() => setAnswerExpanded((prev) => !prev)}
+          aria-expanded={answerExpanded}
         >
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-secondary">
-              모범 답안 참고
+              {t("suggestedAnswer")}
             </span>
             <svg
               width={16}
@@ -354,21 +326,20 @@ export function DrillScreen({
             </svg>
           </div>
           {answerExpanded && (
-            <p className="mt-3 text-sm text-secondary leading-relaxed">
+            <p className="mt-2 text-sm text-secondary leading-relaxed">
               {suggestedAnswer}
             </p>
           )}
         </button>
       )}
 
-      {/* Stop button */}
       <div className="flex justify-center mt-6">
         <button
           type="button"
           onClick={stopDrill}
-          className="h-10 px-5 rounded-full text-red-400 text-sm font-medium hover:bg-red-400/10 transition-colors cursor-pointer"
+          className="h-10 px-5 rounded-full text-red text-sm font-medium hover:bg-red/10 transition-colors cursor-pointer"
         >
-          연습 중단
+          {t("stopDrill")}
         </button>
       </div>
     </div>

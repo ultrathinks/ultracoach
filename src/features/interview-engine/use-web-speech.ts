@@ -1,8 +1,15 @@
 "use client";
 
+import { useLocale } from "next-intl";
 import { useCallback, useRef, useState } from "react";
 
+const SPEECH_LANG: Record<string, string> = {
+  ko: "ko-KR",
+  en: "en-US",
+};
+
 export function useWebSpeech() {
+  const locale = useLocale();
   const [liveCaption, setLiveCaption] = useState("");
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
@@ -12,7 +19,7 @@ export function useWebSpeech() {
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
-    recognition.lang = "ko-KR";
+    recognition.lang = SPEECH_LANG[locale] ?? SPEECH_LANG.en;
     recognition.interimResults = true;
     recognition.continuous = true;
 
@@ -38,7 +45,7 @@ export function useWebSpeech() {
 
     recognitionRef.current = recognition;
     recognition.start();
-  }, []);
+  }, [locale]);
 
   const stop = useCallback(() => {
     const recognition = recognitionRef.current;

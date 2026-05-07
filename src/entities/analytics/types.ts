@@ -8,7 +8,6 @@ export interface ScoreTrendPoint {
 
 export interface TypeComparisonGroup {
   type: string; // "personality" | "technical" | "culture-fit"
-  typeLabel: string; // "인성" | "기술" | "컬처핏"
   avgDelivery: number; // 0-100
   avgContent: number; // 0-100
   count: number;
@@ -51,9 +50,14 @@ export interface FillerHeatmapData {
   maxFreq: number; // for color normalization
 }
 
+export type BodyLanguageCategoryKey =
+  | "gaze"
+  | "posture"
+  | "expression"
+  | "gesture";
+
 export interface BodyLanguageCategory {
-  key: string; // "gaze" | "posture" | "expression" | "gesture"
-  label: string; // "시선" | "자세" | "표정" | "제스처"
+  key: BodyLanguageCategoryKey;
   score: number; // 0-100
   trend: "up" | "down" | "flat" | "none"; // "none" when only 1 session
 }

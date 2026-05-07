@@ -4,8 +4,10 @@ import { z } from "zod";
 import { questionAnalysisSchema } from "@/entities/feedback/schema";
 import { db } from "@/shared/db";
 import { feedback as feedbackTable, sessions } from "@/shared/db/schema";
+import { Problems } from "@/shared/lib/api-error";
 import { auth } from "@/shared/lib/auth";
 import { getOpenAI, parseJsonResponse } from "@/shared/lib/openai";
+import { canUseDrill } from "@/shared/lib/permissions";
 import { rateLimit } from "@/shared/lib/rate-limit";
 
 const checkRate = rateLimit({ windowMs: 60_000, max: 30 });
@@ -36,7 +38,15 @@ export async function POST(
     // auth + ownership check (same pattern as feedback/route.ts)
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+      return Problems.unauthorized(`/api/sessions/${id}/drill`);
+    }
+
+    if (!canUseDrill(session.user)) {
+      return Problems.planRequired({
+        requiredPlan: "pro",
+        currentPlan: session.user.plan,
+        instance: `/api/sessions/${id}/drill`,
+      });
     }
 
     const limited = checkRate(session.user.id, "session-drill");
@@ -53,19 +63,19 @@ export async function POST(
       .limit(1);
 
     if (!target) {
-      return NextResponse.json({ error: "session not found" }, { status: 404 });
+      return Problems.notFound(`/api/sessions/${id}/drill`);
     }
 
     if (target.userId !== session.user.id) {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      return Problems.forbidden(`/api/sessions/${id}/drill`);
     }
 
     // validate request body
     const body = drillRequestSchema.safeParse(await request.json());
     if (!body.success) {
-      return NextResponse.json(
-        { error: "invalid request body" },
-        { status: 400 },
+      return Problems.validation(
+        "invalid request body",
+        `/api/sessions/${id}/drill`,
       );
     }
 
@@ -79,10 +89,7 @@ export async function POST(
       .limit(1);
 
     if (!fb?.summaryJson) {
-      return NextResponse.json(
-        { error: "feedback not found" },
-        { status: 404 },
-      );
+      return Problems.notFound(`/api/sessions/${id}/drill`);
     }
 
     // safeParse summaryJson to extract the specific question
@@ -91,9 +98,9 @@ export async function POST(
       .safeParse(fb.summaryJson);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: "invalid feedback data" },
-        { status: 500 },
+      return Problems.internal(
+        "invalid feedback data",
+        `/api/sessions/${id}/drill`,
       );
     }
 
@@ -102,44 +109,59 @@ export async function POST(
     );
 
     if (!originalQa) {
-      return NextResponse.json(
-        { error: "question not found in session" },
-        { status: 404 },
-      );
+      return Problems.notFound(`/api/sessions/${id}/drill`);
     }
 
-    // build LLM prompt
+    const isEn = false; // drill is currently Korean-only; sessions.language not in select. KO 우선.
     const suggestedRef = originalQa.suggestedAnswer
-      ? `\n\n## 모범 답안 (참고)\n${originalQa.suggestedAnswer}`
+      ? `\n\n## 모범 답안 (참고용, 답안 본문에 STAR 등 언급 금지)\n${originalQa.suggestedAnswer}`
       : "";
 
     const systemPrompt = `당신은 한국 면접 전문 코치입니다. 재연습 답변을 분석하고 피드백을 제공하세요.
-모든 피드백은 한국어로 작성하세요.
+
+## Hard rules
+
+- 모든 피드백은 한국어 자연 구어체로
+- 면접 프레임워크 이름(STAR 등) 출력 금지
+- 빈말 금지 — 모든 평가는 답변 인용 또는 구체적 순간 명시
 
 ## 맥락
+
 - 직무: ${target.jobTitle}
 - 면접 유형: ${target.interviewType}
 - 질문: ${originalQa.questionText}
 - 이전 점수: ${originalQa.contentScore}점${suggestedRef}
 
-## 채점 기준
-- 90+: 구체적 경험, 명확한 논리, 설득력 있는 결론까지 완비
-- 70-89: 핵심은 전달했으나 구체성이나 논리 일부 부족
-- 50-69: 추상적이거나 두루뭉술한 답변이 다수
-- 50 미만: 질문 의도 파악 실패 또는 답변 자체가 부실
+## 채점 (contentScore, 0-100)
 
-## 피드백 원칙
-- 이전 답변 대비 개선된 점과 아직 부족한 점을 구체적으로 지적
-- 모범 답안이 있으면 모범 답안 대비 어디가 부족한지 비교 분석
-- 당장 적용할 수 있는 구체적 개선 포인트 1-2개 제시
-- STAR 구조가 적합한 질문이면 STAR 충족도 평가
+- 90+ : 구체적 경험 + 명확한 논리 + 설득력 있는 결론
+- 70-89: 핵심 전달, 일부 구체성·논리 부족
+- 50-69: 추상적·두루뭉술
+- <50  : 질문 의도 파악 실패 또는 답변 부실
+
+## STAR 평가 규칙
+
+- 경험 기반 질문(과거 행동)에만 starFulfillment 평가
+- 가정형/지식형 질문은 4개 모두 false로 두고 피드백에서 무시
+
+## feedback 작성 형식
+
+피드백 본문은 다음 두 부분으로:
+1. 이전 점수 ${originalQa.contentScore}점 대비 변화 평가 (1-2문장, 어떤 부분이 좋아졌고 어떤 부분이 여전히 부족한지)
+2. 다음 시도에서 적용할 구체적 개선 포인트 1-2개 (실제 행동 단위)
+
+전체 길이 2-3문장 + 개선 포인트 1-2개. 빈 칭찬 금지.
 
 ## 출력 (JSON)
+
+\`\`\`json
 {
-  "contentScore": number (0-100),
-  "feedback": "2-4문장의 구체적 피드백",
+  "contentScore": number,
+  "feedback": "...",
   "starFulfillment": { "situation": boolean, "task": boolean, "action": boolean, "result": boolean }
-}`;
+}
+\`\`\``;
+    void isEn;
 
     const completion = await getOpenAI().chat.completions.create({
       model: "gpt-5.4-mini",
@@ -156,9 +178,6 @@ export async function POST(
     return NextResponse.json(result);
   } catch (error) {
     console.error("drill feedback failed:", error);
-    return NextResponse.json(
-      { error: "failed to generate drill feedback" },
-      { status: 500 },
-    );
+    return Problems.internal("failed to generate drill feedback");
   }
 }

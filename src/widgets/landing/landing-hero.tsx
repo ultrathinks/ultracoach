@@ -3,37 +3,8 @@
 import { motion } from "motion/react";
 import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/shared/ui";
-
-const features = [
-  { emoji: "🧠", category: "면접", title: "산업심리학 기반 구조화 면접" },
-  { emoji: "🎙️", category: "음성", title: "실시간 음성 인식 & TTS" },
-  { emoji: "👁️", category: "분석", title: "시선·자세·표정 실시간 추적" },
-  { emoji: "🗣️", category: "코칭", title: "비언어적 문제 즉시 피드백" },
-  { emoji: "📝", category: "리포트", title: "상세 분석 리포트 & 점수" },
-  { emoji: "🔄", category: "반복", title: "매번 새로운 질문 동적 생성" },
-  { emoji: "🎭", category: "아바타", title: "Simli 립싱크 실전 면접관" },
-  { emoji: "📄", category: "이력서", title: "이력서 기반 맞춤 질문" },
-];
-
-const steps = [
-  {
-    label: "이력서 업로드",
-    description: "PDF 이력서를 업로드하면 AI가 직무와 경험을 분석합니다",
-  },
-  {
-    label: "면접 모드 선택",
-    description: "실전 모드 또는 연습 모드를 선택합니다",
-  },
-  {
-    label: "AI 면접 진행",
-    description: "아바타 면접관이 음성으로 질문하고 답변을 평가합니다",
-  },
-  {
-    label: "피드백 확인",
-    description: "언어·비언어 분석 리포트와 개선점을 확인합니다",
-  },
-];
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
@@ -44,12 +15,75 @@ function Pill({ children }: { children: React.ReactNode }) {
 }
 
 export function LandingHero() {
+  const t = useTranslations("landing");
   const { data: session } = useSession();
+
+  const features = [
+    {
+      emoji: "🧠",
+      category: t("features.interview"),
+      title: t("features.interviewDesc"),
+    },
+    {
+      emoji: "🎙️",
+      category: t("features.voice"),
+      title: t("features.voiceDesc"),
+    },
+    {
+      emoji: "👁️",
+      category: t("features.analysis"),
+      title: t("features.analysisDesc"),
+    },
+    {
+      emoji: "🗣️",
+      category: t("features.coaching"),
+      title: t("features.coachingDesc"),
+    },
+    {
+      emoji: "📝",
+      category: t("features.report"),
+      title: t("features.reportDesc"),
+    },
+    {
+      emoji: "🔄",
+      category: t("features.dynamic"),
+      title: t("features.dynamicDesc"),
+    },
+    {
+      emoji: "🎭",
+      category: t("features.avatar"),
+      title: t("features.avatarDesc"),
+    },
+    {
+      emoji: "📄",
+      category: t("features.resume"),
+      title: t("features.resumeDesc"),
+    },
+  ];
+
+  const steps = [
+    {
+      label: t("steps.resumeUpload"),
+      description: t("steps.resumeUploadDesc"),
+    },
+    {
+      label: t("steps.modeSelect"),
+      description: t("steps.modeSelectDesc"),
+    },
+    {
+      label: t("steps.interview"),
+      description: t("steps.interviewDesc"),
+    },
+    {
+      label: t("steps.feedback"),
+      description: t("steps.feedbackDesc"),
+    },
+  ];
 
   return (
     <div>
       {/* ── Hero ── */}
-      <section className="py-36 lg:py-52">
+      <section className="py-24 sm:py-36 lg:py-52">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <motion.div
             className="inline-flex items-center gap-2.5 px-4 py-2 mb-9 rounded-full text-sm sm:text-base font-medium text-foreground bg-white/[0.04] border border-white/[0.1]"
@@ -61,9 +95,9 @@ export function LandingHero() {
               aria-hidden="true"
               className="inline-flex w-2 h-2 rounded-full bg-indigo animate-pulse"
             />
-            <span>English support is now live</span>
+            <span>{t("announcement")}</span>
             <span className="text-muted">·</span>
-            <span className="text-secondary">한국어도 그대로</span>
+            <span className="text-secondary">{t("announcementKo")}</span>
           </motion.div>
 
           <motion.h1
@@ -72,9 +106,9 @@ export function LandingHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            AI 면접관과 함께
+            {t("heroTitle")}
             <br />
-            실전처럼 준비하세요
+            {t("heroTitleSub")}
           </motion.h1>
 
           <motion.p
@@ -83,7 +117,7 @@ export function LandingHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.08 }}
           >
-            면접 예상 질문부터 표정·자세 분석, 맞춤 피드백까지
+            {t("heroDescription")}
           </motion.p>
 
           <motion.div
@@ -94,23 +128,25 @@ export function LandingHero() {
           >
             {session?.user ? (
               <Link href="/interview">
-                <Button size="lg">면접 시작하기</Button>
+                <Button size="lg">{t("startButton")}</Button>
               </Link>
             ) : (
               <Button size="lg" onClick={() => signIn("google")}>
-                시작하기
+                {t("startButton")}
               </Button>
             )}
-            <Link href="/history">
-              <Button variant="secondary" size="lg">
-                기록 보기
-              </Button>
-            </Link>
+            {session?.user && (
+              <Link href="/history">
+                <Button variant="secondary" size="lg">
+                  {t("viewHistory")}
+                </Button>
+              </Link>
+            )}
           </motion.div>
         </div>
       </section>
 
-      {/* ── 면접 과정 ── */}
+      {/* ── Interview Process ── */}
       <section className="py-28 lg:py-40">
         <div className="max-w-4xl mx-auto px-6">
           <motion.div
@@ -119,13 +155,11 @@ export function LandingHero() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
           >
-            <Pill>면접 과정</Pill>
+            <Pill>{t("steps.resumeUpload")}</Pill>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              간단한 4단계
+              {t("stepsHeader")}
             </h2>
-            <p className="text-secondary text-lg mb-16">
-              복잡한 설정 없이, 바로 시작할 수 있어요.
-            </p>
+            <p className="text-secondary text-lg mb-16">{t("stepsLead")}</p>
           </motion.div>
 
           {steps.map((step, i) => (
@@ -149,7 +183,7 @@ export function LandingHero() {
         </div>
       </section>
 
-      {/* ── 주요 기능 ── */}
+      {/* ── Key Features ── */}
       <section className="py-28 lg:py-40">
         <div className="max-w-5xl mx-auto px-6">
           <motion.div
@@ -159,11 +193,9 @@ export function LandingHero() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
           >
-            <Pill>주요 기능</Pill>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
-              면접의 모든 것을
-              <br />
-              AI가 코칭합니다
+            <Pill>{t("features.interview")}</Pill>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold whitespace-pre-line">
+              {t("featuresHeader")}
             </h2>
           </motion.div>
 
@@ -203,18 +235,16 @@ export function LandingHero() {
           transition={{ duration: 0.5 }}
         >
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-5">
-            지금 바로 시작하세요
+            {t("ctaHeader")}
           </h2>
-          <p className="text-secondary text-lg mb-10">
-            AI와 함께 면접을 준비하고, 자신감을 키우세요.
-          </p>
+          <p className="text-secondary text-lg mb-10">{t("ctaLead")}</p>
           {session?.user ? (
             <Link href="/interview">
-              <Button size="lg">면접 시작하기</Button>
+              <Button size="lg">{t("startButton")}</Button>
             </Link>
           ) : (
             <Button size="lg" onClick={() => signIn("google")}>
-              무료로 시작하기
+              {t("startButton")}
             </Button>
           )}
         </motion.div>

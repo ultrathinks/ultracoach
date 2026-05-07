@@ -1,15 +1,13 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
+import { useId, useState } from "react";
 import { type InterviewType, useSessionStore } from "@/entities/session";
 import { cn } from "@/shared/lib/cn";
-import { Button, Input } from "@/shared/ui";
+import { Button, FormError, Input } from "@/shared/ui";
+import { AvatarPicker } from "./avatar-picker";
 import { requestMediaPermission } from "./use-devices";
-
-const LOCALE_COOKIE = "ultracoach:language";
 
 interface SetupFormProps {
   onStart: () => void;
@@ -17,11 +15,9 @@ interface SetupFormProps {
 
 export function SetupForm({ onStart }: SetupFormProps) {
   const t = useTranslations("setup");
-  const tCommon = useTranslations("common");
-  const locale = useLocale();
-  const router = useRouter();
-  const [, startTransition] = useTransition();
   const setSetup = useSessionStore((s) => s.setSetup);
+  const jobTitleId = useId();
+  const companyNameId = useId();
   const [jobTitle, setJobTitle] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [interviewType, setInterviewType] =
@@ -54,14 +50,6 @@ export function SetupForm({ onStart }: SetupFormProps) {
       desc: t("types.cultureFitDesc"),
     },
   ];
-
-  function setLocale(next: "ko" | "en") {
-    if (next === locale) return;
-    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
-    startTransition(() => {
-      router.refresh();
-    });
-  }
 
   async function handleCheck() {
     setCheckStatus("checking");
@@ -116,51 +104,22 @@ export function SetupForm({ onStart }: SetupFormProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="flex justify-end mb-4">
-        <div className="inline-flex rounded-full bg-card border border-white/[0.06] p-0.5 text-xs">
-          <button
-            type="button"
-            onClick={() => setLocale("ko")}
-            className={cn(
-              "px-3 py-1 rounded-full transition-colors cursor-pointer",
-              locale === "ko"
-                ? "bg-white/[0.08] text-foreground"
-                : "text-muted hover:text-foreground",
-            )}
-          >
-            {tCommon("ko")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setLocale("en")}
-            className={cn(
-              "px-3 py-1 rounded-full transition-colors cursor-pointer",
-              locale === "en"
-                ? "bg-white/[0.08] text-foreground"
-                : "text-muted hover:text-foreground",
-            )}
-          >
-            {tCommon("en")}
-          </button>
-        </div>
-      </div>
-
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-3">{t("title")}</h1>
+        <h1 className="text-4xl font-bold mb-2">{t("title")}</h1>
         <p className="text-muted text-lg">{t("subtitle")}</p>
       </div>
 
-      <div className="space-y-7">
-        <div className="grid grid-cols-2 gap-3">
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
-            id="jobTitle"
+            id={jobTitleId}
             label={t("jobTitle")}
             placeholder={t("jobTitlePlaceholder")}
             value={jobTitle}
             onChange={(e) => setJobTitle(e.target.value)}
           />
           <Input
-            id="companyName"
+            id={companyNameId}
             label={t("companyName")}
             placeholder={t("companyNamePlaceholder")}
             value={companyName}
@@ -170,18 +129,24 @@ export function SetupForm({ onStart }: SetupFormProps) {
         </div>
 
         <div>
-          <p className="text-sm text-secondary mb-3">{t("interviewType")}</p>
-          <div className="grid grid-cols-3 gap-3">
+          <p className="text-sm text-secondary mb-2">{t("interviewType")}</p>
+          <div
+            className="grid grid-cols-1 sm:grid-cols-3 gap-2"
+            role="radiogroup"
+            aria-label={t("interviewType")}
+          >
             {interviewTypes.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
+                role="radio"
+                aria-checked={interviewType === opt.value}
                 onClick={() => setInterviewType(opt.value)}
                 className={cn(
-                  "text-left rounded-xl px-4 py-3.5 border transition-all cursor-pointer",
+                  "text-left rounded-xl px-4 py-4 border transition-all cursor-pointer",
                   interviewType === opt.value
                     ? "border-foreground/30 bg-white/[0.04]"
-                    : "border-white/[0.1] bg-card hover:border-white/[0.15]",
+                    : "border-border-default bg-card hover:border-border-strong",
                 )}
               >
                 <p className="text-sm font-semibold">{opt.label}</p>
@@ -191,15 +156,21 @@ export function SetupForm({ onStart }: SetupFormProps) {
           </div>
         </div>
 
+        <AvatarPicker label={t("interviewer")} />
+
         <div>
-          <p className="text-sm text-secondary mb-3">{t("resume")}</p>
-          <label className="flex items-center gap-3 px-5 py-4 rounded-xl bg-card border border-white/[0.1] cursor-pointer hover:border-white/[0.15] transition-colors">
+          <div className="flex items-baseline justify-between mb-2">
+            <p className="text-sm text-secondary">{t("resume")}</p>
+            <p className="text-xs text-muted">{t("resumeHint")}</p>
+          </div>
+          <label className="flex items-center gap-2 px-5 py-4 rounded-xl bg-card border border-border-default cursor-pointer hover:border-border-strong transition-colors">
             <svg
               width="18"
               height="18"
               viewBox="0 0 16 16"
               fill="none"
               className="text-muted shrink-0"
+              aria-hidden="true"
             >
               <path
                 d="M8 1v10M4 5l4-4 4 4"
@@ -236,13 +207,11 @@ export function SetupForm({ onStart }: SetupFormProps) {
               }}
             />
           </label>
-          {resumeError && (
-            <p className="text-sm text-red mt-2">{resumeError}</p>
-          )}
+          <FormError>{resumeError}</FormError>
         </div>
       </div>
 
-      <div className="mt-10 space-y-3">
+      <div className="mt-10 space-y-2">
         <button
           type="button"
           onClick={handleCheck}
@@ -259,7 +228,7 @@ export function SetupForm({ onStart }: SetupFormProps) {
         </button>
         <Button
           size="lg"
-          className="w-full py-3.5"
+          className="w-full py-4"
           disabled={!jobTitle.trim() || uploading}
           onClick={handleStart}
         >

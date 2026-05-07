@@ -5,6 +5,7 @@ import { questionAnalysisSchema } from "@/entities/feedback/schema";
 import { db } from "@/shared/db";
 import { feedback as feedbackTable, sessions } from "@/shared/db/schema";
 import { auth } from "@/shared/lib/auth";
+import { canUseDrill } from "@/shared/lib/permissions";
 import { DrillScreen } from "@/widgets/drill/drill-screen";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ export default async function DrillPage({
 }) {
   const authSession = await auth();
   if (!authSession?.user?.id) redirect("/");
+  if (!canUseDrill(authSession.user)) redirect("/dashboard/billing");
 
   const { sessionId } = await params;
   const { q } = await searchParams;

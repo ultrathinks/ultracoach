@@ -7,13 +7,18 @@ interface Recording {
   blob: Blob;
 }
 
-const db = new Dexie("ultracoach") as Dexie & {
-  recordings: EntityTable<Recording, "id">;
-};
+class UltraCoachDb extends Dexie {
+  recordings!: EntityTable<Recording, "id">;
 
-db.version(1).stores({
-  recordings: "++id, sessionId, type",
-});
+  constructor() {
+    super("ultracoach");
+    this.version(1).stores({
+      recordings: "++id, sessionId, type",
+    });
+  }
+}
+
+const db = new UltraCoachDb();
 
 export { db };
 export type { Recording };

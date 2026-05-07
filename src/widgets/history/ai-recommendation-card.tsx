@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import type { AiRecommendationData } from "@/entities/analytics";
 
@@ -19,16 +20,17 @@ function truncate(text: string, maxLength: number): string {
 }
 
 function AiRecommendationCardInner({ data }: AiRecommendationCardProps) {
+  const t = useTranslations("history");
   const [expanded, setExpanded] = useState(false);
 
   if (data.suggestion === "" && data.sessionDate === "") {
     return (
       <div className="rounded-xl bg-card border border-white/[0.1] p-6">
-        <h3 className="text-base font-semibold mb-4">AI 추천</h3>
+        <h3 className="text-base font-semibold mb-4">
+          {t("aiRecommendation")}
+        </h3>
         <div className="flex flex-col items-center justify-center py-10 text-center">
-          <p className="text-secondary text-sm">
-            면접 후 다음 세션을 위한 맞춤 제안을 받아보세요
-          </p>
+          <p className="text-secondary text-sm">{t("aiRecommendationEmpty")}</p>
         </div>
       </div>
     );
@@ -37,10 +39,12 @@ function AiRecommendationCardInner({ data }: AiRecommendationCardProps) {
   if (data.suggestion === "") {
     return (
       <div className="rounded-xl bg-card border border-white/[0.1] p-6">
-        <h3 className="text-base font-semibold mb-4">AI 추천</h3>
+        <h3 className="text-base font-semibold mb-4">
+          {t("aiRecommendation")}
+        </h3>
         <div className="flex flex-col items-center justify-center py-10 text-center">
           <p className="text-secondary text-sm">
-            이 세션에 대한 추천이 아직 없어요
+            {t("aiRecommendationSessionEmpty")}
           </p>
         </div>
       </div>
@@ -65,7 +69,7 @@ function AiRecommendationCardInner({ data }: AiRecommendationCardProps) {
       tabIndex={0}
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold">AI 추천</h3>
+        <h3 className="text-base font-semibold">{t("aiRecommendation")}</h3>
         {isLong && (
           <svg
             width={16}

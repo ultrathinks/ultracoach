@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   Line,
   LineChart,
@@ -20,6 +21,8 @@ function formatDate(iso: string): string {
 }
 
 function ScoreTrendChartInner({ data }: ScoreTrendChartProps) {
+  const t = useTranslations("history");
+
   const scored = data.filter(
     (d) => d.deliveryScore !== null || d.contentScore !== null,
   );
@@ -27,16 +30,18 @@ function ScoreTrendChartInner({ data }: ScoreTrendChartProps) {
   if (scored.length === 0) return null;
 
   const isSingle = scored.length === 1;
+  const deliveryLabel = t("delivery");
+  const contentLabel = t("content");
 
   const chartData = scored.map((d) => ({
     date: formatDate(d.createdAt),
-    전달력: d.deliveryScore,
-    답변력: d.contentScore,
+    delivery: d.deliveryScore,
+    content: d.contentScore,
   }));
 
   return (
     <div className="rounded-xl bg-card border border-white/[0.1] p-6">
-      <h3 className="font-semibold mb-6">점수 추이</h3>
+      <h3 className="font-semibold mb-6">{t("scoreTrend")}</h3>
       <ResponsiveContainer width="100%" height={240}>
         <LineChart data={chartData}>
           <XAxis
@@ -65,7 +70,8 @@ function ScoreTrendChartInner({ data }: ScoreTrendChartProps) {
           />
           <Line
             type="monotone"
-            dataKey="전달력"
+            dataKey="delivery"
+            name={deliveryLabel}
             stroke="var(--color-indigo)"
             strokeWidth={2}
             dot={isSingle ? { r: 4, fill: "var(--color-indigo)" } : false}
@@ -73,7 +79,8 @@ function ScoreTrendChartInner({ data }: ScoreTrendChartProps) {
           />
           <Line
             type="monotone"
-            dataKey="답변력"
+            dataKey="content"
+            name={contentLabel}
             stroke="var(--color-pink)"
             strokeWidth={2}
             dot={isSingle ? { r: 4, fill: "var(--color-pink)" } : false}
@@ -83,17 +90,17 @@ function ScoreTrendChartInner({ data }: ScoreTrendChartProps) {
       </ResponsiveContainer>
       {isSingle && (
         <p className="text-center text-muted text-sm mt-4">
-          2개 이상 세션을 완료하면 추이를 확인할 수 있어요
+          {t("scoreTrendSingle")}
         </p>
       )}
       <div className="flex gap-6 mt-5 text-sm text-secondary">
         <span className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-indigo" />
-          전달력
+          {deliveryLabel}
         </span>
         <span className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-pink" />
-          답변력
+          {contentLabel}
         </span>
       </div>
     </div>

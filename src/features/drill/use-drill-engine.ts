@@ -1,8 +1,10 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useRef, useState } from "react";
 import { z } from "zod";
-import { createVad } from "@/features/interview-engine/vad";
+import { transcribeAudio } from "@/shared/lib/transcribe";
+import { createVad } from "@/shared/lib/vad";
 
 export type DrillPhase =
   | "prep"
@@ -29,7 +31,6 @@ interface DrillEngineConfig {
   question: string;
 }
 
-const transcribeResponseSchema = z.object({ text: z.string() });
 const drillResponseSchema = z.object({
   contentScore: z.number(),
   feedback: z.string(),
@@ -50,6 +51,8 @@ export function useDrillEngine({
   questionId,
   question,
 }: DrillEngineConfig) {
+  const t = useTranslations("drill");
+  const locale = useLocale();
   const [drillPhase, setDrillPhase] = useState<DrillPhase>("prep");
   const [transcript, setTranscript] = useState<string>("");
   const [result, setResult] = useState<DrillResult | null>(null);
@@ -70,20 +73,6 @@ export function useDrillEngine({
   // Refs to fix stale closures in onSpeechEnd callback
   const attemptCountRef = useRef(0);
   const bestScoreRef = useRef(0);
-
-  const transcribeAudio = useCallback(async (audioBlob: Blob) => {
-    const formData = new FormData();
-    formData.append("audio", audioBlob, "answer.webm");
-
-    const res = await fetch("/api/whisper", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!res.ok) throw new Error("failed to transcribe");
-    const data = transcribeResponseSchema.parse(await res.json());
-    return data.text;
-  }, []);
 
   const playTTS = useCallback(async (text: string): Promise<void> => {
     const controller = new AbortController();
@@ -190,21 +179,19 @@ export function useDrillEngine({
 
         if (audioBlob.size < 1000) {
           setTranscript("");
-          setValidationError("음성이 감지되지 않았습니다");
+          setValidationError(t("validation.noContent"));
           setDrillPhase("feedback");
           return;
         }
 
         try {
-          const text = await transcribeAudio(audioBlob);
+          const text = await transcribeAudio(audioBlob, locale);
           setTranscript(text);
 
           // 15-word gate
           const wordCount = text.trim().split(/\s+/).length;
           if (wordCount < MIN_WORD_COUNT) {
-            setValidationError(
-              "답변이 너무 짧습니다. 더 구체적으로 답변해 주세요",
-            );
+            setValidationError(t("validation.tooShort"));
             setDrillPhase("feedback");
             return;
           }
@@ -242,13 +229,13 @@ export function useDrillEngine({
           }
         } catch (err) {
           console.error("drill processing failed:", err);
-          setValidationError("분석 중 오류가 발생했습니다. 다시 시도해 주세요");
+          setValidationError(t("validation.tooShort"));
           setDrillPhase("feedback");
         }
       },
     });
     vadRef.current.start(stream);
-  }, [sessionId, questionId, question, transcribeAudio, playTTS]);
+  }, [sessionId, questionId, question, locale, playTTS, t]);
 
   const stopDrill = useCallback(() => {
     loopAbortRef.current = true;

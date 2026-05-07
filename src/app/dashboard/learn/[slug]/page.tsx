@@ -1,6 +1,7 @@
 import { ArrowLeft, Clock } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import {
   articles,
   getArticle,
@@ -19,6 +20,7 @@ export default async function LearnArticlePage({ params }: Props) {
   const { slug } = await params;
   const article = getArticle(slug);
   if (!article) notFound();
+  const t = await getTranslations("learnIndex");
 
   let Content: React.ComponentType;
   try {
@@ -32,23 +34,23 @@ export default async function LearnArticlePage({ params }: Props) {
     <div className="max-w-3xl mx-auto">
       <Link
         href="/dashboard/learn"
-        className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors mb-6"
+        className="inline-flex items-center gap-2 text-sm text-muted hover:text-foreground transition-colors mb-6"
       >
         <ArrowLeft className="h-4 w-4" />
-        목록으로
+        {t("backToList")}
       </Link>
 
-      <div className="flex items-center gap-3 text-xs text-muted mb-4">
+      <div className="flex items-center gap-2 text-xs text-muted mb-4">
         <span className="rounded-full bg-white/[0.06] px-2.5 py-0.5">
           {getCategoryLabel(article.category)}
         </span>
         <span className="flex items-center gap-1">
           <Clock className="h-3 w-3" />
-          {article.readMin}분
+          {t("readMin", { n: article.readMin })}
         </span>
       </div>
 
-      <article className="prose prose-invert prose-sm max-w-none prose-headings:text-foreground prose-p:text-secondary prose-strong:text-foreground prose-li:text-secondary prose-a:text-indigo prose-blockquote:border-indigo/30 prose-blockquote:text-muted prose-hr:border-white/[0.06] prose-th:text-foreground prose-td:text-secondary">
+      <article className="prose prose-invert prose-sm max-w-none prose-headings:text-foreground prose-p:text-secondary prose-strong:text-foreground prose-li:text-secondary prose-a:text-indigo prose-blockquote:border-indigo/30 prose-blockquote:text-muted prose-hr:border-border-subtle prose-th:text-foreground prose-td:text-secondary">
         <Content />
       </article>
     </div>

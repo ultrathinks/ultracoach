@@ -1,0 +1,1 @@
+ALTER TABLE "sessions" ADD COLUMN "progress_snapshot_json" jsonb;

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -16,14 +17,16 @@ interface StarRadarChartProps {
 }
 
 function StarRadarChartInner({ data }: StarRadarChartProps) {
+  const t = useTranslations("history");
+
   if (data.length === 0) {
     return (
       <div className="rounded-xl bg-card border border-white/[0.1] p-6">
-        <h3 className="text-base font-semibold mb-4">STAR 충족률</h3>
+        <h3 className="text-base font-semibold mb-4">
+          {t("starCompleteness")}
+        </h3>
         <div className="flex flex-col items-center justify-center py-10 text-center">
-          <p className="text-secondary text-sm">
-            첫 세션을 완료하면 STAR 충족률을 확인할 수 있어요
-          </p>
+          <p className="text-secondary text-sm">{t("starEmpty")}</p>
         </div>
       </div>
     );
@@ -31,7 +34,7 @@ function StarRadarChartInner({ data }: StarRadarChartProps) {
 
   return (
     <div className="rounded-xl bg-card border border-white/[0.1] p-6">
-      <h3 className="text-base font-semibold mb-4">STAR 충족률</h3>
+      <h3 className="text-base font-semibold mb-4">{t("starCompleteness")}</h3>
       <ResponsiveContainer width="100%" height={260}>
         <RadarChart
           data={data}
@@ -62,7 +65,10 @@ function StarRadarChartInner({ data }: StarRadarChartProps) {
               color: "var(--color-foreground)",
               fontSize: "13px",
             }}
-            formatter={(value: number) => [`${value}%`, "충족률"]}
+            formatter={(value: number) => [
+              `${value}%`,
+              t("starCompletenessShort"),
+            ]}
           />
         </RadarChart>
       </ResponsiveContainer>

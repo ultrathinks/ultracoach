@@ -1,24 +1,29 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { resolveLocale } from "@/i18n/request";
+import { AVATARS, findAvatar, resolveVoiceId } from "@/shared/config/avatars";
+import { Problems } from "@/shared/lib/api-error";
 import { auth } from "@/shared/lib/auth";
 import { rateLimit } from "@/shared/lib/rate-limit";
 
 const checkRate = rateLimit({ windowMs: 60_000, max: 60 });
 
-const KO_VOICE_ID_DEFAULT = "4JJwo477JUAx3HV0T7n7";
-const EN_VOICE_ID_DEFAULT = "21m00Tcm4TlvDq8ikWAM";
 const MODEL_ID = "eleven_multilingual_v2";
+
+const ALLOWED_VOICE_IDS = new Set<string>(
+  AVATARS.flatMap((a) => [a.voiceIdKo, a.voiceIdEn]),
+);
 
 const requestSchema = z.object({
   text: z.string().min(1).max(5000),
+  avatarId: z.string().optional(),
+  voiceId: z.string().optional(),
 });
 
 export async function POST(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+      return Problems.unauthorized("/api/tts");
     }
 
     const limited = checkRate(session.user.id, "tts");
@@ -26,25 +31,26 @@ export async function POST(request: Request) {
 
     const body = requestSchema.safeParse(await request.json());
     if (!body.success) {
-      return NextResponse.json(
-        { error: "invalid request body" },
-        { status: 400 },
-      );
+      return Problems.validation("invalid request body", "/api/tts");
     }
 
     const apiKey = process.env.ELEVENLABS_API_KEY;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: "elevenlabs api key not configured" },
-        { status: 500 },
-      );
+      return Problems.internal("elevenlabs api key not configured", "/api/tts");
     }
 
     const locale = await resolveLocale();
-    const voiceId =
-      locale === "en"
-        ? (process.env.ELEVENLABS_VOICE_ID_EN ?? EN_VOICE_ID_DEFAULT)
-        : (process.env.ELEVENLABS_VOICE_ID_KO ?? KO_VOICE_ID_DEFAULT);
+    const requestedVoiceId = body.data.voiceId;
+    let voiceId: string;
+    if (requestedVoiceId) {
+      if (!ALLOWED_VOICE_IDS.has(requestedVoiceId)) {
+        return Problems.validation("voice id not allowed", "/api/tts");
+      }
+      voiceId = requestedVoiceId;
+    } else {
+      const avatar = findAvatar(body.data.avatarId) ?? AVATARS[0];
+      voiceId = resolveVoiceId(avatar, locale);
+    }
 
     const res = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
@@ -68,7 +74,7 @@ export async function POST(request: Request) {
     );
 
     if (!res.ok || !res.body) {
-      return NextResponse.json({ error: "tts failed" }, { status: 502 });
+      return Problems.internal("tts upstream failed", "/api/tts");
     }
 
     return new Response(res.body, {
@@ -79,6 +85,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("tts proxy failed:", error);
-    return NextResponse.json({ error: "tts proxy error" }, { status: 500 });
+    return Problems.internal("tts proxy error", "/api/tts");
   }
 }

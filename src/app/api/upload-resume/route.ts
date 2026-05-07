@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { toFile } from "openai";
+import { Problems } from "@/shared/lib/api-error";
 import { auth } from "@/shared/lib/auth";
 import { getOpenAI } from "@/shared/lib/openai";
 import { rateLimit } from "@/shared/lib/rate-limit";
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+      return Problems.unauthorized("/api/upload-resume");
     }
 
     const limited = checkRate(session.user.id, "upload-resume");
@@ -28,13 +29,13 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get("file");
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: "no file provided" }, { status: 400 });
+      return Problems.validation("no file provided", "/api/upload-resume");
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "file too large, max 50MB" },
-        { status: 400 },
+      return Problems.validation(
+        "file too large, max 50MB",
+        "/api/upload-resume",
       );
     }
 
@@ -43,9 +44,9 @@ export async function POST(request: Request) {
       !ALLOWED_TYPES.includes(file.type) ||
       !ALLOWED_EXTENSIONS.includes(ext)
     ) {
-      return NextResponse.json(
-        { error: "only pdf and docx files are allowed" },
-        { status: 400 },
+      return Problems.validation(
+        "only pdf and docx files are allowed",
+        "/api/upload-resume",
       );
     }
 
@@ -58,9 +59,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ fileId: uploaded.id });
   } catch (error) {
     console.error("resume upload failed:", error);
-    return NextResponse.json(
-      { error: "failed to upload resume" },
-      { status: 500 },
-    );
+    return Problems.internal("failed to upload resume");
   }
 }

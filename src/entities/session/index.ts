@@ -8,5 +8,6 @@ export type {
   InterviewType,
   JobResearch,
   QuestionEntry,
+  SessionSummary,
 } from "./types";
 export { interviewTypeSchema } from "./types";
