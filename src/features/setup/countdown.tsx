@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/shared/lib/cn";
 
@@ -44,9 +45,10 @@ function StepIcon({ status }: { status: StepStatus }) {
 }
 
 export function Countdown({ researchStatus, onComplete }: CountdownProps) {
+  const t = useTranslations("interview.prep");
   const [steps, setSteps] = useState<Step[]>([
-    { label: "직무 분석", status: "loading" },
-    { label: "면접 질문 최적화", status: "pending" },
+    { label: t("jobAnalysis"), status: "loading" },
+    { label: t("questionOpt"), status: "pending" },
   ]);
   const [ready, setReady] = useState(false);
   const onCompleteRef = useRef(onComplete);
@@ -90,7 +92,7 @@ export function Countdown({ researchStatus, onComplete }: CountdownProps) {
         transition={{ duration: 0.4 }}
       >
         <h2 className="text-2xl font-bold text-center mb-12">
-          {allDone ? "면접을 시작합니다" : "면접을 준비하고 있어요"}
+          {allDone ? t("starting") : t("preparing")}
         </h2>
 
         <div className="space-y-5">

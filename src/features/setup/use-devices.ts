@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 export interface DeviceOption {
@@ -30,11 +31,15 @@ function toOption(d: MediaDeviceInfo, fallbackPrefix: string): DeviceOption {
 }
 
 export function useDevices() {
+  const t = useTranslations("interview.device");
   const [devices, setDevices] = useState<DeviceState>(empty);
   const [supportsSinkId, setSupportsSinkId] = useState(false);
 
   const refresh = useCallback(async () => {
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) {
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices?.enumerateDevices
+    ) {
       return;
     }
     try {
@@ -43,15 +48,16 @@ export function useDevices() {
       const speakers: DeviceOption[] = [];
       const cams: DeviceOption[] = [];
       for (const d of list) {
-        if (d.kind === "audioinput") mics.push(toOption(d, "마이크"));
-        else if (d.kind === "audiooutput") speakers.push(toOption(d, "스피커"));
-        else if (d.kind === "videoinput") cams.push(toOption(d, "카메라"));
+        if (d.kind === "audioinput") mics.push(toOption(d, t("mic")));
+        else if (d.kind === "audiooutput")
+          speakers.push(toOption(d, t("speaker")));
+        else if (d.kind === "videoinput") cams.push(toOption(d, t("cam")));
       }
       setDevices({ mics, speakers, cams });
     } catch (err) {
       console.warn("enumerate devices failed:", err);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     setSupportsSinkId(detectSinkSupport());
@@ -75,7 +81,10 @@ export function useDevices() {
 }
 
 export async function requestMediaPermission(): Promise<boolean> {
-  if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+  if (
+    typeof navigator === "undefined" ||
+    !navigator.mediaDevices?.getUserMedia
+  ) {
     return false;
   }
   try {
