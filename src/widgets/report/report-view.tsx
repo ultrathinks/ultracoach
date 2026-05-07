@@ -2,9 +2,12 @@
 
 import { motion } from "motion/react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import type { QuestionAnalysis, SessionFeedback } from "@/entities/feedback";
 import { cn } from "@/shared/lib/cn";
+import { useFormatDuration } from "@/shared/lib/format";
+import { LinkButton } from "@/shared/ui";
 import { ScoreRing } from "./score-ring";
 
 interface ReportViewProps {
@@ -21,6 +24,7 @@ function QuestionItem({
   qa: QuestionAnalysis;
   sessionId: string;
 }) {
+  const t = useTranslations("report");
   const [expanded, setExpanded] = useState(false);
 
   const answerPreview = qa.answer
@@ -30,14 +34,14 @@ function QuestionItem({
     : "";
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-start gap-3">
+    <div className="space-y-2">
+      <div className="flex items-start gap-2">
         <span className="text-sm text-muted shrink-0 w-8">
           Q{qa.questionId}
         </span>
         <span className="font-medium text-base flex-1">{qa.questionText}</span>
       </div>
-      <div className="flex items-center gap-1.5 ml-11">
+      <div className="flex items-center gap-2 ml-11">
         {(["situation", "task", "action", "result"] as const).map((key) => (
           <span
             key={key}
@@ -51,7 +55,9 @@ function QuestionItem({
             {key[0].toUpperCase()}
           </span>
         ))}
-        <span className="ml-auto text-sm text-muted">{qa.contentScore}점</span>
+        <span className="ml-auto text-sm text-muted">
+          {t("scoreSuffix", { n: qa.contentScore })}
+        </span>
       </div>
       {answerPreview && (
         <p className="text-sm text-foreground/50 ml-11 leading-relaxed">
@@ -61,20 +67,21 @@ function QuestionItem({
       <p className="text-[15px] text-foreground/70 leading-relaxed ml-11">
         {qa.feedback}
       </p>
-      <div className="flex items-center gap-3 ml-11">
+      <div className="flex items-center gap-2 ml-11">
         <Link
           href={`/drill/${sessionId}?q=${qa.questionId}`}
           className="px-3 py-1.5 text-sm font-medium rounded-lg bg-gradient-to-r from-indigo via-purple to-pink text-white hover:opacity-90 transition-opacity"
         >
-          재연습하기
+          {t("drillRetry")}
         </Link>
         {qa.suggestedAnswer && (
           <button
             type="button"
             className="flex items-center gap-2 text-sm text-muted hover:text-secondary transition-colors"
             onClick={() => setExpanded((prev) => !prev)}
+            aria-expanded={expanded}
           >
-            <span>모범 답안</span>
+            <span>{t("sampleAnswer")}</span>
             <svg
               width={14}
               height={14}
@@ -114,61 +121,57 @@ export function ReportView({
   duration,
   sessionId,
 }: ReportViewProps) {
-  const formatDuration = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}분 ${s}초`;
-  };
+  const t = useTranslations("report");
+  const formatDuration = useFormatDuration();
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-20 lg:py-28 space-y-10">
-      {/* header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 className="text-4xl font-bold mb-3">면접 리포트</h1>
+        <h1 className="text-4xl font-bold mb-2">{t("title")}</h1>
         <p className="text-muted text-lg">
           {jobTitle} · {formatDuration(duration)}
         </p>
       </motion.div>
 
-      {/* scores */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <div className="rounded-xl bg-card border border-white/[0.06] flex items-center justify-center gap-16 py-10">
-          <ScoreRing score={feedback.deliveryScore} label="전달력" />
-          <ScoreRing score={feedback.contentScore} label="답변력" />
+        <div className="rounded-xl bg-card border border-border-subtle flex items-center justify-center gap-16 py-10">
+          <ScoreRing
+            score={feedback.deliveryScore}
+            label={t("deliveryScore")}
+          />
+          <ScoreRing score={feedback.contentScore} label={t("contentScore")} />
         </div>
       </motion.div>
 
-      {/* summary */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <div className="rounded-xl bg-card border border-white/[0.06] p-6">
-          <h2 className="text-lg font-semibold mb-3">종합 평가</h2>
+        <div className="rounded-xl bg-card border border-border-subtle p-6">
+          <h2 className="text-lg font-semibold mb-2">{t("summary")}</h2>
           <p className="text-foreground/80 text-base leading-relaxed">
             {feedback.summary}
           </p>
         </div>
       </motion.div>
 
-      {/* key moments */}
       {feedback.keyMoments.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="rounded-xl bg-card border border-white/[0.06] p-6">
-            <h2 className="text-lg font-semibold mb-4">핵심 순간</h2>
-            <div className="space-y-3">
+          <div className="rounded-xl bg-card border border-border-subtle p-6">
+            <h2 className="text-lg font-semibold mb-4">{t("keyMoments")}</h2>
+            <div className="space-y-2">
               {feedback.keyMoments.map((moment, i) => (
                 <div
                   key={`${i}-${moment.timestamp}-${moment.type}`}
@@ -189,14 +192,13 @@ export function ReportView({
         </motion.div>
       )}
 
-      {/* action items */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <div className="rounded-xl bg-card border border-white/[0.06] p-6">
-          <h2 className="text-lg font-semibold mb-4">고칠 것 3가지</h2>
+        <div className="rounded-xl bg-card border border-border-subtle p-6">
+          <h2 className="text-lg font-semibold mb-4">{t("actionItems")}</h2>
           <div className="space-y-4">
             {feedback.actionItems.map((item) => (
               <div key={item.id} className="flex items-start gap-4">
@@ -212,15 +214,16 @@ export function ReportView({
         </div>
       </motion.div>
 
-      {/* question analyses */}
       {feedback.questionAnalyses.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
         >
-          <div className="rounded-xl bg-card border border-white/[0.06] p-6">
-            <h2 className="text-lg font-semibold mb-6">질문별 분석</h2>
+          <div className="rounded-xl bg-card border border-border-subtle p-6">
+            <h2 className="text-lg font-semibold mb-6">
+              {t("questionAnalyses")}
+            </h2>
             <div className="space-y-8">
               {feedback.questionAnalyses.map((qa, i) => (
                 <QuestionItem
@@ -234,7 +237,6 @@ export function ReportView({
         </motion.div>
       )}
 
-      {/* next suggestion */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -242,7 +244,7 @@ export function ReportView({
       >
         <div className="gradient-border rounded-xl">
           <div className="rounded-xl bg-background p-8">
-            <h2 className="text-xl font-bold mb-3">다음 세션 제안</h2>
+            <h2 className="text-xl font-bold mb-2">{t("nextSession")}</h2>
             <p className="text-foreground text-base leading-relaxed">
               {feedback.nextSessionSuggestion}
             </p>
@@ -250,34 +252,15 @@ export function ReportView({
         </div>
       </motion.div>
 
-      {/* dashboard link */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.75 }}
         className="flex justify-center"
       >
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-base font-medium bg-white/[0.06] border border-white/[0.06] hover:bg-white/[0.1] transition-colors"
-        >
-          <svg
-            width={18}
-            height={18}
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M15 18L9 12L15 6"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          대시보드로 가기
-        </Link>
+        <LinkButton href="/dashboard" variant="secondary" size="lg">
+          {t("backToDashboard")}
+        </LinkButton>
       </motion.div>
     </div>
   );
