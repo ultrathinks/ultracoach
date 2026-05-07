@@ -1,4 +1,5 @@
 import { SimliClient } from "simli-client";
+import { z } from "zod";
 
 interface SimliAvatarOptions {
   videoElement: HTMLVideoElement;
@@ -10,7 +11,19 @@ interface SimliAvatarOptions {
   onDisconnected?: (reason: string) => void;
 }
 
-export async function createSimliAvatar(options: SimliAvatarOptions) {
+const videoInfoSchema = z.object({
+  width: z.number().optional(),
+  height: z.number().optional(),
+});
+
+export interface AvatarHandle {
+  sendAudio: (pcm16: Uint8Array) => void;
+  stop: () => Promise<void>;
+}
+
+export async function createSimliAvatar(
+  options: SimliAvatarOptions,
+): Promise<AvatarHandle> {
   const {
     videoElement,
     audioElement,
@@ -30,49 +43,40 @@ export async function createSimliAvatar(options: SimliAvatarOptions) {
 
   if (onSpeaking) client.on("speaking", onSpeaking);
   if (onSilent) client.on("silent", onSilent);
-  if (onDisconnected) {
-    const emitter = client as { on: (event: string, cb: () => void) => void };
-    const markDisconnected = (reason: string) => () => onDisconnected(reason);
-    for (const event of [
-      "disconnected",
-      "disconnect",
-      "closed",
-      "close",
-      "failed",
-      "error",
-    ]) {
-      emitter.on(event, markDisconnected(event));
-    }
-  }
-  if (process.env.NODE_ENV === "development") {
-    client.on("video_info", (serialized) => {
-      let parsed: { width?: number; height?: number } | null = null;
-      try {
-        parsed = JSON.parse(serialized) as { width?: number; height?: number };
-      } catch {
-        parsed = null;
-      }
 
-      if (parsed?.width && parsed?.height) {
-        const ratio = parsed.width / parsed.height;
+  if (onDisconnected) {
+    client.on("error", (detail) => onDisconnected(detail));
+    client.on("startup_error", (detail) => onDisconnected(detail));
+    client.on("stop", () => onDisconnected("stop"));
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    client.on("video_info", (serialized: string) => {
+      let raw: unknown;
+      try {
+        raw = JSON.parse(serialized);
+      } catch {
+        return;
+      }
+      const parsed = videoInfoSchema.safeParse(raw);
+      if (parsed.success && parsed.data.width && parsed.data.height) {
+        const { width, height } = parsed.data;
+        const ratio = width / height;
         const orientation =
           ratio > 1.05 ? "landscape" : ratio < 0.95 ? "portrait" : "square";
         console.info(
-          "[ultracoach] simli video_info:",
-          `raw ${parsed.width}x${parsed.height}`,
+          "[ultracoach] avatar video_info:",
+          `${width}x${height}`,
           `ratio ${ratio.toFixed(3)} (${orientation})`,
         );
-        return;
       }
-
-      console.info("[ultracoach] simli video_info:", serialized);
     });
   }
 
   await client.start();
 
   return {
-    sendAudio(pcm16: Uint8Array) {
+    sendAudio(pcm16) {
       client.sendAudioData(pcm16);
     },
     async stop() {
