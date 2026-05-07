@@ -29,7 +29,7 @@ export function Select({
         <select
           id={id}
           className={cn(
-            "w-full appearance-none rounded-xl bg-card border border-white/[0.1] pl-4 pr-9 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-foreground/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer",
+            "w-full appearance-none rounded-xl bg-card border border-border-default pl-4 pr-9 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-foreground/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer",
             className,
           )}
           {...props}

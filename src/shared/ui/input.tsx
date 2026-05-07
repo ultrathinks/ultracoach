@@ -16,7 +16,7 @@ export function Input({ label, className, id, ...props }: InputProps) {
       <input
         id={id}
         className={cn(
-          "w-full rounded-xl bg-card border border-white/[0.1] px-5 py-3 text-base text-foreground placeholder:text-muted outline-none transition-colors focus:border-foreground/30",
+          "w-full rounded-xl bg-card border border-border-default px-5 py-3 text-base text-foreground placeholder:text-muted outline-none transition-colors focus:border-foreground/30",
           className,
         )}
         {...props}
