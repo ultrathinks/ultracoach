@@ -20,9 +20,10 @@ interface InterviewScreenProps {
   researchStatus?: "idle" | "loading" | "done";
 }
 
-const MIN_PIP_WIDTH = 160;
-const MAX_PIP_WIDTH = 720;
-const DEFAULT_PIP_WIDTH = 288;
+const MIN_PIP_WIDTH = 180;
+const MAX_PIP_WIDTH = 900;
+const DEFAULT_PIP_WIDTH = 420;
+const PIP_WIDTH_STORAGE_KEY = "ultracoach:pipWidth";
 
 export function InterviewScreen({
   researchStatus = "done",
@@ -101,9 +102,19 @@ export function InterviewScreen({
   const [devicePanelOpen, setDevicePanelOpen] = useState(false);
   const [deviceToast, setDeviceToast] = useState<string | null>(null);
   const [isSwapped, setIsSwapped] = useState(false);
-  const [pipWidth, setPipWidth] = useState(DEFAULT_PIP_WIDTH);
+  const [pipWidth, setPipWidth] = useState(() => {
+    if (typeof window === "undefined") return DEFAULT_PIP_WIDTH;
+    const saved = window.localStorage.getItem(PIP_WIDTH_STORAGE_KEY);
+    const n = saved ? Number(saved) : Number.NaN;
+    if (!Number.isFinite(n)) return DEFAULT_PIP_WIDTH;
+    return Math.min(MAX_PIP_WIDTH, Math.max(MIN_PIP_WIDTH, n));
+  });
   const pipWidthRef = useRef(pipWidth);
   pipWidthRef.current = pipWidth;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(PIP_WIDTH_STORAGE_KEY, String(pipWidth));
+  }, [pipWidth]);
   const textInputRef = useRef<HTMLInputElement>(null);
   const [prepSteps, setPrepSteps] = useState<
     { label: string; status: "pending" | "loading" | "done" }[]
