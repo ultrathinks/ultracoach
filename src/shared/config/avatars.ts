@@ -23,9 +23,10 @@ export const AVATARS = [
     description: "차분하고 디테일을 파고드는 시니어 엔지니어",
     persona: "technical",
     faceId: "7e74d6e7-d559-4394-bd56-4923a3ab75ad",
-    // Adam — calm male, multilingual
-    voiceIdKo: "pNInz6obpgDQGcFmaJgB",
-    voiceIdEn: "pNInz6obpgDQGcFmaJgB",
+    // ko: Hyun Bin — cool, professional corporate PR (Korean PVC)
+    // en: Brian — mature, confident narrator (multilingual)
+    voiceIdKo: "s07IwTCOrCDCaETjUVjx",
+    voiceIdEn: "nPczCjzI2devNBz1zQrb",
     previewImage: "/avatars/raj.jpg",
     plan: "free",
     locales: ["ko", "en"],
@@ -36,8 +37,9 @@ export const AVATARS = [
     description: "친절한 사수형 면접관, 답변을 풀어내도록 격려",
     persona: "kind",
     faceId: "cace3ef7-a4c4-425d-a8cf-a5358eb0c427",
-    // Bella — warm female, multilingual
-    voiceIdKo: "EXAVITQu4vr4xnSDxMaL",
+    // ko: JiYoung — warm, clear female (Korean PVC)
+    // en: Sarah — soft warm female (multilingual)
+    voiceIdKo: "AW5wrnG1jVizOYY7R1Oo",
     voiceIdEn: "EXAVITQu4vr4xnSDxMaL",
     previewImage: "/avatars/sora.jpg",
     plan: "pro",
@@ -49,9 +51,10 @@ export const AVATARS = [
     description: "압박 면접 스타일, 약점을 집요하게 추궁",
     persona: "strict",
     faceId: "dd10cb5a-d31d-4f12-b69f-6db3383c006e",
-    // Antoni — firm male, multilingual
-    voiceIdKo: "ErXwobaYiN019PkySvjV",
-    voiceIdEn: "ErXwobaYiN019PkySvjV",
+    // ko: Yohan Koo — confident, authoritative 30s male (Korean PVC)
+    // en: Daniel — deep British authority (multilingual)
+    voiceIdKo: "4JJwo477JUAx3HV0T7n7",
+    voiceIdEn: "onwK4e9ZLuTAKqWW03F9",
     previewImage: "/avatars/michael.jpg",
     plan: "pro",
     locales: ["ko", "en"],
@@ -62,9 +65,9 @@ export const AVATARS = [
     description: "(재미 옵션) 부담 없이 연습하는 아기 면접관",
     persona: "kind",
     faceId: "14de6eb1-0ea6-4fde-9522-8552ce691cb6",
-    // Domi — friendly female, multilingual
-    voiceIdKo: "AZnzlk1XvdvUeBnXmlld",
-    voiceIdEn: "AZnzlk1XvdvUeBnXmlld",
+    // ko: Jisoo — young Korean female with lively, clear delivery (Korean PVC)
+    voiceIdKo: "iWLjl1zCuqXRkW6494ve",
+    voiceIdEn: "iWLjl1zCuqXRkW6494ve",
     previewImage: "/avatars/babi.jpg",
     plan: "premium",
     locales: ["ko"],
